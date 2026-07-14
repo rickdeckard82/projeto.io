@@ -1,0 +1,202 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum GlobalRole {
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+enum StatusCategory {
+  BACKLOG
+  UNSTARTED
+  STARTED
+  COMPLETED
+  CANCELLED
+}
+
+enum Priority {
+  NONE
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+model User {
+  id           String     @id @default(uuid())
+  email        String     @unique
+  passwordHash String     @map("password_hash")
+  fullName     String     @map("full_name")
+  globalRole   GlobalRole @default(MEMBER) @map("global_role")
+  isActive     Boolean    @default(true) @map("is_active")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  refreshTokens   RefreshToken[]
+  ownedProjects   Project[]        @relation("ProjectOwner")
+  projectMembers  ProjectMember[]
+  createdItems    WorkItem[]       @relation("WorkItemCreatedBy")
+  assignedItems   ItemAssignee[]
+  createdDocs     Document[]       @relation("DocumentCreatedBy")
+  updatedDocs     Document[]       @relation("DocumentUpdatedBy")
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  tokenHash String    @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@map("refresh_tokens")
+}
+
+model Project {
+  id          String    @id @default(uuid())
+  name        String
+  key         String?   @unique
+  icon        String?
+  coverColor  String?   @map("cover_color")
+  isPublic    Boolean   @default(false) @map("is_public")
+  description String?
+  ownerId     String    @map("owner_id")
+  archivedAt  DateTime? @map("archived_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  owner    User             @relation("ProjectOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  members  ProjectMember[]
+  statuses Status[]
+  items    WorkItem[]
+  labels   Label[]
+  documents Document[]
+
+  @@map("projects")
+}
+
+model ProjectMember {
+  id        String   @id @default(uuid())
+  projectId String   @map("project_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@map("project_members")
+}
+
+model Status {
+  id        String         @id @default(uuid())
+  projectId String         @map("project_id")
+  name      String
+  category  StatusCategory
+  position  Int
+  createdAt DateTime       @default(now()) @map("created_at")
+  updatedAt DateTime       @updatedAt @map("updated_at")
+
+  project Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  items   WorkItem[]
+
+  @@unique([projectId, position])
+  @@map("statuses")
+}
+
+model WorkItem {
+  id          String    @id @default(uuid())
+  projectId   String    @map("project_id")
+  title       String
+  description String?
+  statusId    String    @map("status_id")
+  priority    Priority  @default(NONE)
+  parentId    String?   @map("parent_id")
+  startDate   DateTime? @map("start_date")
+  dueDate     DateTime? @map("due_date")
+  createdById String    @map("created_by_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  project   Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  status    Status         @relation(fields: [statusId], references: [id], onDelete: Restrict)
+  createdBy User           @relation("WorkItemCreatedBy", fields: [createdById], references: [id])
+  parent    WorkItem?      @relation("SubItems", fields: [parentId], references: [id], onDelete: SetNull)
+  subItems  WorkItem[]     @relation("SubItems")
+  assignees ItemAssignee[]
+  labels    ItemLabel[]
+
+  @@index([projectId])
+  @@index([statusId])
+  @@index([parentId])
+  @@map("work_items")
+}
+
+model ItemAssignee {
+  id         String @id @default(uuid())
+  workItemId String @map("work_item_id")
+  userId     String @map("user_id")
+
+  workItem WorkItem @relation(fields: [workItemId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workItemId, userId])
+  @@map("item_assignees")
+}
+
+model Label {
+  id        String   @id @default(uuid())
+  projectId String   @map("project_id")
+  name      String
+  color     String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  project Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  items   ItemLabel[]
+
+  @@unique([projectId, name])
+  @@map("labels")
+}
+
+model ItemLabel {
+  id         String @id @default(uuid())
+  workItemId String @map("work_item_id")
+  labelId    String @map("label_id")
+
+  workItem WorkItem @relation(fields: [workItemId], references: [id], onDelete: Cascade)
+  label    Label    @relation(fields: [labelId], references: [id], onDelete: Cascade)
+
+  @@unique([workItemId, labelId])
+  @@map("item_labels")
+}
+
+model Document {
+  id            String   @id @default(uuid())
+  projectId     String   @map("project_id")
+  title         String
+  content       String   @default("")
+  createdById   String   @map("created_by_id")
+  updatedById   String?  @map("updated_by_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy User    @relation("DocumentCreatedBy", fields: [createdById], references: [id])
+  updatedBy User?   @relation("DocumentUpdatedBy", fields: [updatedById], references: [id])
+
+  @@index([projectId])
+  @@map("documents")
+}

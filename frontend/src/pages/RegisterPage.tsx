@@ -1,0 +1,70 @@
+import { FormEvent, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../auth/AuthContext';
+import { Button } from '../components/common/Button';
+
+export function RegisterPage() {
+  const { register } = useAuth();
+  const navigate = useNavigate();
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const onSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      await register(email, password, fullName);
+      navigate('/projects');
+    } catch (err: any) {
+      setError(err?.response?.data?.message || 'Falha ao cadastrar');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex h-screen items-center justify-center">
+      <form onSubmit={onSubmit} className="w-full max-w-sm rounded-lg border border-slate-800 bg-slate-900 p-6">
+        <h1 className="mb-4 text-lg font-semibold text-slate-100">Criar conta</h1>
+        {error && <p className="mb-3 text-sm text-red-400">{error}</p>}
+        <label className="mb-1 block text-xs text-slate-400">Nome completo</label>
+        <input
+          required
+          value={fullName}
+          onChange={(e) => setFullName(e.target.value)}
+          className="mb-3 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+        />
+        <label className="mb-1 block text-xs text-slate-400">E-mail</label>
+        <input
+          type="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="mb-3 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+        />
+        <label className="mb-1 block text-xs text-slate-400">Senha (mín. 8 caracteres)</label>
+        <input
+          type="password"
+          required
+          minLength={8}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="mb-4 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+        />
+        <Button type="submit" disabled={loading} className="w-full">
+          {loading ? 'Cadastrando...' : 'Cadastrar'}
+        </Button>
+        <p className="mt-3 text-center text-xs text-slate-500">
+          Você será cadastrado como <strong>Membro</strong>. Um administrador pode alterar seu papel depois.
+        </p>
+        <p className="mt-2 text-center text-xs text-slate-500">
+          Já tem conta? <Link to="/login" className="text-indigo-400">Entrar</Link>
+        </p>
+      </form>
+    </div>
+  );
+}

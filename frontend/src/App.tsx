@@ -1,0 +1,42 @@
+import { Navigate, Route, Routes } from 'react-router-dom';
+import { ProtectedRoute } from './auth/ProtectedRoute';
+import { AppShell } from './components/layout/AppShell';
+import { HomePage } from './pages/HomePage';
+import { LoginPage } from './pages/LoginPage';
+import { RegisterPage } from './pages/RegisterPage';
+import { ProjectsListPage } from './pages/ProjectsListPage';
+import { ArchivedProjectsPage } from './pages/ArchivedProjectsPage';
+import { ProjectDetailLayout } from './pages/ProjectDetailLayout';
+import { ProjectBoardPage } from './pages/ProjectBoardPage';
+import { ProjectListViewPage } from './pages/ProjectListViewPage';
+import { ProjectDocumentsPage } from './pages/ProjectDocumentsPage';
+import { DocumentEditorPage } from './pages/DocumentEditorPage';
+import { ProjectSettingsPage } from './pages/ProjectSettingsPage';
+import { NotFoundPage } from './pages/NotFoundPage';
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+
+      <Route element={<ProtectedRoute />}>
+        <Route element={<AppShell />}>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/projects" element={<ProjectsListPage />} />
+          <Route path="/projects/archived" element={<ArchivedProjectsPage />} />
+          <Route path="/projects/:projectId" element={<ProjectDetailLayout />}>
+            <Route index element={<Navigate to="board" replace />} />
+            <Route path="board" element={<ProjectBoardPage />} />
+            <Route path="list" element={<ProjectListViewPage />} />
+            <Route path="documents" element={<ProjectDocumentsPage />} />
+            <Route path="documents/:documentId" element={<DocumentEditorPage />} />
+            <Route path="settings" element={<ProjectSettingsPage />} />
+          </Route>
+        </Route>
+      </Route>
+
+      <Route path="*" element={<NotFoundPage />} />
+    </Routes>
+  );
+}

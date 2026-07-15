@@ -12,6 +12,13 @@ import {
   updateItemStatus,
 } from '../api/workItems';
 
+/**
+ * Hook TanStack Query que encapsula leitura e mutações dos itens de trabalho de um projeto.
+ * A query usa a chave `queryKeys.projectItems(projectId, filters)` (só roda com `projectId` definido); toda mutação (criar, atualizar, mudar status, atribuir responsáveis, atribuir labels, excluir) invalida a árvore `['projects', projectId, 'items']` no `onSuccess`, forçando um refetch da lista para refletir a mudança — independentemente do filtro ativo no momento.
+ * @param projectId - id do projeto cujos itens serão listados/gerenciados
+ * @param filters - filtros aplicados à listagem (status, responsável, etc.)
+ * @returns itens carregados, estado de carregamento e as funções de mutação (`createItem`, `updateItem`, `updateItemStatus`, `updateItemAssignees`, `updateItemLabels`, `deleteItem`)
+ */
 export function useWorkItems(projectId: string, filters: ItemFilters = {}) {
   const queryClient = useQueryClient();
   const key = queryKeys.projectItems(projectId, filters as Record<string, string | undefined>);

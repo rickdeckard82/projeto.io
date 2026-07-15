@@ -2,6 +2,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../api/queryKeys';
 import { createDocument, deleteDocument, listDocuments, updateDocument } from '../api/documents';
 
+/**
+ * Hook TanStack Query que encapsula leitura e mutações dos documentos (páginas markdown) de um projeto.
+ * A query usa a chave `queryKeys.projectDocuments(projectId)` (só roda com `projectId` definido); toda mutação (criar, atualizar, excluir) invalida essa mesma chave no `onSuccess`, forçando um refetch da lista de documentos.
+ * @param projectId - id do projeto cujos documentos serão listados/gerenciados
+ * @returns documentos carregados, estado de carregamento e as funções de mutação (`createDocument`, `updateDocument`, `deleteDocument`)
+ */
 export function useDocuments(projectId: string) {
   const queryClient = useQueryClient();
 

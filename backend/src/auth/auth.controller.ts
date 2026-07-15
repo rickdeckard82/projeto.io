@@ -9,6 +9,15 @@ import { CurrentUser, AuthenticatedUser } from '../common/decorators/current-use
 const ACCESS_COOKIE = 'access_token';
 const REFRESH_COOKIE = 'refresh_token';
 
+/**
+ * Grava o par de tokens de sessão como cookies httpOnly na resposta.
+ * `httpOnly` impede acesso via JavaScript no browser (mitiga XSS), e
+ * `secure` é ligado apenas em produção (em dev, sobre HTTP puro, o cookie
+ * `secure` seria descartado pelo navegador). Cada cookie tem `maxAge`
+ * alinhado ao tempo de vida do respectivo token (access curto, refresh longo).
+ * @param res - resposta Express na qual os cookies serão setados
+ * @param tokens - par `{ accessToken, refreshToken }` retornado pelo AuthService
+ */
 function setAuthCookies(res: Response, tokens: AuthTokens) {
   const secure = process.env.NODE_ENV === 'production';
   res.cookie(ACCESS_COOKIE, tokens.accessToken, {
@@ -25,10 +34,22 @@ function setAuthCookies(res: Response, tokens: AuthTokens) {
   });
 }
 
+/**
+ * Rotas de autenticação: cadastro, login, refresh de sessão, logout e leitura
+ * do usuário autenticado. As rotas que ainda não têm uma sessão (`register`,
+ * `login`, `refresh`) são marcadas `@Public()` para pular o `JwtAuthGuard`.
+ */
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  /**
+   * Cadastra um novo usuário e já inicia a sessão, setando os cookies de
+   * access/refresh token na resposta via `setAuthCookies`.
+   * @param dto - dados de cadastro (e-mail, senha, nome)
+   * @param res - usado apenas para setar os cookies httpOnly (passthrough)
+   * @returns mensagem de confirmação
+   */
   @Public()
   @Post('register')
   async register(@Body() dto: RegisterDto, @Res({ passthrough: true }) res: Response) {
@@ -37,6 +58,13 @@ export class AuthController {
     return { message: 'Cadastro realizado com sucesso' };
   }
 
+  /**
+   * Autentica um usuário existente e inicia a sessão, setando os cookies de
+   * access/refresh token na resposta.
+   * @param dto - credenciais de login (e-mail e senha)
+   * @param res - usado apenas para setar os cookies httpOnly (passthrough)
+   * @returns mensagem de confirmação
+   */
   @Public()
   @Post('login')
   async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
@@ -45,6 +73,15 @@ export class AuthController {
     return { message: 'Login realizado com sucesso' };
   }
 
+  /**
+   * Renova a sessão a partir do refresh token do cookie, rotacionando-o e
+   * regravando ambos os cookies com os novos tokens. É pública porque é
+   * chamada justamente quando o access token expirou (interceptor do
+   * frontend chama esta rota em qualquer 401).
+   * @param req - usado apenas para ler o cookie `refresh_token`
+   * @param res - usado apenas para setar os novos cookies httpOnly (passthrough)
+   * @returns mensagem de confirmação
+   */
   @Public()
   @Post('refresh')
   async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
@@ -53,6 +90,13 @@ export class AuthController {
     return { message: 'Token renovado' };
   }
 
+  /**
+   * Encerra a sessão: revoga o refresh token no banco e limpa os cookies de
+   * access/refresh no navegador. Requer autenticação (não é `@Public()`).
+   * @param req - usado apenas para ler o cookie `refresh_token`
+   * @param res - usado apenas para limpar os cookies httpOnly (passthrough)
+   * @returns mensagem de confirmação
+   */
   @Post('logout')
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     await this.authService.logout(req.cookies?.[REFRESH_COOKIE]);
@@ -61,6 +105,12 @@ export class AuthController {
     return { message: 'Sessão encerrada' };
   }
 
+  /**
+   * Retorna os dados do usuário autenticado atual, usado pelo frontend para
+   * hidratar o `AuthContext` no carregamento da aplicação.
+   * @param user - usuário autenticado injetado pelo `@CurrentUser()` (via JwtAuthGuard/JwtStrategy)
+   * @returns dados públicos do usuário autenticado
+   */
   @Get('me')
   async me(@CurrentUser() user: AuthenticatedUser) {
     return this.authService.me(user.id);

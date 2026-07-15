@@ -8,21 +8,31 @@ import { ProjectResource } from '../common/decorators/project-resource.decorator
 import { ProjectMemberGuard } from '../common/guards/project-member.guard';
 import { CurrentUser, AuthenticatedUser } from '../common/decorators/current-user.decorator';
 
+/**
+ * Controller REST para gestão de projetos (`/projects`). A leitura individual e as mutações
+ * usam `@UseGuards(ProjectMemberGuard)` + `@ProjectResource('project', 'id')` para exigir que
+ * o usuário seja membro do projeto (ou que o projeto seja público, no caso de GET) — admins
+ * sempre passam. Mutações (update/remove/archive/unarchive/create) acrescentam `@Roles(ADMIN)`,
+ * restringindo-as a administradores globais.
+ */
 @Controller('projects')
 export class ProjectsController {
   constructor(private readonly projectsService: ProjectsService) {}
 
+  /** Lista os projetos visíveis para o usuário autenticado (todos, se admin; membros/públicos, caso contrário). */
   @Get()
   list(@CurrentUser() user: AuthenticatedUser, @Query('archived') archived?: string) {
     return this.projectsService.list(user, archived === 'true');
   }
 
+  /** Cria um novo projeto. Restrito a administradores (`@Roles(ADMIN)`). */
   @Roles(GlobalRole.ADMIN)
   @Post()
   create(@Body() dto: CreateProjectDto, @CurrentUser() user: AuthenticatedUser) {
     return this.projectsService.create(dto, user);
   }
 
+  /** Busca um projeto pelo id. Exige membership no projeto (ou projeto público) via `ProjectMemberGuard`. */
   @UseGuards(ProjectMemberGuard)
   @ProjectResource('project', 'id')
   @Get(':id')
@@ -30,6 +40,7 @@ export class ProjectsController {
     return this.projectsService.findOne(id);
   }
 
+  /** Atualiza um projeto. Restrito a administradores e exige membership via `ProjectMemberGuard`. */
   @Roles(GlobalRole.ADMIN)
   @UseGuards(ProjectMemberGuard)
   @ProjectResource('project', 'id')
@@ -38,6 +49,7 @@ export class ProjectsController {
     return this.projectsService.update(id, dto);
   }
 
+  /** Remove definitivamente um projeto. Restrito a administradores e exige membership via `ProjectMemberGuard`. */
   @Roles(GlobalRole.ADMIN)
   @UseGuards(ProjectMemberGuard)
   @ProjectResource('project', 'id')
@@ -46,6 +58,7 @@ export class ProjectsController {
     return this.projectsService.remove(id);
   }
 
+  /** Arquiva um projeto. Restrito a administradores e exige membership via `ProjectMemberGuard`. */
   @Roles(GlobalRole.ADMIN)
   @UseGuards(ProjectMemberGuard)
   @ProjectResource('project', 'id')
@@ -54,6 +67,7 @@ export class ProjectsController {
     return this.projectsService.archive(id);
   }
 
+  /** Desarquiva um projeto. Restrito a administradores e exige membership via `ProjectMemberGuard`. */
   @Roles(GlobalRole.ADMIN)
   @UseGuards(ProjectMemberGuard)
   @ProjectResource('project', 'id')
@@ -62,6 +76,7 @@ export class ProjectsController {
     return this.projectsService.unarchive(id);
   }
 
+  /** Lista as colunas (statuses) do kanban do projeto. Exige membership (ou projeto público) via `ProjectMemberGuard`. */
   @UseGuards(ProjectMemberGuard)
   @ProjectResource('project', 'id')
   @Get(':id/statuses')

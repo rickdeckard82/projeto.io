@@ -1,3 +1,8 @@
+/**
+ * Formata uma data ISO como tempo relativo até agora (ex.: "agora mesmo", "há 5 min", "há 3h", "há 2d", "há 1 mês"), escolhendo a unidade pelo maior bucket que caiba na diferença (minutos < 60, horas < 24, dias < 30, senão meses).
+ * @param iso - data/hora no formato ISO 8601
+ * @returns texto em português já formatado para exibição
+ */
 export function relativeTime(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime();
   const minutes = Math.floor(diffMs / 60000);

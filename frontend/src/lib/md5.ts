@@ -35,6 +35,11 @@ const S = [
 
 const K = Array.from({ length: 64 }, (_, i) => Math.floor(Math.abs(Math.sin(i + 1)) * 2 ** 32) >>> 0);
 
+/**
+ * Implementação de MD5 (RFC 1321) feita do zero, usada apenas para derivar o hash de e-mail exigido pela URL de avatar do Gravatar — não deve ser usada para fins criptográficos/segurança.
+ * @param input - string de entrada (tipicamente o e-mail já normalizado)
+ * @returns hash MD5 em hexadecimal (32 caracteres)
+ */
 export function md5(input: string): string {
   const bytes = toUtf8Bytes(input);
   const bitLength = bytes.length * 8;

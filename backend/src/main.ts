@@ -4,6 +4,15 @@ import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
+/**
+ * Ponto de entrada da aplicação NestJS. Cria a instância do app e configura,
+ * nesta ordem, os pilares transversais que todo request atravessa: parsing de
+ * cookies (necessário para ler o JWT httpOnly), prefixo global de rota,
+ * validação/transform automática de DTOs, filtro global de exceções (formato
+ * padronizado de erro) e CORS com `credentials: true` (exigido para que o
+ * navegador envie os cookies httpOnly de auth em requisições cross-origin do
+ * frontend). Por fim sobe o servidor HTTP na porta configurada.
+ */
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 

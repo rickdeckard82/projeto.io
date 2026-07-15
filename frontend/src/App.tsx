@@ -12,6 +12,10 @@ import { ProjectListViewPage } from './pages/ProjectListViewPage';
 import { ProjectDocumentsPage } from './pages/ProjectDocumentsPage';
 import { DocumentEditorPage } from './pages/DocumentEditorPage';
 import { ProjectSettingsPage } from './pages/ProjectSettingsPage';
+import { AccountSettingsLayout } from './pages/AccountSettingsLayout';
+import { ProfileSettingsPage } from './pages/ProfileSettingsPage';
+import { SecuritySettingsPage } from './pages/SecuritySettingsPage';
+import { UsersAdminPage } from './pages/UsersAdminPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 
 export default function App() {
@@ -23,6 +27,12 @@ export default function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppShell />}>
           <Route path="/" element={<HomePage />} />
+          <Route path="/settings" element={<AccountSettingsLayout />}>
+            <Route index element={<Navigate to="profile" replace />} />
+            <Route path="profile" element={<ProfileSettingsPage />} />
+            <Route path="security" element={<SecuritySettingsPage />} />
+            <Route path="users" element={<UsersAdminPage />} />
+          </Route>
           <Route path="/projects" element={<ProjectsListPage />} />
           <Route path="/projects/archived" element={<ArchivedProjectsPage />} />
           <Route path="/projects/:projectId" element={<ProjectDetailLayout />}>

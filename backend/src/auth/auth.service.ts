@@ -112,6 +112,7 @@ export class AuthService {
       id: user.id,
       email: user.email,
       fullName: user.fullName,
+      avatarUrl: user.avatarUrl,
       globalRole: user.globalRole,
     };
   }

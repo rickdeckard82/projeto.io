@@ -7,7 +7,7 @@ import { QueryItemsDto } from './dto/query-items.dto';
 import { AuthenticatedUser } from '../common/decorators/current-user.decorator';
 
 const ITEM_INCLUDE = {
-  assignees: { include: { user: { select: { id: true, email: true, fullName: true } } } },
+  assignees: { include: { user: { select: { id: true, email: true, fullName: true, avatarUrl: true } } } },
   labels: { include: { label: true } },
   status: true,
   subItems: true,

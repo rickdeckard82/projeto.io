@@ -1,12 +1,13 @@
-name: plan
+name: projeto.io
 
 services:
   db:
     image: postgres:16-alpine
+    container_name: projetoio-db
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-app_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-app_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-app_password}
       POSTGRES_DB: ${POSTGRES_DB:-pm_app}
     volumes:
       - db_data:/var/lib/postgresql/data
@@ -18,17 +19,18 @@ services:
       timeout: 5s
       retries: 10
 
-  app-backend:
+  backend:
     build:
       context: ./backend
+    container_name: projetoio-backend
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-app_user}:${POSTGRES_PASSWORD:-app_user}@db:5432/${POSTGRES_DB:-pm_app}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-app_user}:${POSTGRES_PASSWORD:-app_password}@db:5432/${POSTGRES_DB:-pm_app}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
       PORT: 3000
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
-      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@suaempresa.com.br}
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@example.com}
       SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-ChangeMe123!}
     depends_on:
       db:
@@ -36,16 +38,18 @@ services:
     ports:
       - "3000:3000"
 
-  app-frontend:
+  frontend:
     build:
       context: ./frontend
       args:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:3000/api/v1}
+    container_name: projetoio-frontend
     restart: unless-stopped
     depends_on:
-      - app-backend
+      - backend
     ports:
       - "5173:80"
 
 volumes:
   db_data:
+    name: projetoio_db_data

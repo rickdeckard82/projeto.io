@@ -17,7 +17,7 @@ export function MemberList({ projectId, members }: { projectId: string; members:
       {members.map((member) => (
         <li key={member.id} className="flex items-center justify-between px-3 py-2">
           <div className="flex items-center gap-2">
-            <Avatar name={member.user.fullName} />
+            <Avatar name={member.user.fullName} src={member.user.avatarUrl} email={member.user.email} />
             <div>
               <p className="text-sm text-slate-200">{member.user.fullName}</p>
               <p className="text-xs text-slate-500">

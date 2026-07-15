@@ -6,7 +6,7 @@ Aplicação de gerenciamento de projetos: projetos, itens de trabalho (kanban), 
 
 - Backend: NestJS + Prisma + PostgreSQL
 - Frontend: React + Vite + TanStack Query + Tailwind
-- Docker Compose: `db`, `app-backend`, `app-frontend`
+- Docker Compose: `db`, `backend`, `frontend`
 
 ## Como rodar
 
@@ -19,7 +19,7 @@ docker compose ps
 curl http://localhost:3000/api/v1/health
 ```
 
-Na primeira subida, o backend roda as migrations e o seed automaticamente (via `docker-entrypoint.sh`), criando um usuário Admin com as credenciais definidas em `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` (padrão: `admin@suaempresa.com.br` / `ChangeMe123!`).
+Na primeira subida, o backend roda as migrations e o seed automaticamente (via `docker-entrypoint.sh`), criando um usuário Admin com as credenciais definidas em `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` (padrão: `admin@example.com` / `ChangeMe123!`).
 
 Acesse a aplicação em `http://localhost:5173`.
 
@@ -39,8 +39,8 @@ Acesse a aplicação em `http://localhost:5173`.
 ## Comandos úteis
 
 ```bash
-docker compose exec app-backend npx prisma studio          # explorar o banco
-docker compose exec app-backend npx prisma migrate deploy  # rodar migrations manualmente
-docker compose logs -f app-backend
+docker compose exec backend npx prisma studio          # explorar o banco
+docker compose exec backend npx prisma migrate deploy  # rodar migrations manualmente
+docker compose logs -f backend
 docker compose down          # para os containers (mantém o volume do banco)
 ```

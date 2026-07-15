@@ -1,23 +1,49 @@
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import { Avatar } from '../common/Avatar';
-import { Button } from '../common/Button';
 
 export function Topbar() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <header className="flex h-14 items-center justify-between border-b border-slate-800 px-4">
       <div className="text-sm font-semibold text-slate-200">Projeto.io</div>
       {user && (
-        <div className="flex items-center gap-3">
-          <Avatar name={user.fullName} />
-          <div className="text-xs text-slate-400">
-            {user.fullName} <span className="text-slate-600">·</span> {user.globalRole}
-          </div>
-          <Button variant="ghost" onClick={() => logout()}>
-            Sair
-          </Button>
-        </div>
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger asChild>
+            <button
+              type="button"
+              className="flex items-center gap-2 rounded-md px-2 py-1 text-xs text-slate-400 outline-none hover:bg-slate-800"
+            >
+              <Avatar name={user.fullName} src={user.avatarUrl} email={user.email} />
+              <span>{user.fullName}</span>
+            </button>
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Portal>
+            <DropdownMenu.Content
+              align="end"
+              sideOffset={6}
+              className="w-56 rounded-md border border-slate-800 bg-slate-900 py-1 shadow-xl"
+            >
+              <div className="px-3 py-2 text-xs text-slate-500">{user.email}</div>
+              <DropdownMenu.Separator className="my-1 h-px bg-slate-800" />
+              <DropdownMenu.Item
+                onSelect={() => navigate('/settings')}
+                className="cursor-pointer px-3 py-2 text-sm text-slate-200 outline-none hover:bg-slate-800"
+              >
+                Configurações
+              </DropdownMenu.Item>
+              <DropdownMenu.Item
+                onSelect={() => logout()}
+                className="cursor-pointer px-3 py-2 text-sm text-red-400 outline-none hover:bg-slate-800"
+              >
+                Sair
+              </DropdownMenu.Item>
+            </DropdownMenu.Content>
+          </DropdownMenu.Portal>
+        </DropdownMenu.Root>
       )}
     </header>
   );

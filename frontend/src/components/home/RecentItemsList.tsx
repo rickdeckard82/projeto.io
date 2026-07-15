@@ -40,7 +40,7 @@ export function RecentItemsList() {
                 {item.assignees.length > 0 && (
                   <div className="flex shrink-0 -space-x-1">
                     {item.assignees.map((a) => (
-                      <Avatar key={a.user.id} name={a.user.fullName} />
+                      <Avatar key={a.user.id} name={a.user.fullName} src={a.user.avatarUrl} email={a.user.email} />
                     ))}
                   </div>
                 )}

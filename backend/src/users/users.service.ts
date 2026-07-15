@@ -1,7 +1,8 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { GlobalRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AuthenticatedUser } from '../common/decorators/current-user.decorator';
 
@@ -9,6 +10,7 @@ const SAFE_SELECT = {
   id: true,
   email: true,
   fullName: true,
+  avatarUrl: true,
   globalRole: true,
   isActive: true,
   createdAt: true,
@@ -20,6 +22,25 @@ export class UsersService {
 
   async list() {
     return this.prisma.user.findMany({ select: SAFE_SELECT, orderBy: { fullName: 'asc' } });
+  }
+
+  async create(dto: CreateUserDto) {
+    const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    if (existing) {
+      throw new ConflictException('Este e-mail já está cadastrado');
+    }
+
+    const passwordHash = await bcrypt.hash(dto.password, 10);
+    return this.prisma.user.create({
+      data: {
+        email: dto.email,
+        passwordHash,
+        fullName: dto.fullName,
+        avatarUrl: dto.avatarUrl || null,
+        globalRole: dto.globalRole || GlobalRole.MEMBER,
+      },
+      select: SAFE_SELECT,
+    });
   }
 
   async findOne(id: string) {
@@ -35,9 +56,12 @@ export class UsersService {
       throw new ForbiddenException('Você só pode editar o seu próprio perfil');
     }
 
-    const data: { fullName?: string; passwordHash?: string } = {};
+    const data: { fullName?: string; avatarUrl?: string | null; passwordHash?: string } = {};
     if (dto.fullName) {
       data.fullName = dto.fullName;
+    }
+    if (dto.avatarUrl !== undefined) {
+      data.avatarUrl = dto.avatarUrl.trim() === '' ? null : dto.avatarUrl.trim();
     }
     if (dto.password) {
       data.passwordHash = await bcrypt.hash(dto.password, 10);

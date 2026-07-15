@@ -41,7 +41,7 @@ export function KanbanCard({ item, onOpen }: { item: WorkItem; onOpen: () => voi
       {item.assignees.length > 0 && (
         <div className="mt-2 flex -space-x-1">
           {item.assignees.map((a) => (
-            <Avatar key={a.user.id} name={a.user.fullName} />
+            <Avatar key={a.user.id} name={a.user.fullName} src={a.user.avatarUrl} email={a.user.email} />
           ))}
         </div>
       )}

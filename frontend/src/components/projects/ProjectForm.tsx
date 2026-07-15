@@ -5,6 +5,7 @@ import { CreateProjectInput } from '../../api/projects';
 import { useAuth } from '../../auth/AuthContext';
 import { COVER_COLOR_PALETTE, ICON_OPTIONS, suggestProjectKey } from '../../lib/projectDefaults';
 import { Button } from '../common/Button';
+import { PolygonBackground } from '../common/PolygonBackground';
 import { EmojiPickerButton } from './EmojiPickerButton';
 import { VisibilityToggle } from './VisibilityToggle';
 import { LeadPicker } from './LeadPicker';
@@ -88,10 +89,10 @@ export function ProjectForm({
         <Dialog.Content className="fixed left-1/2 top-1/2 w-full max-w-xl -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-lg border border-slate-800 bg-slate-900 shadow-xl">
           <Dialog.Title className="sr-only">Criar novo projeto</Dialog.Title>
 
-          <div
-            className="relative h-32 w-full"
-            style={{ background: `linear-gradient(135deg, ${coverColor}dd, ${coverColor}55)` }}
-          >
+          <div className="relative h-32 w-full">
+            <div className="absolute inset-0 overflow-hidden" style={{ background: '#020617' }}>
+              <PolygonBackground color={coverColor} />
+            </div>
             <Dialog.Close asChild>
               <button className="absolute right-3 top-3 text-white/80 hover:text-white">
                 <X size={18} />

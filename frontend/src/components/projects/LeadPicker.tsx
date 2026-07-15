@@ -22,7 +22,11 @@ export function LeadPicker({
           type="button"
           className="flex items-center gap-2 rounded-md border border-slate-700 bg-slate-950 px-3 py-1.5 text-xs text-slate-200 hover:border-slate-600"
         >
-          {selected ? <Avatar name={selected.fullName} /> : <UserRound size={14} />}
+          {selected ? (
+            <Avatar name={selected.fullName} src={selected.avatarUrl} email={selected.email} />
+          ) : (
+            <UserRound size={14} />
+          )}
           {selected ? selected.fullName : 'Líder'}
         </button>
       </DropdownMenu.Trigger>
@@ -38,7 +42,7 @@ export function LeadPicker({
               onSelect={() => onChange(u.id)}
               className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm text-slate-100 outline-none hover:bg-slate-800"
             >
-              <Avatar name={u.fullName} />
+              <Avatar name={u.fullName} src={u.avatarUrl} email={u.email} />
               {u.fullName}
             </DropdownMenu.Item>
           ))}

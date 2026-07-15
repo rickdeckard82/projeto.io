@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Visão geral
 
-"Projeto.io" é uma aplicação de gerenciamento de projetos (inspirada no Plane, porém deliberadamente mais simples): projetos, itens de trabalho em quadro kanban, documentos em markdown e controle de acesso por papéis. Stack: **NestJS + Prisma + PostgreSQL** no backend, **React + Vite + TanStack Query + Tailwind** no frontend, tudo orquestrado via **Docker Compose** (`db`, `app-backend`, `app-frontend`).
+"Projeto.io" é uma aplicação de gerenciamento de projetos (inspirada no Plane, porém deliberadamente mais simples): projetos, itens de trabalho em quadro kanban, documentos em markdown e controle de acesso por papéis. Stack: **NestJS + Prisma + PostgreSQL** no backend, **React + Vite + TanStack Query + Tailwind** no frontend, tudo orquestrado via **Docker Compose** (`db`, `backend`, `frontend`).
 
 Não há Node/npm instalado no host — todo build/lint/execução acontece dentro dos containers Docker (ou via containers descartáveis do `node:20-alpine`, ver seção de migrations abaixo).
 
@@ -21,8 +21,8 @@ Frontend em `http://localhost:5173`, API em `http://localhost:3000/api/v1`. Na s
 
 ### Rebuild após alterar código
 ```bash
-docker compose build app-backend app-frontend
-docker compose up -d --force-recreate app-backend app-frontend
+docker compose build backend frontend
+docker compose up -d --force-recreate backend frontend
 ```
 
 ### Criar uma migration do Prisma (schema.prisma alterado)
@@ -31,24 +31,24 @@ docker compose up -d --force-recreate app-backend app-frontend
 ```bash
 # 1) Suba o banco (se ainda não estiver rodando)
 docker compose up -d db
-# a network criada pelo compose é <pasta>_default (ex.: plan_default)
+# a network criada pelo compose é projetoio_default (definida por "name: projeto.io" no docker-compose.yml)
 
 # 2) Crie (uma vez só) um banco-sombra dedicado, SEPARADO do pm_app real
-docker exec plan-db-1 psql -U app_user -d pm_app -c "CREATE DATABASE pm_app_shadow;"
+docker exec projetoio-db psql -U app_user -d pm_app -c "CREATE DATABASE pm_app_shadow;"
 
 # 3) Gere apenas o arquivo de migration via diff (sem aplicar)
 mkdir -p backend/prisma/migrations/<timestamp>_nome
-docker run --rm -v "<CAMINHO_ABSOLUTO>/backend:/app" -w /app --network plan_default \
-  -e DATABASE_URL="postgresql://app_user:app_user@db:5432/pm_app" node:20-alpine \
+docker run --rm -v "<CAMINHO_ABSOLUTO>/backend:/app" -w /app --network projetoio_default \
+  -e DATABASE_URL="postgresql://app_user:app_password@db:5432/pm_app" node:20-alpine \
   sh -c "apk add --no-cache openssl libssl3 >/dev/null 2>&1 && npx prisma migrate diff \
     --from-migrations prisma/migrations \
     --to-schema-datamodel prisma/schema.prisma \
-    --shadow-database-url postgresql://app_user:app_user@db:5432/pm_app_shadow \
+    --shadow-database-url postgresql://app_user:app_password@db:5432/pm_app_shadow \
     --script > prisma/migrations/<timestamp>_nome/migration.sql"
 
 # 4) Aplique de forma não-interativa
-docker run --rm -v "<CAMINHO_ABSOLUTO>/backend:/app" -w /app --network plan_default \
-  -e DATABASE_URL="postgresql://app_user:app_user@db:5432/pm_app" node:20-alpine \
+docker run --rm -v "<CAMINHO_ABSOLUTO>/backend:/app" -w /app --network projetoio_default \
+  -e DATABASE_URL="postgresql://app_user:app_password@db:5432/pm_app" node:20-alpine \
   sh -c "apk add --no-cache openssl libssl3 >/dev/null 2>&1 && npx prisma migrate deploy && npx prisma generate"
 ```
 
@@ -61,9 +61,9 @@ Não há suíte de testes configurada (nenhum script `test` em `backend/package.
 
 ### Banco de dados
 ```bash
-docker compose exec app-backend npx prisma studio          # explorar dados
-docker compose exec app-backend npx prisma migrate deploy  # reaplicar migrations pendentes
-docker exec plan-db-1 psql -U app_user -d pm_app             # psql direto
+docker compose exec backend npx prisma studio          # explorar dados
+docker compose exec backend npx prisma migrate deploy  # reaplicar migrations pendentes
+docker exec projetoio-db psql -U app_user -d pm_app          # psql direto
 ```
 
 ## Arquitetura

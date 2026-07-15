@@ -113,7 +113,7 @@ export class ProjectsService {
   async listMembers(id: string) {
     return this.prisma.projectMember.findMany({
       where: { projectId: id },
-      include: { user: { select: { id: true, email: true, fullName: true, globalRole: true } } },
+      include: { user: { select: { id: true, email: true, fullName: true, avatarUrl: true, globalRole: true } } },
     });
   }
 

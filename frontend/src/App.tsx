@@ -6,6 +6,7 @@ import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { VerifyEmailPage } from './pages/VerifyEmailPage';
 import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
+import { NotesPage } from './pages/NotesPage';
 import { ProjectsListPage } from './pages/ProjectsListPage';
 import { ArchivedProjectsPage } from './pages/ArchivedProjectsPage';
 import { ProjectDetailLayout } from './pages/ProjectDetailLayout';
@@ -43,6 +44,7 @@ export default function App() {
             <Route path="smtp" element={<SmtpSettingsPage />} />
             <Route path="privacy" element={<PrivacySettingsPage />} />
           </Route>
+          <Route path="/notes" element={<NotesPage />} />
           <Route path="/projects" element={<ProjectsListPage />} />
           <Route path="/projects/archived" element={<ArchivedProjectsPage />} />
           <Route path="/projects/:projectId" element={<ProjectDetailLayout />}>

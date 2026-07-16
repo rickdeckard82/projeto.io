@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Archive, ChevronDown, ChevronRight, FileText, FolderKanban, Home, ListTodo } from 'lucide-react';
+import { Archive, ChevronDown, ChevronRight, FileText, FolderKanban, Home, ListTodo, StickyNote } from 'lucide-react';
 import { listProjects } from '../../api/projects';
 import { queryKeys } from '../../api/queryKeys';
 import { APP_VERSION } from '../../lib/appInfo';
@@ -57,6 +57,10 @@ export function Sidebar() {
         <NavLink to="/projects/archived" className={navLinkClass}>
           <Archive size={16} />
           Arquivos
+        </NavLink>
+        <NavLink to="/notes" className={navLinkClass}>
+          <StickyNote size={16} />
+          Notas
         </NavLink>
 
         <SectionLabel>Projetos</SectionLabel>

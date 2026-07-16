@@ -68,6 +68,7 @@ model User {
   createdDocs     Document[]       @relation("DocumentCreatedBy")
   updatedDocs     Document[]       @relation("DocumentUpdatedBy")
   itemActivities  ItemActivity[]
+  notes           Note[]
 
   @@map("users")
 }
@@ -283,4 +284,20 @@ model Document {
 
   @@index([projectId])
   @@map("documents")
+}
+
+/// Nota/sticker de texto livre, não vinculada a nenhum projeto — visível a qualquer usuário
+/// autenticado (mural compartilhado da página inicial). Só quem criou (ou um Admin) pode
+/// editar/apagar; ver `NotesService`.
+model Note {
+  id          String   @id @default(uuid())
+  content     String
+  color       String?
+  createdById String   @map("created_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  createdBy User @relation(fields: [createdById], references: [id])
+
+  @@map("notes")
 }

@@ -101,6 +101,16 @@ export interface WorkItem {
   subItems: WorkItemSummary[];
 }
 
+export interface Note {
+  id: string;
+  content: string;
+  color: string | null;
+  createdById: string;
+  createdBy: Pick<User, 'id' | 'fullName' | 'avatarUrl'>;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type ActivityType =
   | 'CREATED'
   | 'TITLE_CHANGED'

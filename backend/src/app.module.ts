@@ -11,6 +11,7 @@ import { WorkItemsModule } from './work-items/work-items.module';
 import { DocumentsModule } from './documents/documents.module';
 import { SettingsModule } from './settings/settings.module';
 import { MailModule } from './mail/mail.module';
+import { NotesModule } from './notes/notes.module';
 import { HealthController } from './health/health.controller';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
@@ -28,6 +29,7 @@ import { RolesGuard } from './common/guards/roles.guard';
     DocumentsModule,
     SettingsModule,
     MailModule,
+    NotesModule,
   ],
   controllers: [HealthController],
   providers: [

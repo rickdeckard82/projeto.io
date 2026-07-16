@@ -59,6 +59,7 @@ Falhas de envio de e-mail (SMTP incorreto, credenciais inválidas etc.) ficam re
 13. `/register` com e-mail do domínio permitido → confirme a tela "verifique seu e-mail" (sem login automático) e que o e-mail de confirmação chega na caixa real.
 14. Abra o link do e-mail (`/verify-email?token=...`) → confirme a tela de sucesso; faça `/login` e confirme que agora funciona.
 15. Tente `/login` com uma conta ainda não confirmada → confirme a mensagem "confirme seu e-mail" e teste o botão de reenvio.
+16. Abra o quadro do mesmo projeto em duas janelas/navegadores com usuários diferentes; mova um card ou adicione um comentário em uma janela e confirme que a outra atualiza sozinha, sem precisar recarregar (tempo real via WebSocket).
 
 ## Comandos úteis
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Flag,
@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { addItemComment, getItemActivities } from '../../api/workItems';
 import { queryKeys } from '../../api/queryKeys';
+import { socket } from '../../lib/socket';
 import { ItemActivity, Priority } from '../../types';
 import { Avatar } from '../common/Avatar';
 import { Button } from '../common/Button';
@@ -71,6 +72,20 @@ export function ActivityFeed({ itemId, canComment }: { itemId: string; canCommen
     queryKey: queryKeys.itemActivities(itemId),
     queryFn: () => getItemActivities(itemId),
   });
+
+  // Tempo real: já entrou na sala do projeto via useWorkItems (mesma página); só falta ouvir o
+  // evento de atividade e refazer a busca quando for deste item especificamente.
+  useEffect(() => {
+    const onActivityChanged = (payload: { workItemId: string }) => {
+      if (payload.workItemId === itemId) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.itemActivities(itemId) });
+      }
+    };
+    socket.on('activity:changed', onActivityChanged);
+    return () => {
+      socket.off('activity:changed', onActivityChanged);
+    };
+  }, [itemId, queryClient]);
 
   const commentMutation = useMutation({
     mutationFn: (message: string) => addItemComment(itemId, message),

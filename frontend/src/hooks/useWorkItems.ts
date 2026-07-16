@@ -1,5 +1,7 @@
+import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../api/queryKeys';
+import { socket } from '../lib/socket';
 import {
   createItem,
   CreateItemInput,
@@ -30,6 +32,27 @@ export function useWorkItems(projectId: string, filters: ItemFilters = {}) {
   });
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'items'] });
+
+  // Tempo real: entra na sala do projeto (RealtimeGateway) e refaz a busca sempre que outro
+  // usuário criar/editar/mover/excluir um item — sem isso, mudanças de outra sessão só
+  // apareceriam ao recarregar a página.
+  useEffect(() => {
+    if (!projectId) return;
+
+    socket.emit('join-project', projectId);
+    const onItemsChanged = (payload: { projectId: string }) => {
+      if (payload.projectId === projectId) {
+        invalidate();
+      }
+    };
+    socket.on('items:changed', onItemsChanged);
+
+    return () => {
+      socket.off('items:changed', onItemsChanged);
+      socket.emit('leave-project', projectId);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId]);
 
   const createMutation = useMutation({
     mutationFn: (data: CreateItemInput) => createItem(projectId, data),

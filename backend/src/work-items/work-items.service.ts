@@ -5,6 +5,7 @@ import { CreateItemDto } from './dto/create-item.dto';
 import { UpdateItemDto } from './dto/update-item.dto';
 import { QueryItemsDto } from './dto/query-items.dto';
 import { AuthenticatedUser } from '../common/decorators/current-user.decorator';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
 
 /**
  * Include padrão usado ao carregar um work item: traz os responsáveis (com dados básicos do
@@ -40,7 +41,10 @@ const RECENT_ITEM_INCLUDE = {
  */
 @Injectable()
 export class WorkItemsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly realtimeGateway: RealtimeGateway,
+  ) {}
 
   /**
    * Lista os itens de um projeto, aplicando os filtros opcionais vindos da querystring.
@@ -113,6 +117,7 @@ export class WorkItemsService {
     });
 
     await this.logActivity(created.id, creator.id, ActivityType.CREATED);
+    this.realtimeGateway.emitItemsChanged(projectId);
 
     return created;
   }
@@ -206,6 +211,8 @@ export class WorkItemsService {
       await this.logActivity(id, actor.id, ActivityType.PRIORITY_CHANGED, { from: item.priority, to: dto.priority });
     }
 
+    this.realtimeGateway.emitItemsChanged(item.projectId);
+    this.realtimeGateway.emitActivityChanged(item.projectId, id);
     return updated;
   }
 
@@ -249,6 +256,8 @@ export class WorkItemsService {
       });
     }
 
+    this.realtimeGateway.emitItemsChanged(item.projectId);
+    this.realtimeGateway.emitActivityChanged(item.projectId, id);
     return updated;
   }
 
@@ -289,6 +298,8 @@ export class WorkItemsService {
       }
     }
 
+    this.realtimeGateway.emitItemsChanged(item.projectId);
+    this.realtimeGateway.emitActivityChanged(item.projectId, id);
     return this.findOne(id);
   }
 
@@ -336,6 +347,8 @@ export class WorkItemsService {
       }
     }
 
+    this.realtimeGateway.emitItemsChanged(item.projectId);
+    this.realtimeGateway.emitActivityChanged(item.projectId, id);
     return this.findOne(id);
   }
 
@@ -346,8 +359,9 @@ export class WorkItemsService {
    * @throws NotFoundException - se o item não existir
    */
   async remove(id: string) {
-    await this.findOne(id);
+    const item = await this.findOne(id);
     await this.prisma.workItem.delete({ where: { id } });
+    this.realtimeGateway.emitItemsChanged(item.projectId);
     return { message: 'Item removido' };
   }
 
@@ -376,11 +390,13 @@ export class WorkItemsService {
    * @throws NotFoundException - se o item não existir
    */
   async addComment(workItemId: string, message: string, actor: AuthenticatedUser) {
-    await this.findOne(workItemId);
-    return this.prisma.itemActivity.create({
+    const item = await this.findOne(workItemId);
+    const created = await this.prisma.itemActivity.create({
       data: { workItemId, userId: actor.id, type: ActivityType.COMMENT, message },
       include: { user: ACTIVITY_USER_SELECT },
     });
+    this.realtimeGateway.emitActivityChanged(item.projectId, workItemId);
+    return created;
   }
 
   /** Registra uma entrada no histórico de atividade de um item. `metadata` guarda os detalhes específicos de cada tipo de evento (ex.: valor anterior/novo) usados pelo frontend para montar a mensagem exibida. */

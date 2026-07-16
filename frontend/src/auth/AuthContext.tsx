@@ -1,5 +1,6 @@
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 import { fetchMe, login as loginApi, logout as logoutApi, register as registerApi } from '../api/auth';
+import { socket } from '../lib/socket';
 import { User } from '../types';
 
 interface AuthContextValue {
@@ -29,6 +30,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     refreshUser().finally(() => setIsLoading(false));
   }, []);
+
+  // Conecta o WebSocket de tempo real (RealtimeGateway) só enquanto há sessão autenticada — o
+  // handshake carrega o cookie access_token; sem usuário, não há token válido para autenticar.
+  useEffect(() => {
+    if (user) {
+      socket.connect();
+    } else {
+      socket.disconnect();
+    }
+  }, [user]);
 
   const login = async (email: string, password: string) => {
     await loginApi({ email, password });

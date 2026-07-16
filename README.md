@@ -105,11 +105,13 @@ Se a rede `proxy` ainda não existir neste host, crie antes de subir os containe
 
 ### 4. Configurar o Proxy Host no NPM
 
-1. **Proxy Host novo** → Domain Names: `seuapp.com.br`. Forward Hostname/IP: `frontend`. Forward Port: `80`. Scheme: `http`.
+1. **Proxy Host novo** → aba **Details** → Domain Names: `seuapp.com.br`. Scheme: `http`. **Forward Hostname/IP: `frontend`** (não `backend` — esse campo é a rota "coringa" `/`, que precisa servir os arquivos estáticos do frontend). Forward Port: `80`.
 2. Aba **SSL**: peça um certificado Let's Encrypt novo, ative "Force SSL" e "HTTP/2 Support".
-3. Aba **Advanced** → **Custom Locations**, adicione duas:
+3. Aba **Custom Locations**, adicione duas:
    - Location `/api` → Forward Hostname/IP: `backend`, Forward Port: `3000`.
    - Location `/socket.io` → Forward Hostname/IP: `backend`, Forward Port: `3000`, e **ative "Websockets Support"** nessa location (e, por segurança, no proxy host todo também). **Esse é o passo mais fácil de esquecer** — sem ele, o tempo real (mudanças de card entre navegadores) simplesmente não funciona, sem erro óbvio na tela.
+
+> **"502 Bad Gateway" logo após configurar?** É quase sempre a aba **Details** apontando para o serviço/porta errados — confira que ali está `frontend`:`80`, **não** `backend`:`80` (o backend nem escuta na porta 80, só na 3000; só as Custom Locations `/api`/`/socket.io` devem apontar para `backend`).
 
 ### 5. Verificação pós-deploy
 

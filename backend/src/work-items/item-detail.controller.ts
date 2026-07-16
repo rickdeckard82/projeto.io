@@ -31,15 +31,15 @@ export class ItemDetailController {
     return this.workItemsService.findOne(itemId);
   }
 
-  /** Atualiza campos do item (título, descrição, prioridade, datas, pai); restrito a Admin/Membro. */
-  @Roles(GlobalRole.ADMIN, GlobalRole.MEMBER)
+  /** Atualiza campos do item (título, descrição, prioridade, datas, pai); restrito a Admin/Senior/Membro. */
+  @Roles(GlobalRole.ADMIN, GlobalRole.SENIOR, GlobalRole.MEMBER)
   @Patch()
   update(@Param('itemId') itemId: string, @Body() dto: UpdateItemDto, @CurrentUser() user: AuthenticatedUser) {
     return this.workItemsService.update(itemId, dto, user);
   }
 
-  /** Move o item para outro status/coluna do kanban; restrito a Admin/Membro. */
-  @Roles(GlobalRole.ADMIN, GlobalRole.MEMBER)
+  /** Move o item para outro status/coluna do kanban; restrito a Admin/Senior/Membro. */
+  @Roles(GlobalRole.ADMIN, GlobalRole.SENIOR, GlobalRole.MEMBER)
   @Patch('status')
   updateStatus(
     @Param('itemId') itemId: string,
@@ -49,8 +49,8 @@ export class ItemDetailController {
     return this.workItemsService.updateStatus(itemId, dto.statusId, user);
   }
 
-  /** Substitui a lista de responsáveis pelo item; restrito a Admin/Membro. */
-  @Roles(GlobalRole.ADMIN, GlobalRole.MEMBER)
+  /** Substitui a lista de responsáveis pelo item; restrito a Admin/Senior/Membro. */
+  @Roles(GlobalRole.ADMIN, GlobalRole.SENIOR, GlobalRole.MEMBER)
   @Patch('assignees')
   updateAssignees(
     @Param('itemId') itemId: string,
@@ -60,8 +60,8 @@ export class ItemDetailController {
     return this.workItemsService.updateAssignees(itemId, dto.userIds, user);
   }
 
-  /** Substitui a lista de etiquetas do item; restrito a Admin/Membro. */
-  @Roles(GlobalRole.ADMIN, GlobalRole.MEMBER)
+  /** Substitui a lista de etiquetas do item; restrito a Admin/Senior/Membro. */
+  @Roles(GlobalRole.ADMIN, GlobalRole.SENIOR, GlobalRole.MEMBER)
   @Patch('labels')
   updateLabels(
     @Param('itemId') itemId: string,
@@ -77,15 +77,15 @@ export class ItemDetailController {
     return this.workItemsService.listActivities(itemId);
   }
 
-  /** Adiciona um comentário ao item; restrito a Admin/Membro. */
-  @Roles(GlobalRole.ADMIN, GlobalRole.MEMBER)
+  /** Adiciona um comentário ao item; restrito a Admin/Senior/Membro. */
+  @Roles(GlobalRole.ADMIN, GlobalRole.SENIOR, GlobalRole.MEMBER)
   @Post('comments')
   addComment(@Param('itemId') itemId: string, @Body() dto: CreateCommentDto, @CurrentUser() user: AuthenticatedUser) {
     return this.workItemsService.addComment(itemId, dto.message, user);
   }
 
-  /** Remove definitivamente o item; restrito a Admin/Membro. */
-  @Roles(GlobalRole.ADMIN, GlobalRole.MEMBER)
+  /** Remove definitivamente o item; restrito a Admin/Senior/Membro. */
+  @Roles(GlobalRole.ADMIN, GlobalRole.SENIOR, GlobalRole.MEMBER)
   @Delete()
   remove(@Param('itemId') itemId: string) {
     return this.workItemsService.remove(itemId);

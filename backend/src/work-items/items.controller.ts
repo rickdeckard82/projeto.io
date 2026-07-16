@@ -26,8 +26,8 @@ export class ProjectItemsController {
     return this.workItemsService.list(projectId, query);
   }
 
-  /** Cria um novo item de trabalho no projeto; restrito a Admin/Membro (Visualizador não pode escrever). */
-  @Roles(GlobalRole.ADMIN, GlobalRole.MEMBER)
+  /** Cria um novo item de trabalho no projeto; restrito a Admin/Senior/Membro (Visualizador não pode escrever). */
+  @Roles(GlobalRole.ADMIN, GlobalRole.SENIOR, GlobalRole.MEMBER)
   @Post()
   create(
     @Param('projectId') projectId: string,

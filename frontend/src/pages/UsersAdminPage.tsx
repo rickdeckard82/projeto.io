@@ -12,7 +12,7 @@ import { Button } from '../components/common/Button';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { Spinner } from '../components/common/Spinner';
 
-const ROLE_OPTIONS: GlobalRole[] = ['ADMIN', 'MEMBER', 'VIEWER'];
+const ROLE_OPTIONS: GlobalRole[] = ['ADMIN', 'SENIOR', 'MEMBER', 'VIEWER'];
 
 export function UsersAdminPage() {
   const { user: currentUser } = useAuth();

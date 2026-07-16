@@ -12,8 +12,8 @@ import { CurrentUser, AuthenticatedUser } from '../common/decorators/current-use
  * Controller REST para gestão de projetos (`/projects`). A leitura individual e as mutações
  * usam `@UseGuards(ProjectMemberGuard)` + `@ProjectResource('project', 'id')` para exigir que
  * o usuário seja membro do projeto (ou que o projeto seja público, no caso de GET) — admins
- * sempre passam. Mutações (update/remove/archive/unarchive/create) acrescentam `@Roles(ADMIN)`,
- * restringindo-as a administradores globais.
+ * sempre passam. Criar/arquivar/desarquivar aceitam Admin e Senior (`@Roles(ADMIN, SENIOR)`);
+ * atualizar/remover o projeto continuam restritos a Admin.
  */
 @Controller('projects')
 export class ProjectsController {
@@ -25,8 +25,8 @@ export class ProjectsController {
     return this.projectsService.list(user, archived === 'true');
   }
 
-  /** Cria um novo projeto. Restrito a administradores (`@Roles(ADMIN)`). */
-  @Roles(GlobalRole.ADMIN)
+  /** Cria um novo projeto. Restrito a administradores e Senior (`@Roles(ADMIN, SENIOR)`). */
+  @Roles(GlobalRole.ADMIN, GlobalRole.SENIOR)
   @Post()
   create(@Body() dto: CreateProjectDto, @CurrentUser() user: AuthenticatedUser) {
     return this.projectsService.create(dto, user);
@@ -58,8 +58,8 @@ export class ProjectsController {
     return this.projectsService.remove(id);
   }
 
-  /** Arquiva um projeto. Restrito a administradores e exige membership via `ProjectMemberGuard`. */
-  @Roles(GlobalRole.ADMIN)
+  /** Arquiva um projeto. Restrito a administradores e Senior; exige membership via `ProjectMemberGuard`. */
+  @Roles(GlobalRole.ADMIN, GlobalRole.SENIOR)
   @UseGuards(ProjectMemberGuard)
   @ProjectResource('project', 'id')
   @Patch(':id/archive')
@@ -67,8 +67,8 @@ export class ProjectsController {
     return this.projectsService.archive(id);
   }
 
-  /** Desarquiva um projeto. Restrito a administradores e exige membership via `ProjectMemberGuard`. */
-  @Roles(GlobalRole.ADMIN)
+  /** Desarquiva um projeto. Restrito a administradores e Senior; exige membership via `ProjectMemberGuard`. */
+  @Roles(GlobalRole.ADMIN, GlobalRole.SENIOR)
   @UseGuards(ProjectMemberGuard)
   @ProjectResource('project', 'id')
   @Patch(':id/unarchive')

@@ -48,7 +48,7 @@ export function ProjectDetailLayout() {
             {tab.label}
           </NavLink>
         ))}
-        <RoleGate allow={['ADMIN']}>
+        <RoleGate allow={['ADMIN', 'SENIOR']}>
           <NavLink
             to="settings"
             className={({ isActive }) =>

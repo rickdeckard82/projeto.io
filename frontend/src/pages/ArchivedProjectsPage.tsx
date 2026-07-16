@@ -45,7 +45,7 @@ export function ArchivedProjectsPage() {
               </Link>
               {project.description && <p className="mt-1 text-xs text-slate-400">{project.description}</p>}
             </div>
-            <RoleGate allow={['ADMIN']}>
+            <RoleGate allow={['ADMIN', 'SENIOR']}>
               <Button variant="secondary" onClick={() => unarchiveMutation.mutate(project.id)}>
                 Desarquivar
               </Button>

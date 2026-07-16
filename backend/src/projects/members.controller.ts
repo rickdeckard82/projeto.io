@@ -9,8 +9,9 @@ import { ProjectMemberGuard } from '../common/guards/project-member.guard';
 /**
  * Controller REST para gestão de membros de um projeto (`/projects/:id/members`).
  * Todas as rotas exigem membership no projeto (ou projeto público, para GET) via
- * `ProjectMemberGuard` + `@ProjectResource('project', 'id')`; adicionar e remover membros
- * são restritos a administradores globais (`@Roles(ADMIN)`).
+ * `ProjectMemberGuard` + `@ProjectResource('project', 'id')`. Adicionar membro aceita Admin e
+ * Senior (`@Roles(ADMIN, SENIOR)`); remover continua restrito a Admin — Senior pode trazer
+ * gente pro projeto, mas não tirar.
  */
 @Controller('projects/:id/members')
 @UseGuards(ProjectMemberGuard)
@@ -24,8 +25,8 @@ export class MembersController {
     return this.projectsService.listMembers(id);
   }
 
-  /** Adiciona um usuário como membro do projeto. Restrito a administradores. */
-  @Roles(GlobalRole.ADMIN)
+  /** Adiciona um usuário como membro do projeto. Restrito a administradores e Senior. */
+  @Roles(GlobalRole.ADMIN, GlobalRole.SENIOR)
   @Post()
   add(@Param('id') id: string, @Body() dto: AddMemberDto) {
     return this.projectsService.addMember(id, dto.userId);

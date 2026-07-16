@@ -77,7 +77,7 @@ Módulos por recurso, cada um com `*.controller.ts` + `*.service.ts` + `dto/`: `
 
 **Cadeia de autorização (aplicada globalmente via `APP_GUARD` em `app.module.ts`):**
 1. `JwtAuthGuard` — valida o JWT (cookie `access_token` ou header `Bearer`); rotas marcadas com `@Public()` pulam essa checagem.
-2. `RolesGuard` — compara `@Roles(...)` do handler com o `globalRole` do usuário (`ADMIN` / `MEMBER` / `VIEWER`). Sem `@Roles()`, qualquer usuário autenticado passa.
+2. `RolesGuard` — compara `@Roles(...)` do handler com o `globalRole` do usuário (`ADMIN` / `SENIOR` / `MEMBER` / `VIEWER`). Sem `@Roles()`, qualquer usuário autenticado passa. `SENIOR` tem tudo que `MEMBER` tem (criar/editar itens, documentos, etiquetas — todo endpoint com `@Roles(ADMIN, SENIOR, MEMBER)`) mais criar projeto, arquivar/desarquivar projeto e adicionar membro (`@Roles(ADMIN, SENIOR)` nesses quatro endpoints específicos em `projects.controller.ts`/`members.controller.ts`); atualizar/remover projeto e remover membro continuam só `ADMIN`.
 3. `ProjectMemberGuard` — aplicado manualmente com `@UseGuards(ProjectMemberGuard)` + `@ProjectResource(kind, param)` nos controllers de recursos de projeto. Resolve o `projectId` a partir do parâmetro de rota (direto se `kind: 'project'`, ou via lookup se `'workItem' | 'document' | 'label'`), depois:
    - Admin sempre passa.
    - Caso contrário, precisa de uma linha em `project_members`.

@@ -24,8 +24,8 @@ export class ProjectLabelsController {
     return this.labelsService.list(projectId);
   }
 
-  /** Cria uma nova etiqueta no projeto; restrito a Admin/Membro. */
-  @Roles(GlobalRole.ADMIN, GlobalRole.MEMBER)
+  /** Cria uma nova etiqueta no projeto; restrito a Admin/Senior/Membro. */
+  @Roles(GlobalRole.ADMIN, GlobalRole.SENIOR, GlobalRole.MEMBER)
   @Post()
   create(@Param('projectId') projectId: string, @Body() dto: CreateLabelDto) {
     return this.labelsService.create(projectId, dto);
@@ -43,15 +43,15 @@ export class ProjectLabelsController {
 export class LabelsController {
   constructor(private readonly labelsService: LabelsService) {}
 
-  /** Atualiza nome e/ou cor da etiqueta; restrito a Admin/Membro. */
-  @Roles(GlobalRole.ADMIN, GlobalRole.MEMBER)
+  /** Atualiza nome e/ou cor da etiqueta; restrito a Admin/Senior/Membro. */
+  @Roles(GlobalRole.ADMIN, GlobalRole.SENIOR, GlobalRole.MEMBER)
   @Patch()
   update(@Param('labelId') labelId: string, @Body() dto: UpdateLabelDto) {
     return this.labelsService.update(labelId, dto);
   }
 
-  /** Remove definitivamente a etiqueta; restrito a Admin/Membro. */
-  @Roles(GlobalRole.ADMIN, GlobalRole.MEMBER)
+  /** Remove definitivamente a etiqueta; restrito a Admin/Senior/Membro. */
+  @Roles(GlobalRole.ADMIN, GlobalRole.SENIOR, GlobalRole.MEMBER)
   @Delete()
   remove(@Param('labelId') labelId: string) {
     return this.labelsService.remove(labelId);

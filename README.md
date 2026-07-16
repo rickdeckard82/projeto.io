@@ -1,6 +1,6 @@
 # Projeto.io
 
-Aplicação de gerenciamento de projetos: projetos, itens de trabalho (kanban), documentos em markdown e controle de acesso por papéis (Admin / Membro / Visualizador).
+Aplicação de gerenciamento de projetos: projetos, itens de trabalho (kanban), documentos em markdown e controle de acesso por papéis (Admin / Senior / Membro / Visualizador).
 
 ## Stack
 
@@ -64,6 +64,7 @@ Falhas de envio de e-mail (SMTP incorreto, credenciais inválidas etc.) ficam re
 18. Em **Configurações → Perfil**, clique "Baixar meus dados" e confirme que baixa um JSON com perfil, tarefas e atividade.
 19. Como Admin, em **Configurações → Usuários**, anonimize um usuário de teste e confirme que nome/e-mail somem da lista e o login antigo dele para de funcionar.
 20. Acesse `/privacidade` deslogado e confirme que carrega; preencha **Configurações → Privacidade (LGPD)** como Admin e confirme que a página pública reflete o que foi salvo.
+21. Como Admin, promova um usuário a **Senior**. Logado como esse usuário, confirme que consegue criar projeto, criar item, arquivar/desarquivar projeto e adicionar membro — mas não consegue editar/excluir o projeto nem remover um membro (esses botões nem aparecem na UI).
 
 ## Deploy em produção (domínio próprio + Nginx Proxy Manager)
 

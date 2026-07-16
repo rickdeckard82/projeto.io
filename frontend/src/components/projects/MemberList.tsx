@@ -2,10 +2,14 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ProjectMember } from '../../types';
 import { removeProjectMember } from '../../api/projects';
 import { queryKeys } from '../../api/queryKeys';
+import { useAuth } from '../../auth/AuthContext';
 import { Avatar } from '../common/Avatar';
 import { Button } from '../common/Button';
 
+/** Remover membro do projeto continua restrito a Admin no backend (Senior só adiciona) — evita mostrar um botão que sempre falharia para quem não é Admin. */
 export function MemberList({ projectId, members }: { projectId: string; members: ProjectMember[] }) {
+  const { user } = useAuth();
+  const canRemove = user?.globalRole === 'ADMIN';
   const queryClient = useQueryClient();
   const removeMutation = useMutation({
     mutationFn: (userId: string) => removeProjectMember(projectId, userId),
@@ -25,9 +29,11 @@ export function MemberList({ projectId, members }: { projectId: string; members:
               </p>
             </div>
           </div>
-          <Button variant="ghost" onClick={() => removeMutation.mutate(member.userId)}>
-            Remover
-          </Button>
+          {canRemove && (
+            <Button variant="ghost" onClick={() => removeMutation.mutate(member.userId)}>
+              Remover
+            </Button>
+          )}
         </li>
       ))}
     </ul>

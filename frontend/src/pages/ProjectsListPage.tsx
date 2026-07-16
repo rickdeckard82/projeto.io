@@ -29,7 +29,7 @@ export function ProjectsListPage() {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-lg font-semibold text-slate-100">Projetos</h1>
-        <RoleGate allow={['ADMIN']}>
+        <RoleGate allow={['ADMIN', 'SENIOR']}>
           <Button onClick={() => setOpen(true)}>Adicionar Projeto</Button>
         </RoleGate>
       </div>

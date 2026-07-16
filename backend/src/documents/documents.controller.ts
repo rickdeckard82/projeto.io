@@ -25,8 +25,8 @@ export class ProjectDocumentsController {
     return this.documentsService.list(projectId);
   }
 
-  /** Cria um novo documento no projeto; restrito a Admin/Membro. */
-  @Roles(GlobalRole.ADMIN, GlobalRole.MEMBER)
+  /** Cria um novo documento no projeto; restrito a Admin/Senior/Membro. */
+  @Roles(GlobalRole.ADMIN, GlobalRole.SENIOR, GlobalRole.MEMBER)
   @Post()
   create(
     @Param('projectId') projectId: string,
@@ -54,8 +54,8 @@ export class DocumentDetailController {
     return this.documentsService.findOne(documentId);
   }
 
-  /** Atualiza título e/ou conteúdo do documento; restrito a Admin/Membro. */
-  @Roles(GlobalRole.ADMIN, GlobalRole.MEMBER)
+  /** Atualiza título e/ou conteúdo do documento; restrito a Admin/Senior/Membro. */
+  @Roles(GlobalRole.ADMIN, GlobalRole.SENIOR, GlobalRole.MEMBER)
   @Patch()
   update(
     @Param('documentId') documentId: string,
@@ -65,8 +65,8 @@ export class DocumentDetailController {
     return this.documentsService.update(documentId, dto, user);
   }
 
-  /** Remove definitivamente o documento; restrito a Admin/Membro. */
-  @Roles(GlobalRole.ADMIN, GlobalRole.MEMBER)
+  /** Remove definitivamente o documento; restrito a Admin/Senior/Membro. */
+  @Roles(GlobalRole.ADMIN, GlobalRole.SENIOR, GlobalRole.MEMBER)
   @Delete()
   remove(@Param('documentId') documentId: string) {
     return this.documentsService.remove(documentId);

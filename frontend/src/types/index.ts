@@ -1,4 +1,4 @@
-export type GlobalRole = 'ADMIN' | 'MEMBER' | 'VIEWER';
+export type GlobalRole = 'ADMIN' | 'SENIOR' | 'MEMBER' | 'VIEWER';
 
 export type StatusCategory = 'BACKLOG' | 'UNSTARTED' | 'STARTED' | 'COMPLETED' | 'CANCELLED';
 

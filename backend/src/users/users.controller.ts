@@ -58,4 +58,15 @@ export class UsersController {
   deactivate(@Param('id') id: string) {
     return this.usersService.deactivate(id);
   }
+
+  /**
+   * Anonimiza um usuário (direito de eliminação de dados pessoais, LGPD art. 18, VI):
+   * apaga e-mail/nome/avatar/senha, mantendo o registro para preservar o histórico de
+   * projetos. Ação irreversível. Restrito a administradores.
+   */
+  @Roles(GlobalRole.ADMIN)
+  @Patch(':id/anonymize')
+  anonymize(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.usersService.anonymize(id, user);
+  }
 }

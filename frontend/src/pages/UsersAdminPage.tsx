@@ -2,7 +2,7 @@ import { FormEvent, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Dialog from '@radix-ui/react-dialog';
-import { createUser, deactivateUser, listUsers, updateUserRole } from '../api/users';
+import { anonymizeUser, createUser, deactivateUser, listUsers, updateUserRole } from '../api/users';
 import { queryKeys } from '../api/queryKeys';
 import { useAuth } from '../auth/AuthContext';
 import { GlobalRole, User } from '../types';
@@ -20,6 +20,7 @@ export function UsersAdminPage() {
   const { data: users, isLoading } = useQuery({ queryKey: queryKeys.users, queryFn: listUsers });
   const [createOpen, setCreateOpen] = useState(false);
   const [deactivateTarget, setDeactivateTarget] = useState<User | null>(null);
+  const [anonymizeTarget, setAnonymizeTarget] = useState<User | null>(null);
 
   const roleMutation = useMutation({
     mutationFn: ({ id, globalRole }: { id: string; globalRole: GlobalRole }) => updateUserRole(id, globalRole),
@@ -31,6 +32,14 @@ export function UsersAdminPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.users });
       setDeactivateTarget(null);
+    },
+  });
+
+  const anonymizeMutation = useMutation({
+    mutationFn: (id: string) => anonymizeUser(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.users });
+      setAnonymizeTarget(null);
     },
   });
 
@@ -51,7 +60,7 @@ export function UsersAdminPage() {
         {users?.map((u) => (
           <li key={u.id} className="flex items-center justify-between gap-3 px-3 py-2">
             <div className="flex items-center gap-2">
-              <Avatar name={u.fullName} src={u.avatarUrl} email={u.email} />
+              <Avatar name={u.fullName} src={u.avatarUrl} />
               <div>
                 <p className="text-sm text-slate-200">
                   {u.fullName} {u.id === currentUser?.id && <span className="text-slate-600">(você)</span>}
@@ -80,6 +89,9 @@ export function UsersAdminPage() {
               >
                 Desativar
               </Button>
+              <Button variant="ghost" disabled={u.id === currentUser?.id} onClick={() => setAnonymizeTarget(u)}>
+                Anonimizar
+              </Button>
             </div>
           </li>
         ))}
@@ -94,6 +106,15 @@ export function UsersAdminPage() {
         confirmLabel="Desativar"
         onConfirm={() => deactivateTarget && deactivateMutation.mutate(deactivateTarget.id)}
         onCancel={() => setDeactivateTarget(null)}
+      />
+
+      <ConfirmDialog
+        open={!!anonymizeTarget}
+        title="Anonimizar usuário"
+        description={`O nome, e-mail, avatar e senha de ${anonymizeTarget?.fullName} serão apagados permanentemente (LGPD — direito de eliminação). O registro é mantido apenas para preservar o histórico de tarefas e documentos já criados por essa pessoa, mas sem nenhum dado pessoal. Essa ação NÃO pode ser desfeita.`}
+        confirmLabel="Anonimizar"
+        onConfirm={() => anonymizeTarget && anonymizeMutation.mutate(anonymizeTarget.id)}
+        onCancel={() => setAnonymizeTarget(null)}
       />
     </div>
   );

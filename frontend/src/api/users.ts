@@ -16,6 +16,11 @@ export async function deactivateUser(id: string): Promise<User> {
   return res.data;
 }
 
+export async function anonymizeUser(id: string): Promise<User> {
+  const res = await apiClient.patch(`/users/${id}/anonymize`);
+  return res.data;
+}
+
 export async function updateUser(
   id: string,
   data: { fullName?: string; avatarUrl?: string; password?: string },

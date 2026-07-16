@@ -1,5 +1,6 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
+import * as crypto from 'crypto';
 import { GlobalRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -125,5 +126,54 @@ export class UsersService {
    */
   async deactivate(id: string) {
     return this.prisma.user.update({ where: { id }, data: { isActive: false }, select: SAFE_SELECT });
+  }
+
+  /**
+   * Anonimiza um usuário para atender ao direito de eliminação de dados pessoais (LGPD,
+   * art. 18, VI): sobrescreve os campos identificáveis (e-mail, nome, avatar, senha) com
+   * valores não pessoais, desativa a conta e revoga todas as sessões ativas. O registro em
+   * si não é apagado — `WorkItem.createdBy`/`Document.createdBy` não têm `onDelete: Cascade`,
+   * então uma exclusão física falharia (ou apagaria o histórico do projeto); anonimizar em vez
+   * de excluir preserva esse histórico sem manter dado pessoal. Ação irreversível. Restrito a
+   * administradores no controller (`@Roles(ADMIN)`).
+   * @param id - Id do usuário a ser anonimizado.
+   * @param requester - Usuário autenticado que está realizando a requisição.
+   * @returns Usuário anonimizado (campos seguros, sem hash de senha).
+   * @throws NotFoundException - quando não existe usuário com o id informado.
+   * @throws ForbiddenException - quando o admin tenta anonimizar a própria conta.
+   */
+  async anonymize(id: string, requester: AuthenticatedUser) {
+    if (requester.id === id) {
+      throw new ForbiddenException('Você não pode anonimizar a própria conta');
+    }
+
+    const existing = await this.prisma.user.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException('Usuário não encontrado');
+    }
+
+    const unusablePassword = await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 10);
+    const user = await this.prisma.user.update({
+      where: { id },
+      data: {
+        email: `usuario-removido-${id}@anonimizado.local`,
+        fullName: 'Usuário removido',
+        avatarUrl: null,
+        passwordHash: unusablePassword,
+        isActive: false,
+        emailVerifiedAt: null,
+        verificationTokenHash: null,
+        verificationTokenExpiresAt: null,
+        verificationEmailSentAt: null,
+      },
+      select: SAFE_SELECT,
+    });
+
+    await this.prisma.refreshToken.updateMany({
+      where: { userId: id, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+
+    return user;
   }
 }

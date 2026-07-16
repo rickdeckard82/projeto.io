@@ -52,6 +52,14 @@ export class RealtimeGateway implements OnGatewayConnection {
     private readonly prisma: PrismaService,
   ) {}
 
+  /**
+   * Autentica o handshake da conexão: exige um JWT de acesso válido no cookie `access_token`
+   * (mesmo cookie httpOnly usado pelo HTTP). Sem token, ou com token inválido/expirado,
+   * desconecta o socket imediatamente — sem isso, qualquer um poderia se conectar e escutar
+   * eventos de projetos que não deveria ver. Guarda o `userId` decodificado em `client.data`
+   * para as autorizações por sala feitas depois (`handleJoinProject`).
+   * @param client - socket recém-conectado
+   */
   handleConnection(client: Socket) {
     const cookies = parseCookies(client.handshake.headers.cookie);
     const token = cookies['access_token'];
@@ -72,6 +80,14 @@ export class RealtimeGateway implements OnGatewayConnection {
     }
   }
 
+  /**
+   * Entra na sala `project:<projectId>` se o usuário autenticado (`client.data.userId`) puder ler
+   * o projeto — Admin, membro, ou projeto público (ver {@link canReadProject}). Sem autenticação
+   * prévia (`handleConnection` falhou) ou sem autorização, não faz nada — o cliente simplesmente
+   * não recebe os eventos daquela sala, sem erro explícito.
+   * @param client - socket que está pedindo para entrar na sala
+   * @param projectId - id do projeto cuja sala o cliente quer ouvir
+   */
   @SubscribeMessage('join-project')
   async handleJoinProject(client: Socket, projectId: string) {
     const userId: string | undefined = client.data.userId;
@@ -85,6 +101,7 @@ export class RealtimeGateway implements OnGatewayConnection {
     }
   }
 
+  /** Sai da sala `project:<projectId>` — chamado pelo frontend ao desmontar a página do projeto, para não continuar recebendo eventos de um projeto que não está mais sendo visto. */
   @SubscribeMessage('leave-project')
   handleLeaveProject(client: Socket, projectId: string) {
     if (typeof projectId === 'string') {
@@ -102,6 +119,14 @@ export class RealtimeGateway implements OnGatewayConnection {
     this.server?.to(`project:${projectId}`).emit('activity:changed', { workItemId });
   }
 
+  /**
+   * Reimplementa, para o contexto de socket (sem `ExecutionContext`/request HTTP), a mesma regra
+   * de leitura do `ProjectMemberGuard`: Admin sempre pode; membro do projeto pode; sem nenhum dos
+   * dois, só se o projeto for público.
+   * @param userId - id do usuário autenticado no socket
+   * @param projectId - id do projeto que ele quer ouvir
+   * @returns `true` se o usuário pode entrar na sala desse projeto
+   */
   private async canReadProject(userId: string, projectId: string): Promise<boolean> {
     const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { globalRole: true } });
     if (!user) {

@@ -88,18 +88,20 @@ docker compose --env-file .env up --build -d
 
 Por padrão o `docker-compose.yml` já publica as portas 3000 (backend), 5173→80 (frontend) e 5432 (Postgres) no host — se o firewall do servidor não bloquear a 5432, o Postgres fica acessível pela internet. Recomendado restringir/remover essa publicação de porta em produção (o NPM acessa os containers pela rede interna do Docker, não precisa da porta do host).
 
-### 3. Conectar o Nginx Proxy Manager à rede do app
+### 3. Rede compartilhada com o Nginx Proxy Manager
 
-A rede criada por este `docker-compose.yml` chama-se `projetoio_default` (nome fixo, ver bloco `networks:` no final do arquivo). No `docker-compose.yml` do **próprio NPM**, adicione:
+Se o NPM já roda no mesmo host numa rede Docker própria (padrão comum: uma rede chamada `proxy`), é mais simples este app entrar nela do que pedir para o NPM entrar na rede deste app. `backend` e `frontend` já estão configurados em `docker-compose.yml` para entrar em duas redes: a interna (`projetoio_default`, usada para falar com o `db`) e a externa `proxy`:
 
 ```yaml
 networks:
   default:
-    external: true
     name: projetoio_default
+  proxy:
+    external: true
+    name: proxy
 ```
 
-e recrie o container do NPM. A partir daí ele alcança os serviços deste app pelo nome (`frontend`, `backend`), sem precisar das portas publicadas no host.
+Se a rede `proxy` ainda não existir neste host, crie antes de subir os containers (`docker network create proxy`) — ou ajuste o `name:` acima para o nome real da rede do seu NPM. O `db` fica só na rede interna (nunca entra na `proxy`), então o Postgres não fica alcançável a partir de outros containers atrás do NPM.
 
 ### 4. Configurar o Proxy Host no NPM
 

@@ -26,7 +26,7 @@ docker compose up -d --force-recreate backend frontend
 ```
 
 ### Deploy em produção
-Ver `README.md` ("Deploy em produção") para o passo a passo com domínio próprio + Nginx Proxy Manager (mesmo domínio, roteamento por caminho — `/api` e `/socket.io` para o backend, resto para o frontend). A rede do compose tem nome fixo `projetoio_default` (bloco `networks:` no final do `docker-compose.yml`) justamente para um NPM em outro compose conseguir se conectar a ela como rede externa.
+Ver `README.md` ("Deploy em produção") para o passo a passo com domínio próprio + Nginx Proxy Manager (mesmo domínio, roteamento por caminho — `/api` e `/socket.io` para o backend, resto para o frontend). `backend`/`frontend` entram em duas redes Docker (bloco `networks:` no final do `docker-compose.yml`): a interna `projetoio_default` (fala com o `db`) e a externa `proxy` (mesma rede do Nginx Proxy Manager no host, para ele alcançar os serviços pelo nome sem depender das portas publicadas). `db` fica só na interna.
 
 ### Criar uma migration do Prisma (schema.prisma alterado)
 `prisma migrate dev` é interativo e falha em ambiente non-TTY sempre que há uma mudança "arriscada" (ex.: nova coluna `UNIQUE`), mesmo rodando via `docker run`. `prisma migrate diff --from-migrations` **exige** `--shadow-database-url` (não há como omitir). Fluxo seguro e testado neste repo:

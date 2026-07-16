@@ -40,6 +40,9 @@ services:
         condition: service_healthy
     ports:
       - "3000:3000"
+    networks:
+      - default
+      - proxy
 
   frontend:
     build:
@@ -52,6 +55,9 @@ services:
       - backend
     ports:
       - "5173:80"
+    networks:
+      - default
+      - proxy
 
 volumes:
   db_data:
@@ -60,3 +66,6 @@ volumes:
 networks:
   default:
     name: projetoio_default
+  proxy:
+    external: true
+    name: proxy

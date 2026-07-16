@@ -2,6 +2,7 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import { Avatar } from '../common/Avatar';
+import logo from '../../assets/projeto-io-logo.svg';
 
 export function Topbar() {
   const { user, logout } = useAuth();
@@ -9,7 +10,7 @@ export function Topbar() {
 
   return (
     <header className="flex h-14 items-center justify-between border-b border-slate-800 px-4">
-      <div className="text-sm font-semibold text-slate-200">Projeto.io</div>
+      <img src={logo} alt="Projeto.io" className="h-9 w-auto" />
       {user && (
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild>

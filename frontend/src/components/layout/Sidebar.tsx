@@ -41,8 +41,8 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="hidden w-64 shrink-0 overflow-y-auto border-r border-slate-800 p-3 sm:block">
-      <nav className="flex flex-col gap-1">
+    <aside className="thin-scrollbar hidden w-64 shrink-0 flex-col overflow-y-auto border-r border-slate-800 sm:flex">
+      <nav className="flex flex-1 flex-col gap-1 p-3">
         <NavLink to="/" end className={navLinkClass}>
           <Home size={16} />
           Página inicial
@@ -94,6 +94,10 @@ export function Sidebar() {
           );
         })}
       </nav>
+
+      <footer className="px-3 py-3 text-center text-[11px] text-slate-600">
+        Pulsar © 2026 Projeto.io • v0.1.0
+      </footer>
     </aside>
   );
 }

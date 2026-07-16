@@ -5,11 +5,12 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { MailModule } from '../mail/mail.module';
+import { RefreshTokenCleanupService } from './refresh-token-cleanup.service';
 
 @Module({
   imports: [PassportModule, JwtModule.register({}), MailModule],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, RefreshTokenCleanupService],
   exports: [AuthService],
 })
 export class AuthModule {}

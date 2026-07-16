@@ -5,6 +5,7 @@ import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { VerifyEmailPage } from './pages/VerifyEmailPage';
+import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
 import { ProjectsListPage } from './pages/ProjectsListPage';
 import { ArchivedProjectsPage } from './pages/ArchivedProjectsPage';
 import { ProjectDetailLayout } from './pages/ProjectDetailLayout';
@@ -19,6 +20,7 @@ import { SecuritySettingsPage } from './pages/SecuritySettingsPage';
 import { UsersAdminPage } from './pages/UsersAdminPage';
 import { AllowedDomainsSettingsPage } from './pages/AllowedDomainsSettingsPage';
 import { SmtpSettingsPage } from './pages/SmtpSettingsPage';
+import { PrivacySettingsPage } from './pages/PrivacySettingsPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 
 export default function App() {
@@ -27,6 +29,7 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/verify-email" element={<VerifyEmailPage />} />
+      <Route path="/privacidade" element={<PrivacyPolicyPage />} />
 
       <Route element={<ProtectedRoute />}>
         <Route element={<AppShell />}>
@@ -38,6 +41,7 @@ export default function App() {
             <Route path="users" element={<UsersAdminPage />} />
             <Route path="allowed-domains" element={<AllowedDomainsSettingsPage />} />
             <Route path="smtp" element={<SmtpSettingsPage />} />
+            <Route path="privacy" element={<PrivacySettingsPage />} />
           </Route>
           <Route path="/projects" element={<ProjectsListPage />} />
           <Route path="/projects/archived" element={<ArchivedProjectsPage />} />

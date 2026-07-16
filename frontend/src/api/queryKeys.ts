@@ -4,6 +4,7 @@ export const queryKeys = {
   users: ['users'] as const,
   allowedDomains: ['allowed-domains'] as const,
   smtpSettings: ['smtp-settings'] as const,
+  privacySettings: ['privacy-settings'] as const,
   projects: (archived = false) => ['projects', { archived }] as const,
   project: (id: string) => ['projects', id] as const,
   projectMembers: (id: string) => ['projects', id, 'members'] as const,

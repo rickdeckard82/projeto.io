@@ -241,6 +241,23 @@ model SmtpSettings {
   @@map("smtp_settings")
 }
 
+/// Dados do controlador/encarregado (LGPD) usados para montar a página pública de Política de
+/// Privacidade. Deliberadamente não hardcoda nenhuma empresa específica: este software é
+/// reutilizável por qualquer organização que suba os próprios containers, então essa
+/// informação é configurável por quem opera a instância, não fixa no código.
+model PrivacySettings {
+  id                 String   @id @default("singleton")
+  controllerName     String?  @map("controller_name")
+  controllerDocument String?  @map("controller_document")
+  dpoName            String?  @map("dpo_name")
+  dpoEmail           String?  @map("dpo_email")
+  retentionNotice    String?  @map("retention_notice")
+  additionalNotes    String?  @map("additional_notes")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  @@map("privacy_settings")
+}
+
 model Document {
   id            String   @id @default(uuid())
   projectId     String   @map("project_id")

@@ -113,6 +113,16 @@ export interface SmtpSettings {
   updatedAt: string;
 }
 
+export interface PrivacySettings {
+  controllerName: string | null;
+  controllerDocument: string | null;
+  dpoName: string | null;
+  dpoEmail: string | null;
+  retentionNotice: string | null;
+  additionalNotes: string | null;
+  updatedAt: string;
+}
+
 export interface ProjectDocument {
   id: string;
   projectId: string;

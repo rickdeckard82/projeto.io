@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Archive, ChevronDown, ChevronRight, FileText, FolderKanban, Home, ListTodo } from 'lucide-react';
 import { listProjects } from '../../api/projects';
@@ -97,6 +97,10 @@ export function Sidebar() {
 
       <footer className="px-3 py-3 text-center text-[11px] text-slate-600">
         Pulsar © 2026 Projeto.io • v0.1.0
+        <br />
+        <Link to="/privacidade" target="_blank" className="hover:text-slate-400">
+          Política de Privacidade
+        </Link>
       </footer>
     </aside>
   );

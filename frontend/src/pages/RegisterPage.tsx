@@ -110,7 +110,13 @@ export function RegisterPage() {
         )}
       </div>
 
-      <footer className="pb-6 text-xs text-slate-600">Pulsar © 2026 Projeto.io • v0.1.0</footer>
+      <footer className="pb-6 text-center text-xs text-slate-600">
+        Pulsar © 2026 Projeto.io • v0.1.0
+        <br />
+        <Link to="/privacidade" target="_blank" className="hover:text-slate-400">
+          Política de Privacidade
+        </Link>
+      </footer>
     </div>
   );
 }

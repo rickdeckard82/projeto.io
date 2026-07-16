@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Globe, Home, Lock, Mail, User as UserIcon, Users } from 'lucide-react';
+import { Globe, Home, Lock, Mail, Shield, User as UserIcon, Users } from 'lucide-react';
 import { RoleGate } from '../../auth/RoleGate';
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -43,6 +43,10 @@ export function SettingsSidebar() {
           <NavLink to="/settings/smtp" className={navLinkClass}>
             <Mail size={16} />
             E-mail (SMTP)
+          </NavLink>
+          <NavLink to="/settings/privacy" className={navLinkClass}>
+            <Shield size={16} />
+            Privacidade (LGPD)
           </NavLink>
         </RoleGate>
       </nav>

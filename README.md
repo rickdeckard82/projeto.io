@@ -61,6 +61,60 @@ Falhas de envio de e-mail (SMTP incorreto, credenciais inválidas etc.) ficam re
 15. Tente `/login` com uma conta ainda não confirmada → confirme a mensagem "confirme seu e-mail" e teste o botão de reenvio.
 16. Abra o quadro do mesmo projeto em duas janelas/navegadores com usuários diferentes; mova um card ou adicione um comentário em uma janela e confirme que a outra atualiza sozinha, sem precisar recarregar (tempo real via WebSocket).
 
+## Deploy em produção (domínio próprio + Nginx Proxy Manager)
+
+Cenário: servidor com Docker, Nginx Proxy Manager (NPM) rodando em outro container no mesmo host, expondo a app em um domínio próprio (ex.: `https://seuapp.com.br`) com frontend e API sob o **mesmo domínio**, por caminho — é o arranjo mais simples porque elimina CORS e mantém os cookies de sessão simples (sem `Domain` cross-subdomain), e já bate com como o WebSocket de tempo real (`lib/socket.ts`) foi implementado (conecta na mesma origem, sem prefixo `/api/v1`).
+
+### 1. Variáveis de ambiente no `.env` do servidor
+
+```bash
+NODE_ENV=production
+CORS_ORIGIN=https://seuapp.com.br
+FRONTEND_URL=https://seuapp.com.br
+VITE_API_BASE_URL=https://seuapp.com.br/api/v1
+JWT_ACCESS_SECRET=<valor aleatório forte>
+JWT_REFRESH_SECRET=<valor aleatório forte>
+ENCRYPTION_KEY=<openssl rand -base64 32>
+SEED_ADMIN_PASSWORD=<troque o padrão antes do primeiro deploy>
+```
+
+`VITE_API_BASE_URL` é usada em **build time** do frontend (fica embutida no bundle estático) — depois de definir/alterar essa variável é preciso `docker compose build frontend` de novo; só reiniciar o container não atualiza nada.
+
+### 2. Subir os containers
+
+```bash
+docker compose --env-file .env up --build -d
+```
+
+Por padrão o `docker-compose.yml` já publica as portas 3000 (backend), 5173→80 (frontend) e 5432 (Postgres) no host — se o firewall do servidor não bloquear a 5432, o Postgres fica acessível pela internet. Recomendado restringir/remover essa publicação de porta em produção (o NPM acessa os containers pela rede interna do Docker, não precisa da porta do host).
+
+### 3. Conectar o Nginx Proxy Manager à rede do app
+
+A rede criada por este `docker-compose.yml` chama-se `projetoio_default` (nome fixo, ver bloco `networks:` no final do arquivo). No `docker-compose.yml` do **próprio NPM**, adicione:
+
+```yaml
+networks:
+  default:
+    external: true
+    name: projetoio_default
+```
+
+e recrie o container do NPM. A partir daí ele alcança os serviços deste app pelo nome (`frontend`, `backend`), sem precisar das portas publicadas no host.
+
+### 4. Configurar o Proxy Host no NPM
+
+1. **Proxy Host novo** → Domain Names: `seuapp.com.br`. Forward Hostname/IP: `frontend`. Forward Port: `80`. Scheme: `http`.
+2. Aba **SSL**: peça um certificado Let's Encrypt novo, ative "Force SSL" e "HTTP/2 Support".
+3. Aba **Advanced** → **Custom Locations**, adicione duas:
+   - Location `/api` → Forward Hostname/IP: `backend`, Forward Port: `3000`.
+   - Location `/socket.io` → Forward Hostname/IP: `backend`, Forward Port: `3000`, e **ative "Websockets Support"** nessa location (e, por segurança, no proxy host todo também). **Esse é o passo mais fácil de esquecer** — sem ele, o tempo real (mudanças de card entre navegadores) simplesmente não funciona, sem erro óbvio na tela.
+
+### 5. Verificação pós-deploy
+
+- `https://seuapp.com.br/api/v1/health` deve responder `200`.
+- Login funciona e o cookie de sessão persiste ao recarregar (confirma que `NODE_ENV=production`/cookies `Secure` não quebraram nada sob HTTPS).
+- Abra o quadro em duas abas logadas com usuários diferentes e confirme que mover um card atualiza a outra sem reload (confirma que o `/socket.io` com Websockets Support está roteado corretamente — ver passo 4).
+
 ## Comandos úteis
 
 ```bash

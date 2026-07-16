@@ -66,7 +66,7 @@ export function KanbanCardPreview({ item, parentTitle }: { item: WorkItem; paren
         {item.assignees.length > 0 && (
           <div className="ml-auto flex shrink-0 -space-x-1 pl-1">
             {item.assignees.map((a) => (
-              <Avatar key={a.user.id} name={a.user.fullName} src={a.user.avatarUrl} email={a.user.email} />
+              <Avatar key={a.user.id} name={a.user.fullName} src={a.user.avatarUrl} />
             ))}
           </div>
         )}
@@ -259,7 +259,7 @@ function AssigneeMenu({
               {users
                 .filter((u) => selectedIds.includes(u.id))
                 .map((u) => (
-                  <Avatar key={u.id} name={u.fullName} src={u.avatarUrl} email={u.email} />
+                  <Avatar key={u.id} name={u.fullName} src={u.avatarUrl} />
                 ))}
             </span>
           )}
@@ -282,7 +282,7 @@ function AssigneeMenu({
               onCheckedChange={() => onToggle(u.id)}
               className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm text-slate-100 outline-none hover:bg-slate-800"
             >
-              <Avatar name={u.fullName} src={u.avatarUrl} email={u.email} />
+              <Avatar name={u.fullName} src={u.avatarUrl} />
               {u.fullName}
               {selectedIds.includes(u.id) && <Check size={12} className="ml-auto text-indigo-400" />}
             </DropdownMenu.CheckboxItem>

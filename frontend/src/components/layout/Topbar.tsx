@@ -18,7 +18,7 @@ export function Topbar() {
               type="button"
               className="flex items-center gap-2 rounded-md px-2 py-1 text-xs text-slate-400 outline-none hover:bg-slate-800"
             >
-              <Avatar name={user.fullName} src={user.avatarUrl} email={user.email} />
+              <Avatar name={user.fullName} src={user.avatarUrl} />
               <span>{user.fullName}</span>
             </button>
           </DropdownMenu.Trigger>

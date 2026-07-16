@@ -32,7 +32,7 @@ export function ProfileSettingsPage() {
       <h1 className="mb-6 text-lg font-semibold text-slate-100">Perfil</h1>
       <form onSubmit={onSubmit} className="rounded-lg border border-slate-800 bg-slate-900 p-6">
         <div className="mb-6 flex items-center gap-4">
-          <Avatar name={fullName || user.fullName} src={avatarUrl} email={user.email} size={64} />
+          <Avatar name={fullName || user.fullName} src={avatarUrl} size={64} />
           <div>
             <div className="mb-1 text-xs text-slate-500">{user.globalRole}</div>
             <label className="mb-1 block text-xs text-slate-400">URL da imagem</label>

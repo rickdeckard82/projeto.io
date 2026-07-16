@@ -1,24 +1,26 @@
 import { useEffect, useState } from 'react';
-import { gravatarUrl } from '../../lib/gravatar';
 
+/**
+ * Nunca usa serviços de avatar de terceiros (ex.: Gravatar) como fallback automático: isso
+ * enviaria o e-mail (hash) de um usuário — muitas vezes de outra pessoa sendo exibida na tela,
+ * sem conhecimento dela — para um servidor fora da infraestrutura própria, sem base legal
+ * conhecida (LGPD). Sem `src` customizado, o fallback é sempre as iniciais do nome, geradas
+ * localmente.
+ */
 export function Avatar({
   name,
   src,
-  email,
   size = 24,
 }: {
   name: string;
   src?: string | null;
-  email?: string;
   size?: number;
 }) {
   const [srcFailed, setSrcFailed] = useState(false);
-  const [gravatarFailed, setGravatarFailed] = useState(false);
 
   useEffect(() => {
     setSrcFailed(false);
-    setGravatarFailed(false);
-  }, [src, email]);
+  }, [src]);
 
   const initials = name
     .split(' ')
@@ -28,9 +30,7 @@ export function Avatar({
 
   const style = { width: size, height: size };
 
-  const customSrc = src && !srcFailed ? src : null;
-  const fallbackSrc = !customSrc && email && !gravatarFailed ? gravatarUrl(email) : null;
-  const imgSrc = customSrc || fallbackSrc;
+  const imgSrc = src && !srcFailed ? src : null;
 
   if (imgSrc) {
     return (
@@ -38,7 +38,7 @@ export function Avatar({
         src={imgSrc}
         alt={name}
         title={name}
-        onError={() => (customSrc ? setSrcFailed(true) : setGravatarFailed(true))}
+        onError={() => setSrcFailed(true)}
         style={style}
         className="rounded-full object-cover"
       />

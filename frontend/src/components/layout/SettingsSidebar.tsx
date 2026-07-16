@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import { Globe, Home, Lock, Mail, Shield, User as UserIcon, Users } from 'lucide-react';
 import { RoleGate } from '../../auth/RoleGate';
 
@@ -13,8 +13,8 @@ function SectionLabel({ children }: { children: string }) {
 
 export function SettingsSidebar() {
   return (
-    <aside className="thin-scrollbar hidden w-64 shrink-0 overflow-y-auto border-r border-slate-800 p-3 sm:block">
-      <nav className="flex flex-col gap-1">
+    <aside className="thin-scrollbar hidden w-64 shrink-0 flex-col overflow-y-auto border-r border-slate-800 sm:flex">
+      <nav className="flex flex-1 flex-col gap-1 p-3">
         <NavLink to="/" end className={navLinkClass}>
           <Home size={16} />
           Página inicial
@@ -50,6 +50,14 @@ export function SettingsSidebar() {
           </NavLink>
         </RoleGate>
       </nav>
+
+      <footer className="px-3 py-3 text-center text-[11px] text-slate-600">
+        Pulsar © 2026 Projeto.io • v0.1.0
+        <br />
+        <Link to="/privacidade" target="_blank" className="hover:text-slate-400">
+          Política de Privacidade
+        </Link>
+      </footer>
     </aside>
   );
 }

@@ -21,6 +21,11 @@ export async function anonymizeUser(id: string): Promise<User> {
   return res.data;
 }
 
+export async function exportMyData(): Promise<unknown> {
+  const res = await apiClient.get('/users/me/export');
+  return res.data;
+}
+
 export async function updateUser(
   id: string,
   data: { fullName?: string; avatarUrl?: string; password?: string },

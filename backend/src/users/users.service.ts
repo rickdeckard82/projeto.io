@@ -34,6 +34,57 @@ export class UsersService {
   }
 
   /**
+   * Reúne todos os dados pessoais do usuário para atender ao direito de acesso/portabilidade
+   * (LGPD art. 18, II e V): perfil, tarefas criadas e atribuídas, documentos criados/editados,
+   * atividade registrada em itens e participação em projetos. Todas as consultas são filtradas
+   * pelo próprio `userId` — não expõe dado de nenhum outro usuário.
+   * @param userId - Id do usuário autenticado que está solicitando seus próprios dados.
+   * @returns Objeto com todos os dados pessoais do usuário, prontos para exportação.
+   */
+  async exportOwnData(userId: string) {
+    const [profile, createdItems, assignedItems, createdDocuments, updatedDocuments, activities, memberships] =
+      await Promise.all([
+        this.prisma.user.findUnique({ where: { id: userId }, select: SAFE_SELECT }),
+        this.prisma.workItem.findMany({
+          where: { createdById: userId },
+          select: { id: true, title: true, projectId: true, createdAt: true },
+        }),
+        this.prisma.itemAssignee.findMany({
+          where: { userId },
+          select: { workItem: { select: { id: true, title: true, projectId: true } } },
+        }),
+        this.prisma.document.findMany({
+          where: { createdById: userId },
+          select: { id: true, title: true, projectId: true, createdAt: true },
+        }),
+        this.prisma.document.findMany({
+          where: { updatedById: userId },
+          select: { id: true, title: true, projectId: true, updatedAt: true },
+        }),
+        this.prisma.itemActivity.findMany({
+          where: { userId },
+          select: { id: true, workItemId: true, type: true, message: true, metadata: true, createdAt: true },
+          orderBy: { createdAt: 'asc' },
+        }),
+        this.prisma.projectMember.findMany({
+          where: { userId },
+          select: { projectId: true, project: { select: { name: true } }, createdAt: true },
+        }),
+      ]);
+
+    return {
+      exportedAt: new Date().toISOString(),
+      profile,
+      createdWorkItems: createdItems,
+      assignedWorkItems: assignedItems.map((a) => a.workItem),
+      createdDocuments,
+      updatedDocuments,
+      itemActivity: activities,
+      projectMemberships: memberships,
+    };
+  }
+
+  /**
    * Cria um novo usuário, garantindo unicidade de e-mail e persistindo a senha com hash bcrypt.
    * @param dto - Dados de criação (e-mail, senha em texto plano, nome, avatar opcional, papel global opcional).
    * @returns Usuário criado (campos seguros, sem hash de senha).

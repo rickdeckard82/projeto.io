@@ -29,6 +29,17 @@ export class UsersController {
     return this.usersService.create(dto);
   }
 
+  /**
+   * Exporta todos os dados pessoais do próprio usuário autenticado (perfil, tarefas criadas
+   * e atribuídas, documentos, atividade, participação em projetos) — direito de acesso e
+   * portabilidade (LGPD art. 18, II e V). Sempre relativo a quem faz a requisição; não é
+   * possível exportar dados de outro usuário por esta rota.
+   */
+  @Get('me/export')
+  exportOwnData(@CurrentUser() user: AuthenticatedUser) {
+    return this.usersService.exportOwnData(user.id);
+  }
+
   /** Busca um usuário pelo id. */
   @Get(':id')
   findOne(@Param('id') id: string) {

@@ -1,7 +1,7 @@
 import { FormEvent, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useAuth } from '../auth/AuthContext';
-import { updateUser } from '../api/users';
+import { updateUser, exportMyData } from '../api/users';
 import { Button } from '../components/common/Button';
 import { Avatar } from '../components/common/Avatar';
 
@@ -17,6 +17,19 @@ export function ProfileSettingsPage() {
       await refreshUser();
       setSuccess(true);
       setTimeout(() => setSuccess(false), 2000);
+    },
+  });
+
+  const exportMutation = useMutation({
+    mutationFn: exportMyData,
+    onSuccess: (data) => {
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'meus-dados.json';
+      link.click();
+      URL.revokeObjectURL(url);
     },
   });
 
@@ -81,6 +94,22 @@ export function ProfileSettingsPage() {
           {mutation.isPending ? 'Salvando...' : 'Salvar alterações'}
         </Button>
       </form>
+
+      <div className="mt-6 rounded-lg border border-slate-800 bg-slate-900 p-6">
+        <h2 className="mb-1 text-sm font-semibold text-slate-100">Meus dados</h2>
+        <p className="mb-4 text-xs text-slate-500">
+          Baixe uma cópia de todos os seus dados pessoais tratados pelo sistema (perfil, tarefas, documentos e
+          atividade), conforme a LGPD.
+        </p>
+        <Button
+          type="button"
+          variant="secondary"
+          disabled={exportMutation.isPending}
+          onClick={() => exportMutation.mutate()}
+        >
+          {exportMutation.isPending ? 'Gerando...' : 'Baixar meus dados'}
+        </Button>
+      </div>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { CSSProperties, useState } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { Check, CornerDownRight, Layers, Plus, Tag, UserPlus } from 'lucide-react';
+import { Check, CornerDownRight, Layers, Lock, Plus, Tag, UserPlus } from 'lucide-react';
 import { Label, Priority, StatusCategory, UserDirectoryEntry, WorkItem } from '../../types';
 import { Avatar } from '../common/Avatar';
 import { Badge } from '../common/Badge';
@@ -296,6 +296,8 @@ function AssigneeMenu({
 export function KanbanCard({
   item,
   canEdit,
+  currentUserId,
+  isAdmin,
   labels,
   users,
   parentTitle,
@@ -307,6 +309,8 @@ export function KanbanCard({
 }: {
   item: WorkItem;
   canEdit: boolean;
+  currentUserId?: string;
+  isAdmin: boolean;
   labels: Label[];
   users: UserDirectoryEntry[];
   parentTitle?: string;
@@ -316,7 +320,8 @@ export function KanbanCard({
   onChangeLabels: (labelIds: string[]) => void;
   onCreateLabel: (name: string, color: string) => Promise<Label>;
 }) {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: item.id });
+  const isLockedByOther = !!item.statusLockedById && item.statusLockedById !== currentUserId && !isAdmin;
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: item.id, disabled: isLockedByOther });
 
   const glowColor = STATUS_GLOW[item.status.category];
   const style = glowStyle(item.status.category);
@@ -349,6 +354,15 @@ export function KanbanCard({
         <p className="mb-0.5 flex items-center gap-1 truncate text-[10px] text-slate-500">
           <CornerDownRight size={10} className="shrink-0" />
           {parentTitle}
+        </p>
+      )}
+      {item.statusLockedBy && (
+        <p
+          className="mb-0.5 flex items-center gap-1 truncate text-[10px] text-amber-500"
+          title={`Travado por ${item.statusLockedBy.fullName} enquanto "Em andamento"`}
+        >
+          <Lock size={10} className="shrink-0" />
+          {item.statusLockedBy.fullName}
         </p>
       )}
       <p className="text-sm text-slate-100">{item.title}</p>

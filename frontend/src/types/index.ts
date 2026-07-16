@@ -70,6 +70,8 @@ export interface WorkItem {
   dueDate: string | null;
   createdById: string;
   createdBy: User;
+  statusLockedById: string | null;
+  statusLockedBy: Pick<User, 'id' | 'fullName' | 'avatarUrl'> | null;
   createdAt: string;
   updatedAt: string;
   assignees: { user: User }[];

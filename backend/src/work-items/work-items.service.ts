@@ -1,5 +1,5 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { ActivityType, Prisma, StatusCategory } from '@prisma/client';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ActivityType, GlobalRole, Prisma, StatusCategory } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateItemDto } from './dto/create-item.dto';
 import { UpdateItemDto } from './dto/update-item.dto';
@@ -17,6 +17,7 @@ const ITEM_INCLUDE = {
   labels: { include: { label: true } },
   status: true,
   createdBy: { select: { id: true, email: true, fullName: true, avatarUrl: true } },
+  statusLockedBy: { select: { id: true, fullName: true, avatarUrl: true } },
   subItems: true,
 };
 
@@ -221,16 +222,34 @@ export class WorkItemsService {
    * drag-and-drop do board no frontend. Se o novo status for de conclusão/cancelamento e o item
    * tiver sub-itens, exige que todos os sub-itens já estejam concluídos ou cancelados antes de
    * permitir a mudança — um item "pai" só fecha depois que todo o trabalho filho fechou.
+   *
+   * Trava de "Em andamento": quando alguém move um item para um status de categoria `STARTED`,
+   * `statusLockedById` grava quem foi; enquanto o item continuar em `STARTED`, só essa pessoa
+   * (ou um Admin) pode mudar o status de novo — evita que outro colega "roube" ou finalize uma
+   * tarefa que já está sendo trabalhada por alguém. Sair de `STARTED` (concluir, cancelar, ou
+   * voltar) limpa a trava.
    * @param id - id do item
    * @param statusId - id do novo status
    * @param actor - usuário autenticado que está movendo o item (autor da entrada de atividade gerada)
    * @returns o item atualizado
    * @throws NotFoundException - se o item não existir
+   * @throws ForbiddenException - se o item estiver travado por outro usuário (em "Em andamento") e quem está tentando mudar não for nem quem travou nem um Admin
    * @throws BadRequestException - se o status informado não pertencer ao mesmo projeto do item, ou se houver sub-itens ainda não concluídos/cancelados e o novo status for de conclusão/cancelamento
    */
   async updateStatus(id: string, statusId: string, actor: AuthenticatedUser) {
     const item = await this.findOne(id);
     const status = await this.assertStatusBelongsToProject(statusId, item.projectId);
+
+    if (
+      item.status.category === StatusCategory.STARTED &&
+      item.statusLockedById &&
+      item.statusLockedById !== actor.id &&
+      actor.globalRole !== GlobalRole.ADMIN
+    ) {
+      throw new ForbiddenException(
+        `Este item está travado por ${item.statusLockedBy?.fullName} enquanto estiver "Em andamento" — só essa pessoa (ou um Admin) pode mudar o status.`,
+      );
+    }
 
     if (status.category === StatusCategory.COMPLETED || status.category === StatusCategory.CANCELLED) {
       const subItems = await this.prisma.workItem.findMany({
@@ -247,7 +266,11 @@ export class WorkItemsService {
       }
     }
 
-    const updated = await this.prisma.workItem.update({ where: { id }, data: { statusId }, include: ITEM_INCLUDE });
+    const updated = await this.prisma.workItem.update({
+      where: { id },
+      data: { statusId, statusLockedById: status.category === StatusCategory.STARTED ? actor.id : null },
+      include: ITEM_INCLUDE,
+    });
 
     if (item.statusId !== statusId) {
       await this.logActivity(id, actor.id, ActivityType.STATUS_CHANGED, {

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
+import { Lock } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getItem, createItem, updateItemStatus } from '../../api/workItems';
 import { listProjectStatuses } from '../../api/projects';
@@ -31,7 +32,6 @@ export function ItemDetailModal({
   const { user } = useAuth();
   const editable = user ? canEditItem(user.globalRole) : false;
   const queryClient = useQueryClient();
-
   const { data: item, isLoading } = useQuery({
     queryKey: queryKeys.item(itemId),
     queryFn: () => getItem(itemId),
@@ -40,6 +40,8 @@ export function ItemDetailModal({
     queryKey: queryKeys.projectStatuses(projectId),
     queryFn: () => listProjectStatuses(projectId),
   });
+  const isLockedByOther =
+    !!item?.statusLockedById && item.statusLockedById !== user?.id && user?.globalRole !== 'ADMIN';
 
   const { updateItem, updateItemAssignees, updateItemLabels, deleteItem } = useWorkItems(projectId);
 
@@ -111,10 +113,21 @@ export function ItemDetailModal({
 
               <div className="flex flex-wrap gap-4 text-xs text-slate-400">
                 <div>
-                  <label className="mb-1 block">Status</label>
+                  <label className="mb-1 flex items-center gap-1">
+                    Status
+                    {item.statusLockedBy && (
+                      <span
+                        className="flex items-center gap-1 text-amber-500"
+                        title={`Travado por ${item.statusLockedBy.fullName} enquanto "Em andamento"`}
+                      >
+                        <Lock size={10} />
+                        {item.statusLockedBy.fullName}
+                      </span>
+                    )}
+                  </label>
                   <select
                     value={item.statusId}
-                    disabled={!editable}
+                    disabled={!editable || isLockedByOther}
                     onChange={(e) => statusMutation.mutate(e.target.value)}
                     className="rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-100 disabled:opacity-50"
                   >

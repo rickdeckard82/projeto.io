@@ -8,6 +8,8 @@ export function KanbanColumn({
   items,
   canCreate,
   canEdit,
+  currentUserId,
+  isAdmin,
   labels,
   users,
   getParentTitle,
@@ -22,6 +24,8 @@ export function KanbanColumn({
   items: WorkItem[];
   canCreate: boolean;
   canEdit: boolean;
+  currentUserId?: string;
+  isAdmin: boolean;
   labels: Label[];
   users: UserDirectoryEntry[];
   getParentTitle: (parentId: string) => string | undefined;
@@ -62,6 +66,8 @@ export function KanbanColumn({
             key={item.id}
             item={item}
             canEdit={canEdit}
+            currentUserId={currentUserId}
+            isAdmin={isAdmin}
             labels={labels}
             users={users}
             parentTitle={item.parentId ? getParentTitle(item.parentId) : undefined}

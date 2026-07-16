@@ -62,6 +62,7 @@ model User {
   ownedProjects   Project[]        @relation("ProjectOwner")
   projectMembers  ProjectMember[]
   createdItems    WorkItem[]       @relation("WorkItemCreatedBy")
+  statusLockedItems WorkItem[]     @relation("WorkItemStatusLockedBy")
   assignedItems   ItemAssignee[]
   createdDocs     Document[]       @relation("DocumentCreatedBy")
   updatedDocs     Document[]       @relation("DocumentUpdatedBy")
@@ -151,14 +152,21 @@ model WorkItem {
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
 
-  project   Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  status    Status         @relation(fields: [statusId], references: [id], onDelete: Restrict)
-  createdBy User           @relation("WorkItemCreatedBy", fields: [createdById], references: [id])
-  parent    WorkItem?      @relation("SubItems", fields: [parentId], references: [id], onDelete: SetNull)
-  subItems  WorkItem[]     @relation("SubItems")
-  assignees ItemAssignee[]
-  labels    ItemLabel[]
-  activities ItemActivity[]
+  /// Preenchido com quem moveu o item para um status de categoria STARTED ("Em andamento"); limpo
+  /// quando o item sai dessa categoria (concluído, cancelado ou volta pra trás). Enquanto
+  /// preenchido, só essa pessoa (ou um Admin) pode mudar o status do item — ver
+  /// `WorkItemsService.updateStatus`.
+  statusLockedById String? @map("status_locked_by_id")
+
+  project       Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  status        Status         @relation(fields: [statusId], references: [id], onDelete: Restrict)
+  createdBy     User           @relation("WorkItemCreatedBy", fields: [createdById], references: [id])
+  statusLockedBy User?         @relation("WorkItemStatusLockedBy", fields: [statusLockedById], references: [id], onDelete: SetNull)
+  parent        WorkItem?      @relation("SubItems", fields: [parentId], references: [id], onDelete: SetNull)
+  subItems      WorkItem[]     @relation("SubItems")
+  assignees     ItemAssignee[]
+  labels        ItemLabel[]
+  activities    ItemActivity[]
 
   @@index([projectId])
   @@index([statusId])

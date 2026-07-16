@@ -87,6 +87,8 @@ export function KanbanBoard({ projectId }: { projectId: string }) {
               items={items.filter((i) => i.statusId === status.id)}
               canCreate={canCreate}
               canEdit={canCreate}
+              currentUserId={user?.id}
+              isAdmin={user?.globalRole === 'ADMIN'}
               labels={labels || []}
               users={users || []}
               getParentTitle={(parentId) => itemsById.get(parentId)?.title}

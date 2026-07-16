@@ -109,13 +109,17 @@ Se a rede `proxy` ainda não existir neste host, crie antes de subir os containe
 
 ### 4. Configurar o Proxy Host no NPM
 
-1. **Proxy Host novo** → aba **Details** → Domain Names: `seuapp.com.br`. Scheme: `http`. **Forward Hostname/IP: `frontend`** (não `backend` — esse campo é a rota "coringa" `/`, que precisa servir os arquivos estáticos do frontend). Forward Port: `80`.
+**Use sempre o `container_name` (`projetoio-frontend`/`projetoio-backend`), nunca o nome "cru" do serviço (`frontend`/`backend`).** Quando a rede `proxy` é compartilhada com outros apps no mesmo host, o Docker Compose registra um apelido de rede igual ao **nome do serviço** para cada container — se outro app no mesmo host também tiver um serviço chamado `frontend` (ou `backend`), os dois passam a responder pelo mesmo nome nessa rede, e o DNS do Docker resolve para um ou outro de forma inconsistente (sintoma: acessar seu domínio abre o app errado). `container_name` é garantido único pelo próprio Docker (ele recusa subir dois containers com o mesmo `container_name` no host), então nunca colide.
+
+1. **Proxy Host novo** → aba **Details** → Domain Names: `seuapp.com.br`. Scheme: `http`. **Forward Hostname/IP: `projetoio-frontend`** (não `projetoio-backend` — esse campo é a rota "coringa" `/`, que precisa servir os arquivos estáticos do frontend). Forward Port: `80`.
 2. Aba **SSL**: peça um certificado Let's Encrypt novo, ative "Force SSL" e "HTTP/2 Support".
 3. Aba **Custom Locations**, adicione duas:
-   - Location `/api` → Forward Hostname/IP: `backend`, Forward Port: `3000`.
-   - Location `/socket.io` → Forward Hostname/IP: `backend`, Forward Port: `3000`, e **ative "Websockets Support"** nessa location (e, por segurança, no proxy host todo também). **Esse é o passo mais fácil de esquecer** — sem ele, o tempo real (mudanças de card entre navegadores) simplesmente não funciona, sem erro óbvio na tela.
+   - Location `/api` → Forward Hostname/IP: `projetoio-backend`, Forward Port: `3000`.
+   - Location `/socket.io` → Forward Hostname/IP: `projetoio-backend`, Forward Port: `3000`, e **ative "Websockets Support"** nessa location (e, por segurança, no proxy host todo também). **Esse é o passo mais fácil de esquecer** — sem ele, o tempo real (mudanças de card entre navegadores) simplesmente não funciona, sem erro óbvio na tela.
 
-> **"502 Bad Gateway" logo após configurar?** É quase sempre a aba **Details** apontando para o serviço/porta errados — confira que ali está `frontend`:`80`, **não** `backend`:`80` (o backend nem escuta na porta 80, só na 3000; só as Custom Locations `/api`/`/socket.io` devem apontar para `backend`).
+> **"502 Bad Gateway" logo após configurar?** É quase sempre a aba **Details** apontando para o serviço/porta errados — confira que ali está `projetoio-frontend`:`80`, **não** `projetoio-backend`:`80` (o backend nem escuta na porta 80, só na 3000; só as Custom Locations `/api`/`/socket.io` devem apontar para `projetoio-backend`).
+>
+> **Domínio abre o app errado (não o seu)?** Sinal de colisão de nome de serviço na rede `proxy` compartilhada — confira que o Forward Hostname/IP em todas as locations usa `projetoio-frontend`/`projetoio-backend` (container_name), não `frontend`/`backend` (nome do serviço, que pode colidir com outro app no mesmo host).
 
 ### 5. Verificação pós-deploy
 

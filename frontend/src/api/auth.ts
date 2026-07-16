@@ -20,3 +20,13 @@ export async function fetchMe(): Promise<User> {
   const res = await apiClient.get('/auth/me');
   return res.data;
 }
+
+export async function verifyEmail(token: string) {
+  const res = await apiClient.get('/auth/verify-email', { params: { token } });
+  return res.data;
+}
+
+export async function resendVerification(email: string) {
+  const res = await apiClient.post('/auth/resend-verification', { email });
+  return res.data;
+}

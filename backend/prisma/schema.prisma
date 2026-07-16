@@ -29,6 +29,19 @@ enum Priority {
   URGENT
 }
 
+enum ActivityType {
+  CREATED
+  TITLE_CHANGED
+  DESCRIPTION_CHANGED
+  STATUS_CHANGED
+  PRIORITY_CHANGED
+  LABEL_ADDED
+  LABEL_REMOVED
+  ASSIGNEE_ADDED
+  ASSIGNEE_REMOVED
+  COMMENT
+}
+
 model User {
   id           String     @id @default(uuid())
   email        String     @unique
@@ -40,6 +53,11 @@ model User {
   createdAt    DateTime   @default(now()) @map("created_at")
   updatedAt    DateTime   @updatedAt @map("updated_at")
 
+  emailVerifiedAt            DateTime? @map("email_verified_at")
+  verificationTokenHash      String?   @map("verification_token_hash")
+  verificationTokenExpiresAt DateTime? @map("verification_token_expires_at")
+  verificationEmailSentAt    DateTime? @map("verification_email_sent_at")
+
   refreshTokens   RefreshToken[]
   ownedProjects   Project[]        @relation("ProjectOwner")
   projectMembers  ProjectMember[]
@@ -47,6 +65,7 @@ model User {
   assignedItems   ItemAssignee[]
   createdDocs     Document[]       @relation("DocumentCreatedBy")
   updatedDocs     Document[]       @relation("DocumentUpdatedBy")
+  itemActivities  ItemActivity[]
 
   @@map("users")
 }
@@ -139,6 +158,7 @@ model WorkItem {
   subItems  WorkItem[]     @relation("SubItems")
   assignees ItemAssignee[]
   labels    ItemLabel[]
+  activities ItemActivity[]
 
   @@index([projectId])
   @@index([statusId])
@@ -182,6 +202,43 @@ model ItemLabel {
 
   @@unique([workItemId, labelId])
   @@map("item_labels")
+}
+
+model ItemActivity {
+  id         String       @id @default(uuid())
+  workItemId String       @map("work_item_id")
+  userId     String       @map("user_id")
+  type       ActivityType
+  message    String?
+  metadata   Json?
+  createdAt  DateTime     @default(now()) @map("created_at")
+
+  workItem WorkItem @relation(fields: [workItemId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([workItemId])
+  @@map("item_activities")
+}
+
+model AllowedDomain {
+  id        String   @id @default(uuid())
+  domain    String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("allowed_domains")
+}
+
+model SmtpSettings {
+  id                String   @id @default("singleton")
+  host              String
+  port              Int
+  useSsl            Boolean  @default(false) @map("use_ssl")
+  fromEmail         String   @map("from_email")
+  authUser          String   @map("auth_user")
+  authPassEncrypted String   @map("auth_pass_encrypted")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("smtp_settings")
 }
 
 model Document {

@@ -1,8 +1,9 @@
-import { Body, Controller, Get, Post, Req, Res } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, Req, Res } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { AuthService, AuthTokens } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { ResendVerificationDto } from './dto/resend-verification.dto';
 import { Public } from '../common/decorators/public.decorator';
 import { CurrentUser, AuthenticatedUser } from '../common/decorators/current-user.decorator';
 
@@ -44,18 +45,38 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   /**
-   * Cadastra um novo usuário e já inicia a sessão, setando os cookies de
-   * access/refresh token na resposta via `setAuthCookies`.
+   * Cadastra um novo usuário. Não inicia sessão automaticamente: a conta só fica
+   * utilizável depois que o e-mail de confirmação (enviado aqui) é confirmado via
+   * `GET /auth/verify-email`.
    * @param dto - dados de cadastro (e-mail, senha, nome)
-   * @param res - usado apenas para setar os cookies httpOnly (passthrough)
-   * @returns mensagem de confirmação
+   * @returns mensagem pedindo confirmação por e-mail
    */
   @Public()
   @Post('register')
-  async register(@Body() dto: RegisterDto, @Res({ passthrough: true }) res: Response) {
-    const tokens = await this.authService.register(dto);
-    setAuthCookies(res, tokens);
-    return { message: 'Cadastro realizado com sucesso' };
+  async register(@Body() dto: RegisterDto) {
+    return this.authService.register(dto);
+  }
+
+  /**
+   * Confirma o e-mail de um usuário a partir do link enviado no cadastro/reenvio.
+   * @param token - token bruto recebido na query string do link de confirmação
+   * @returns mensagem de confirmação
+   */
+  @Public()
+  @Get('verify-email')
+  async verifyEmail(@Query('token') token?: string) {
+    return this.authService.verifyEmail(token);
+  }
+
+  /**
+   * Reenvia o e-mail de confirmação de cadastro para uma conta ainda não verificada.
+   * @param dto - e-mail da conta
+   * @returns mensagem genérica (não revela se o e-mail existe/já está confirmado)
+   */
+  @Public()
+  @Post('resend-verification')
+  async resendVerification(@Body() dto: ResendVerificationDto) {
+    return this.authService.resendVerification(dto.email);
   }
 
   /**

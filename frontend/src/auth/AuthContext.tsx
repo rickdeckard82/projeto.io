@@ -6,7 +6,7 @@ interface AuthContextValue {
   user: User | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, fullName: string) => Promise<void>;
+  register: (email: string, password: string, fullName: string) => Promise<{ message: string }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -36,8 +36,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const register = async (email: string, password: string, fullName: string) => {
-    await registerApi({ email, password, fullName });
-    await refreshUser();
+    // Cadastro não inicia sessão automaticamente: a conta só fica utilizável depois de
+    // confirmada por e-mail (ver AuthService.register no backend).
+    return registerApi({ email, password, fullName });
   };
 
   const logout = async () => {

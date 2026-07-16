@@ -4,6 +4,7 @@ import { AppShell } from './components/layout/AppShell';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
+import { VerifyEmailPage } from './pages/VerifyEmailPage';
 import { ProjectsListPage } from './pages/ProjectsListPage';
 import { ArchivedProjectsPage } from './pages/ArchivedProjectsPage';
 import { ProjectDetailLayout } from './pages/ProjectDetailLayout';
@@ -16,6 +17,8 @@ import { AccountSettingsLayout } from './pages/AccountSettingsLayout';
 import { ProfileSettingsPage } from './pages/ProfileSettingsPage';
 import { SecuritySettingsPage } from './pages/SecuritySettingsPage';
 import { UsersAdminPage } from './pages/UsersAdminPage';
+import { AllowedDomainsSettingsPage } from './pages/AllowedDomainsSettingsPage';
+import { SmtpSettingsPage } from './pages/SmtpSettingsPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 
 export default function App() {
@@ -23,6 +26,7 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/verify-email" element={<VerifyEmailPage />} />
 
       <Route element={<ProtectedRoute />}>
         <Route element={<AppShell />}>
@@ -32,6 +36,8 @@ export default function App() {
             <Route path="profile" element={<ProfileSettingsPage />} />
             <Route path="security" element={<SecuritySettingsPage />} />
             <Route path="users" element={<UsersAdminPage />} />
+            <Route path="allowed-domains" element={<AllowedDomainsSettingsPage />} />
+            <Route path="smtp" element={<SmtpSettingsPage />} />
           </Route>
           <Route path="/projects" element={<ProjectsListPage />} />
           <Route path="/projects/archived" element={<ArchivedProjectsPage />} />

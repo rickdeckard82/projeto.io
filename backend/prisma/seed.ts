@@ -20,6 +20,7 @@ async function main() {
       passwordHash,
       fullName: 'Administrador',
       globalRole: GlobalRole.ADMIN,
+      emailVerifiedAt: new Date(),
     },
   });
 

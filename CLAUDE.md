@@ -12,7 +12,7 @@ Não há Node/npm instalado no host — todo build/lint/execução acontece dent
 
 ### Subir a aplicação completa
 ```bash
-cp .env.example .env   # defina JWT_ACCESS_SECRET / JWT_REFRESH_SECRET com valores aleatórios
+cp .env.example .env   # defina JWT_ACCESS_SECRET / JWT_REFRESH_SECRET / ENCRYPTION_KEY com valores aleatórios
 docker compose up --build -d
 docker compose ps
 curl http://localhost:3000/api/v1/health
@@ -70,7 +70,7 @@ docker exec projetoio-db psql -U app_user -d pm_app          # psql direto
 
 ### Backend (`backend/src`) — NestJS
 
-Módulos por recurso, cada um com `*.controller.ts` + `*.service.ts` + `dto/`: `auth`, `users`, `projects`, `labels`, `work-items`, `documents`, mais `prisma/` (client singleton) e `common/` (guards, decorators, filters compartilhados).
+Módulos por recurso, cada um com `*.controller.ts` + `*.service.ts` + `dto/`: `auth`, `users`, `projects`, `labels`, `work-items`, `documents`, `settings` (domínios permitidos + SMTP), mais `mail/` (envio de e-mail transacional), `prisma/` (client singleton) e `common/` (guards, decorators, filters, `utils/` compartilhados — `token-hash.util.ts` para hash SHA-256 de tokens, `crypto.util.ts` para criptografia reversível AES-256-GCM).
 
 **Cadeia de autorização (aplicada globalmente via `APP_GUARD` em `app.module.ts`):**
 1. `JwtAuthGuard` — valida o JWT (cookie `access_token` ou header `Bearer`); rotas marcadas com `@Public()` pulam essa checagem.
@@ -82,15 +82,17 @@ Módulos por recurso, cada um com `*.controller.ts` + `*.service.ts` + `dto/`: `
 
 Esse desenho faz o `ProjectMemberGuard` cuidar só de "faz parte do projeto (ou o projeto é público)?" — a distinção de permissão de escrita por papel (Admin/Membro podem escrever, Visualizador não) fica inteiramente a cargo do `@Roles()` em cada endpoint de mutação.
 
-**Modelo de dados (`prisma/schema.prisma`):** `User` (papel global) → `Project` (dono, `key` único opcional tipo "ZABBIXIA", `icon`, `coverColor`, `isPublic`, `archivedAt`) → `ProjectMember` (join table, é a fonte da verdade de acesso) → `Status` (colunas do kanban, categorizadas em `BACKLOG/UNSTARTED/STARTED/COMPLETED/CANCELLED`, 5 seedadas por projeto em `default-statuses.ts`) → `WorkItem` (auto-referencia `parentId` para sub-itens; `ItemAssignee`/`ItemLabel` são join tables N:N) → `Document` (conteúdo markdown puro).
+**Modelo de dados (`prisma/schema.prisma`):** `User` (papel global; `emailVerifiedAt`/`verificationTokenHash`/`verificationTokenExpiresAt`/`verificationEmailSentAt` controlam a confirmação de e-mail do autocadastro) → `Project` (dono, `key` único opcional tipo "ZABBIXIA", `icon`, `coverColor`, `isPublic`, `archivedAt`) → `ProjectMember` (join table, é a fonte da verdade de acesso) → `Status` (colunas do kanban, categorizadas em `BACKLOG/UNSTARTED/STARTED/COMPLETED/CANCELLED`, 5 seedadas por projeto em `default-statuses.ts`) → `WorkItem` (auto-referencia `parentId` para sub-itens — que aparecem como cards próprios no board, com indicador "↳ parent title"; um item só pode ir para `COMPLETED`/`CANCELLED` se todos os seus sub-itens já estiverem `COMPLETED`/`CANCELLED`; `ItemAssignee`/`ItemLabel` são join tables N:N) → `ItemActivity` (feed de eventos do item — criação, mudança de título/descrição/prioridade/status, label/assignee adicionado-removido, comentário — logado automaticamente por `WorkItemsService.logActivity`, exposto em `GET /items/:id/activities`) → `Document` (conteúdo markdown puro). `AllowedDomain` (domínios de e-mail liberados para autocadastro) e `SmtpSettings` (linha singleton `id: 'singleton'`, senha sempre em `authPassEncrypted`) não pertencem a essa cadeia — são configuração global, geridas pelo `SettingsModule`.
 
 `Project.key`: se o usuário não informar, é sugerido a partir do nome (`project-key.util.ts`) e desambiguado com sufixo numérico em caso de colisão; é imutável após a criação (não existe no `UpdateProjectDto`).
 
-Auth usa JWT de acesso (curto) + refresh token persistido (hash SHA-256) em `refresh_tokens`, permitindo revogação/logout. Tokens vão em cookies httpOnly (`access_token`/`refresh_token`), setados em `auth.controller.ts`.
+Auth usa JWT de acesso (curto) + refresh token persistido (hash SHA-256, via `common/utils/token-hash.util.ts`) em `refresh_tokens`, permitindo revogação/logout. Tokens vão em cookies httpOnly (`access_token`/`refresh_token`), setados em `auth.controller.ts`.
+
+**Autocadastro restrito por domínio + confirmação por e-mail:** `POST /auth/register` só cria a conta se o domínio do e-mail estiver em `AllowedDomain` (tabela vazia = autocadastro bloqueado para todos) e o `SmtpSettings` singleton existir; a conta nasce com `emailVerifiedAt = null` e **não** inicia sessão. Um token de confirmação (bruto, hash SHA-256 salvo, validade 48h) é gerado e enviado por `MailModule` → `MailerService` (monta um `nodemailer` transport novo a cada envio, a partir do `SmtpSettings` do banco — nunca de env vars — decriptando a senha com `crypto.util.ts`). Se o envio falhar, a conta recém-criada é apagada (rollback) para não deixar um usuário eternamente não-confirmável; o erro real vai para o log do backend via `Logger`, nunca é exposto na resposta. `GET /auth/verify-email?token=` confirma (`@Public()`); `POST /auth/resend-verification` reenvia com cooldown de 60s e resposta genérica (mesma mensagem exista ou não a conta, esteja ou não confirmada — evita enumeração). `JwtStrategy.validate()` e `AuthService.login()` bloqueiam usuários com `emailVerifiedAt` nulo. Usuários criados por um Admin via `POST /users` pulam esse fluxo inteiro (`emailVerifiedAt` já vem preenchido em `UsersService.create`) — a restrição vale só para o autocadastro público. Variáveis novas: `ENCRYPTION_KEY` (base64, 32 bytes — chave AES-256-GCM da senha do SMTP) e `FRONTEND_URL` (usada para montar o link do e-mail de confirmação).
 
 ### Frontend (`frontend/src`) — React + Vite
 
-- **Roteamento**: `App.tsx` define as rotas; tudo autenticado fica sob `<ProtectedRoute>` → `<AppShell>` (Topbar + Sidebar fixos, `<Outlet/>` para o conteúdo). Rotas de projeto são aninhadas sob `ProjectDetailLayout` (`/projects/:projectId/{board,list,documents,settings}`).
+- **Roteamento**: `App.tsx` define as rotas; tudo autenticado fica sob `<ProtectedRoute>` → `<AppShell>` (Topbar + Sidebar fixos, `<Outlet/>` para o conteúdo). Rotas de projeto são aninhadas sob `ProjectDetailLayout` (`/projects/:projectId/{board,list,documents,settings}`). Rotas públicas (fora do `<ProtectedRoute>`): `/login`, `/register`, `/verify-email` (`VerifyEmailPage`, lê `?token=` e chama `GET /auth/verify-email`). `/settings/allowed-domains` (`AllowedDomainsSettingsPage`) e `/settings/smtp` (`SmtpSettingsPage`) ficam dentro de `/settings`, visíveis só a Admin (`RoleGate` no `SettingsSidebar` + redirect client-side; a garantia real é o `@Roles(ADMIN)` do backend).
 - **Dados/estado servidor**: TanStack Query em todo lugar; `api/queryKeys.ts` centraliza as chaves. Módulos em `api/*.ts` são funções `axios` puras por recurso; `api/client.ts` tem o interceptor que renova o access token via `/auth/refresh` em qualquer `401` (exceto chamadas para `/auth/*`) e replay da requisição original.
 - **Sessão**: `auth/AuthContext.tsx` guarda o usuário atual (busca `/auth/me` no mount); `auth/RoleGate.tsx` (`<RoleGate allow={['ADMIN']}>`) e `lib/permissions.ts` (funções puras `canCreateProject`, `canEditItem`, etc.) fazem a checagem de UI — **é só conveniência visual**, a garantia real de acesso é sempre o backend.
 - **Kanban**: `components/kanban/KanbanBoard.tsx` usa `@dnd-kit/core`; `onDragEnd` chama `PATCH /items/:id/status`. Colunas vêm de `GET /projects/:id/statuses`.

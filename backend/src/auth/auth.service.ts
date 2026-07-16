@@ -1,4 +1,12 @@
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  Logger,
+  ServiceUnavailableException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
@@ -6,9 +14,13 @@ import { GlobalRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { MailerService } from '../mail/mailer.service';
+import { hashToken } from '../common/utils/token-hash.util';
 
 const ACCESS_TOKEN_TTL = '15m';
 const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+const VERIFICATION_TOKEN_TTL_MS = 48 * 60 * 60 * 1000; // 48 horas
+const RESEND_COOLDOWN_MS = 60 * 1000; // 60 segundos
 
 export interface AuthTokens {
   accessToken: string;
@@ -16,30 +28,52 @@ export interface AuthTokens {
 }
 
 /**
- * Concentra toda a lógica de autenticação: cadastro, login, emissão e rotação
- * de tokens JWT, logout e leitura do usuário autenticado. Access tokens são
- * de curta duração e stateless; refresh tokens são persistidos (em forma de
- * hash) em `refresh_tokens` para permitir revogação individual (logout) e
- * rotação a cada uso, reduzindo o impacto de um refresh token vazado.
+ * Concentra toda a lógica de autenticação: cadastro (restrito por domínio de e-mail permitido
+ * e sujeito a confirmação por e-mail), login, emissão e rotação de tokens JWT, logout e
+ * leitura do usuário autenticado. Access tokens são de curta duração e stateless; refresh
+ * tokens são persistidos (em forma de hash) em `refresh_tokens` para permitir revogação
+ * individual (logout) e rotação a cada uso, reduzindo o impacto de um refresh token vazado.
  */
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly mailerService: MailerService,
   ) {}
 
   /**
-   * Cria um novo usuário com papel global `MEMBER` e já emite o par de
-   * tokens de acesso/refresh, autenticando-o imediatamente após o cadastro.
+   * Cria um novo usuário com papel global `MEMBER`, mas **não** o autentica imediatamente:
+   * o e-mail precisa pertencer a um domínio previamente liberado em `/settings/allowed-domains`
+   * e o servidor de SMTP precisa estar configurado; a conta só fica utilizável (login liberado)
+   * depois que o usuário confirma o link enviado por e-mail (`verifyEmail`).
    * @param dto - e-mail, senha em texto plano e nome completo do novo usuário
-   * @returns par `{ accessToken, refreshToken }` da sessão recém-criada
+   * @returns mensagem pedindo para o usuário verificar o e-mail
    * @throws ConflictException - quando já existe um usuário com o mesmo e-mail
+   * @throws ForbiddenException - quando o domínio do e-mail não está na lista de permitidos
+   * @throws ServiceUnavailableException - quando o SMTP não está configurado, ou o envio do e-mail falha
    */
   async register(dto: RegisterDto) {
     const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
     if (existing) {
       throw new ConflictException('Este e-mail já está cadastrado');
+    }
+
+    const domain = dto.email.split('@')[1]?.toLowerCase();
+    const allowed = domain ? await this.prisma.allowedDomain.findUnique({ where: { domain } }) : null;
+    if (!allowed) {
+      throw new ForbiddenException(
+        'Cadastro não permitido para este domínio de e-mail. Contate um administrador.',
+      );
+    }
+
+    const smtpConfigured = await this.prisma.smtpSettings.findUnique({ where: { id: 'singleton' } });
+    if (!smtpConfigured) {
+      throw new ServiceUnavailableException(
+        'Cadastro temporariamente indisponível: servidor de e-mail não configurado. Contate um administrador.',
+      );
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
@@ -52,17 +86,29 @@ export class AuthService {
       },
     });
 
-    return this.issueTokens(user.id, user.email);
+    try {
+      await this.generateAndSendVerification(user.id, user.email, user.fullName);
+    } catch (err) {
+      // Sem confirmação enviada, a conta nunca poderia ser ativada — melhor não deixá-la
+      // criada do que travar um usuário para sempre em estado não-confirmável.
+      this.logger.error('Falha ao enviar e-mail de confirmação no cadastro', err instanceof Error ? err.stack : err);
+      await this.prisma.user.delete({ where: { id: user.id } });
+      throw new ServiceUnavailableException(
+        'Não foi possível enviar o e-mail de confirmação. Tente novamente mais tarde ou contate um administrador.',
+      );
+    }
+
+    return { message: 'Cadastro realizado. Verifique seu e-mail para ativar sua conta.' };
   }
 
   /**
-   * Autentica um usuário existente por e-mail/senha e emite um novo par de
-   * tokens. Usa uma mensagem de erro genérica para credenciais inválidas e
-   * usuário inativo/inexistente, evitando vazar qual das duas condições falhou
-   * (proteção contra enumeração de e-mails cadastrados).
+   * Autentica um usuário existente por e-mail/senha e emite um novo par de tokens. Além do
+   * usuário inativo/inexistente (mensagem genérica, para não vazar qual condição falhou), um
+   * e-mail ainda não confirmado também bloqueia o login — mas com uma mensagem específica,
+   * checada só depois da senha validar, para não revelar o estado de contas de terceiros.
    * @param dto - e-mail e senha em texto plano informados no login
    * @returns par `{ accessToken, refreshToken }` da nova sessão
-   * @throws UnauthorizedException - credenciais inválidas, usuário inexistente ou inativo
+   * @throws UnauthorizedException - credenciais inválidas, usuário inexistente/inativo, ou e-mail não confirmado
    */
   async login(dto: LoginDto) {
     const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
@@ -75,7 +121,70 @@ export class AuthService {
       throw new UnauthorizedException('Credenciais inválidas');
     }
 
+    if (!user.emailVerifiedAt) {
+      throw new UnauthorizedException('Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada.');
+    }
+
     return this.issueTokens(user.id, user.email);
+  }
+
+  /**
+   * Confirma o e-mail de um usuário a partir do token recebido por link, liberando o login.
+   * Não autentica automaticamente — o usuário ainda precisa fazer login normalmente depois.
+   * @param rawToken - token bruto (não hash) recebido na query string do link de confirmação
+   * @returns mensagem de confirmação
+   * @throws BadRequestException - token ausente, inválido ou expirado
+   */
+  async verifyEmail(rawToken: string | undefined) {
+    if (!rawToken) {
+      throw new BadRequestException('Token ausente');
+    }
+
+    const tokenHash = hashToken(rawToken);
+    const user = await this.prisma.user.findFirst({ where: { verificationTokenHash: tokenHash } });
+    if (!user) {
+      throw new BadRequestException('Token inválido');
+    }
+    if (!user.verificationTokenExpiresAt || user.verificationTokenExpiresAt < new Date()) {
+      throw new BadRequestException('Token expirado. Solicite um novo e-mail de confirmação.');
+    }
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { emailVerifiedAt: new Date(), verificationTokenHash: null, verificationTokenExpiresAt: null },
+    });
+
+    return { message: 'E-mail confirmado com sucesso' };
+  }
+
+  /**
+   * Reenvia o e-mail de confirmação de cadastro, gerando um novo token (invalidando o anterior).
+   * Responde sempre com a mesma mensagem genérica, exista ou não o e-mail, já esteja ou não
+   * verificado, para não permitir enumeração de contas cadastradas.
+   * @param email - e-mail informado pelo usuário para reenvio
+   * @returns mensagem genérica de confirmação
+   */
+  async resendVerification(email: string) {
+    const generic = {
+      message: 'Se o e-mail existir e estiver pendente de confirmação, um novo link foi enviado.',
+    };
+
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user || user.emailVerifiedAt) {
+      return generic;
+    }
+    if (user.verificationEmailSentAt && Date.now() - user.verificationEmailSentAt.getTime() < RESEND_COOLDOWN_MS) {
+      return generic;
+    }
+
+    try {
+      await this.generateAndSendVerification(user.id, user.email, user.fullName);
+    } catch (err) {
+      // Falha de envio no reenvio não deve expor detalhes ao chamador (mesma resposta genérica).
+      this.logger.error('Falha ao enviar e-mail de confirmação no reenvio', err instanceof Error ? err.stack : err);
+    }
+
+    return generic;
   }
 
   /**
@@ -103,9 +212,9 @@ export class AuthService {
       throw new UnauthorizedException('Refresh token inválido');
     }
 
-    const tokenHash = this.hashToken(rawRefreshToken);
+    const tokenHashValue = hashToken(rawRefreshToken);
     const stored = await this.prisma.refreshToken.findFirst({
-      where: { userId: payload.sub, tokenHash, revokedAt: null },
+      where: { userId: payload.sub, tokenHash: tokenHashValue, revokedAt: null },
     });
 
     if (!stored || stored.expiresAt < new Date()) {
@@ -136,9 +245,9 @@ export class AuthService {
     if (!rawRefreshToken) {
       return;
     }
-    const tokenHash = this.hashToken(rawRefreshToken);
+    const tokenHashValue = hashToken(rawRefreshToken);
     await this.prisma.refreshToken.updateMany({
-      where: { tokenHash, revokedAt: null },
+      where: { tokenHash: tokenHashValue, revokedAt: null },
       data: { revokedAt: new Date() },
     });
   }
@@ -164,9 +273,30 @@ export class AuthService {
   }
 
   /**
+   * Gera um novo token de confirmação de e-mail (bruto, de uso único), grava seu hash + validade
+   * de 48h no usuário e envia o e-mail de confirmação via `MailerService`. Usada tanto pelo
+   * cadastro inicial quanto pelo reenvio.
+   * @param userId - id do usuário
+   * @param email - e-mail de destino
+   * @param fullName - nome do usuário, usado na saudação do e-mail
+   */
+  private async generateAndSendVerification(userId: string, email: string, fullName: string) {
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        verificationTokenHash: hashToken(rawToken),
+        verificationTokenExpiresAt: new Date(Date.now() + VERIFICATION_TOKEN_TTL_MS),
+        verificationEmailSentAt: new Date(),
+      },
+    });
+    await this.mailerService.sendVerificationEmail(email, fullName, rawToken);
+  }
+
+  /**
    * Gera o par de tokens de uma sessão (access + refresh) e persiste o
    * refresh token (como hash, nunca em texto plano) para permitir revogação
-   * e rotação futuras. Usado por `register`, `login` e `refresh`.
+   * e rotação futuras. Usado por `login` e `refresh`.
    * @param userId - id do usuário para quem os tokens serão emitidos
    * @param email - e-mail do usuário, embutido apenas no access token
    * @returns par `{ accessToken, refreshToken }` assinados
@@ -188,23 +318,11 @@ export class AuthService {
     await this.prisma.refreshToken.create({
       data: {
         userId,
-        tokenHash: this.hashToken(refreshToken),
+        tokenHash: hashToken(refreshToken),
         expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_MS),
       },
     });
 
     return { accessToken, refreshToken };
-  }
-
-  /**
-   * Aplica SHA-256 sobre o refresh token antes de gravá-lo no banco. Como o
-   * refresh token em si já concede uma nova sessão a quem o possuir, ele nunca
-   * é armazenado em texto plano — assim, um vazamento do banco de dados não
-   * permite reconstruir os tokens originais nem impersonar usuários.
-   * @param token - refresh token bruto (JWT) em texto plano
-   * @returns hash SHA-256 hexadecimal do token
-   */
-  private hashToken(token: string): string {
-    return crypto.createHash('sha256').update(token).digest('hex');
   }
 }

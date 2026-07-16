@@ -52,6 +52,10 @@ export class UsersService {
         fullName: dto.fullName,
         avatarUrl: dto.avatarUrl || null,
         globalRole: dto.globalRole || GlobalRole.MEMBER,
+        // Criado diretamente por um admin: já é confiável, não passa pelo fluxo de
+        // confirmação por e-mail nem pela lista de domínios permitidos (só o
+        // autocadastro público em /auth/register é restrito por essas regras).
+        emailVerifiedAt: new Date(),
       },
       select: SAFE_SELECT,
     });

@@ -60,6 +60,10 @@ Falhas de envio de e-mail (SMTP incorreto, credenciais inválidas etc.) ficam re
 14. Abra o link do e-mail (`/verify-email?token=...`) → confirme a tela de sucesso; faça `/login` e confirme que agora funciona.
 15. Tente `/login` com uma conta ainda não confirmada → confirme a mensagem "confirme seu e-mail" e teste o botão de reenvio.
 16. Abra o quadro do mesmo projeto em duas janelas/navegadores com usuários diferentes; mova um card ou adicione um comentário em uma janela e confirme que a outra atualiza sozinha, sem precisar recarregar (tempo real via WebSocket).
+17. Mova um item para uma coluna "Em andamento" com o usuário A; logue como usuário B (membro do mesmo projeto) e confirme que não consegue arrastar/mudar o status desse item (mensagem de erro clara); como Admin, confirme que consegue mudar mesmo assim. Volte com o usuário A e confirme que a trava some ao mover para outra coluna.
+18. Em **Configurações → Perfil**, clique "Baixar meus dados" e confirme que baixa um JSON com perfil, tarefas e atividade.
+19. Como Admin, em **Configurações → Usuários**, anonimize um usuário de teste e confirme que nome/e-mail somem da lista e o login antigo dele para de funcionar.
+20. Acesse `/privacidade` deslogado e confirme que carrega; preencha **Configurações → Privacidade (LGPD)** como Admin e confirme que a página pública reflete o que foi salvo.
 
 ## Deploy em produção (domínio próprio + Nginx Proxy Manager)
 

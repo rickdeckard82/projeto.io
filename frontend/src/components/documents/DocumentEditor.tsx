@@ -17,6 +17,7 @@ export function DocumentEditor({
   const [title, setTitle] = useState(document.title);
   const [content, setContent] = useState(document.content);
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     setTitle(document.title);
@@ -25,8 +26,13 @@ export function DocumentEditor({
 
   const save = async () => {
     setSaving(true);
+    setSaved(false);
     try {
       await onSave({ title, content });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch {
+      // erro já é exibido pela página (Toast) — aqui só evita marcar como salvo
     } finally {
       setSaving(false);
     }
@@ -43,7 +49,8 @@ export function DocumentEditor({
           className="flex-1 bg-transparent text-lg font-semibold text-slate-100 outline-none disabled:opacity-70"
         />
         {editable && (
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
+            {saved && <span className="text-xs text-green-400">Salvo</span>}
             <Button variant="secondary" disabled={saving} onClick={save}>
               {saving ? 'Salvando...' : 'Salvar'}
             </Button>

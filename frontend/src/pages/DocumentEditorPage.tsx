@@ -42,6 +42,7 @@ export function DocumentEditorPage() {
             .then(() => {})
             .catch((err) => {
               setError(extractErrorMessage(err, 'Não foi possível salvar o documento.'));
+              throw err;
             })
         }
         onDelete={() =>

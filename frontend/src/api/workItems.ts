@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import { Priority, RecentWorkItem, WorkItem } from '../types';
+import { ItemActivity, Priority, RecentWorkItem, WorkItem } from '../types';
 
 export interface ItemFilters {
   statusId?: string;
@@ -57,7 +57,17 @@ export async function deleteItem(id: string): Promise<void> {
   await apiClient.delete(`/items/${id}`);
 }
 
-export async function getRecentItems(limit = 10): Promise<RecentWorkItem[]> {
-  const res = await apiClient.get('/me/recent-items', { params: { limit } });
+export async function getItemActivities(id: string): Promise<ItemActivity[]> {
+  const res = await apiClient.get(`/items/${id}/activities`);
+  return res.data;
+}
+
+export async function addItemComment(id: string, message: string): Promise<ItemActivity> {
+  const res = await apiClient.post(`/items/${id}/comments`, { message });
+  return res.data;
+}
+
+export async function getRecentItems(limit = 10, sortBy: 'dueDate' | 'priority' = 'dueDate'): Promise<RecentWorkItem[]> {
+  const res = await apiClient.get('/me/recent-items', { params: { limit, sortBy } });
   return res.data;
 }

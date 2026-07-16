@@ -34,7 +34,7 @@ export function LeadPicker({
         <DropdownMenu.Content
           align="start"
           sideOffset={6}
-          className="max-h-64 w-56 overflow-y-auto rounded-md border border-slate-800 bg-slate-900 p-1 shadow-xl"
+          className="thin-scrollbar max-h-64 w-56 overflow-y-auto rounded-md border border-slate-800 bg-slate-900 p-1 shadow-xl"
         >
           {users?.map((u) => (
             <DropdownMenu.Item

@@ -24,3 +24,34 @@ body {
 .markdown-preview code {
   @apply rounded bg-slate-800 px-1 py-0.5 text-xs;
 }
+
+.thin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.thin-scrollbar::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 9999px;
+}
+
+.thin-scrollbar:hover {
+  scrollbar-color: rgb(51 65 85) transparent;
+}
+
+.thin-scrollbar:hover::-webkit-scrollbar-thumb {
+  background-color: rgb(51 65 85);
+}
+
+.thin-scrollbar:hover::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(71 85 105);
+}

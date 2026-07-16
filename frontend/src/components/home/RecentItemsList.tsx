@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { getRecentItems } from '../../api/workItems';
@@ -5,22 +6,41 @@ import { queryKeys } from '../../api/queryKeys';
 import { Spinner } from '../common/Spinner';
 import { EmptyState } from '../common/EmptyState';
 import { Avatar } from '../common/Avatar';
+import { Badge } from '../common/Badge';
 import { relativeTime } from '../../lib/relativeTime';
+import { priorityColor, priorityLabel } from '../items/PrioritySelect';
+
+type SortBy = 'dueDate' | 'priority';
 
 export function RecentItemsList() {
+  const [sortBy, setSortBy] = useState<SortBy>('dueDate');
+
   const { data: items, isLoading } = useQuery({
-    queryKey: queryKeys.recentItems,
-    queryFn: () => getRecentItems(10),
+    queryKey: queryKeys.recentItems(sortBy),
+    queryFn: () => getRecentItems(10, sortBy),
   });
 
   return (
     <div>
-      <h2 className="mb-3 text-sm font-semibold text-slate-200">Recentes</h2>
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-sm font-semibold text-slate-200">Recentes</h2>
+        <label className="flex items-center gap-1.5 text-xs text-slate-500">
+          Ordenar por
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as SortBy)}
+            className="rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-200"
+          >
+            <option value="dueDate">Vencimento</option>
+            <option value="priority">Prioridade</option>
+          </select>
+        </label>
+      </div>
 
       {isLoading && <Spinner />}
 
       {!isLoading && (!items || items.length === 0) && (
-        <EmptyState title="Nenhuma atividade recente" description="Itens criados ou atualizados aparecerão aqui." />
+        <EmptyState title="Nenhuma tarefa pendente" description="Tarefas atribuídas a você aparecerão aqui." />
       )}
 
       {!isLoading && items && items.length > 0 && (
@@ -33,8 +53,18 @@ export function RecentItemsList() {
               >
                 <div className="min-w-0">
                   <p className="truncate text-sm text-slate-100">{item.title}</p>
-                  <p className="text-xs text-slate-500">
-                    {item.project.name} · {item.status?.name} · {relativeTime(item.updatedAt)}
+                  <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
+                    <span>{item.project.name} · {item.status?.name}</span>
+                    {item.priority !== 'NONE' && (
+                      <span
+                        className="rounded-full px-1.5 py-0.5 text-[10px] font-medium text-slate-950"
+                        style={{ backgroundColor: priorityColor(item.priority) }}
+                      >
+                        {priorityLabel(item.priority)}
+                      </span>
+                    )}
+                    {item.dueDate && <Badge>Vence {new Date(item.dueDate).toLocaleDateString('pt-BR')}</Badge>}
+                    <span>{relativeTime(item.updatedAt)}</span>
                   </p>
                 </div>
                 {item.assignees.length > 0 && (

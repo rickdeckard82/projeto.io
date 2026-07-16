@@ -22,7 +22,7 @@ export function ProjectDetailLayout() {
   if (isLoading) return <Spinner />;
 
   return (
-    <div>
+    <div className="flex h-full flex-col">
       <div className="mb-1 flex items-center gap-2">
         {project?.icon && <span className="text-lg">{project.icon}</span>}
         <h1 className="text-lg font-semibold text-slate-100">{project?.name}</h1>
@@ -62,7 +62,9 @@ export function ProjectDetailLayout() {
         </RoleGate>
       </div>
 
-      <Outlet />
+      <div className="thin-scrollbar min-h-0 flex-1 overflow-y-auto">
+        <Outlet />
+      </div>
     </div>
   );
 }

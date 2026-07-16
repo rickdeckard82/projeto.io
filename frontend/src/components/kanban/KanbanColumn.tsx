@@ -1,20 +1,36 @@
 import { FormEvent, useState } from 'react';
 import { useDroppable } from '@dnd-kit/core';
-import { Status, WorkItem } from '../../types';
+import { Label, Priority, Status, User, WorkItem } from '../../types';
 import { KanbanCard } from './KanbanCard';
 
 export function KanbanColumn({
   status,
   items,
   canCreate,
+  canEdit,
+  labels,
+  users,
+  getParentTitle,
   onOpen,
   onCreate,
+  onChangePriority,
+  onChangeAssignees,
+  onChangeLabels,
+  onCreateLabel,
 }: {
   status: Status;
   items: WorkItem[];
   canCreate: boolean;
+  canEdit: boolean;
+  labels: Label[];
+  users: User[];
+  getParentTitle: (parentId: string) => string | undefined;
   onOpen: (id: string) => void;
   onCreate: (title: string) => Promise<void>;
+  onChangePriority: (id: string, priority: Priority) => void;
+  onChangeAssignees: (id: string, userIds: string[]) => void;
+  onChangeLabels: (id: string, labelIds: string[]) => void;
+  onCreateLabel: (name: string, color: string) => Promise<Label>;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: status.id });
   const [title, setTitle] = useState('');
@@ -31,7 +47,7 @@ export function KanbanColumn({
   return (
     <div
       ref={setNodeRef}
-      className={`flex w-72 shrink-0 flex-col rounded-lg border p-2 ${
+      className={`flex h-full w-72 shrink-0 flex-col rounded-lg border p-2 ${
         isOver ? 'border-indigo-500 bg-indigo-950/20' : 'border-slate-800 bg-slate-950/40'
       }`}
     >
@@ -40,9 +56,21 @@ export function KanbanColumn({
         <span className="text-xs text-slate-600">{items.length}</span>
       </div>
 
-      <div className="min-h-[4rem] flex-1">
+      <div className="thin-scrollbar min-h-[4rem] flex-1 overflow-y-auto px-0.5">
         {items.map((item) => (
-          <KanbanCard key={item.id} item={item} onOpen={() => onOpen(item.id)} />
+          <KanbanCard
+            key={item.id}
+            item={item}
+            canEdit={canEdit}
+            labels={labels}
+            users={users}
+            parentTitle={item.parentId ? getParentTitle(item.parentId) : undefined}
+            onOpen={() => onOpen(item.id)}
+            onChangePriority={(priority) => onChangePriority(item.id, priority)}
+            onChangeAssignees={(userIds) => onChangeAssignees(item.id, userIds)}
+            onChangeLabels={(labelIds) => onChangeLabels(item.id, labelIds)}
+            onCreateLabel={onCreateLabel}
+          />
         ))}
       </div>
 

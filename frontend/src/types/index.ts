@@ -62,6 +62,7 @@ export interface WorkItem {
   startDate: string | null;
   dueDate: string | null;
   createdById: string;
+  createdBy: User;
   createdAt: string;
   updatedAt: string;
   assignees: { user: User }[];
@@ -69,8 +70,47 @@ export interface WorkItem {
   subItems: WorkItem[];
 }
 
+export type ActivityType =
+  | 'CREATED'
+  | 'TITLE_CHANGED'
+  | 'DESCRIPTION_CHANGED'
+  | 'STATUS_CHANGED'
+  | 'PRIORITY_CHANGED'
+  | 'LABEL_ADDED'
+  | 'LABEL_REMOVED'
+  | 'ASSIGNEE_ADDED'
+  | 'ASSIGNEE_REMOVED'
+  | 'COMMENT';
+
+export interface ItemActivity {
+  id: string;
+  workItemId: string;
+  userId: string;
+  type: ActivityType;
+  message: string | null;
+  metadata: Record<string, string | null | undefined> | null;
+  createdAt: string;
+  user: Pick<User, 'id' | 'fullName' | 'avatarUrl'>;
+}
+
 export interface RecentWorkItem extends WorkItem {
   project: { id: string; name: string };
+}
+
+export interface AllowedDomain {
+  id: string;
+  domain: string;
+  createdAt: string;
+}
+
+export interface SmtpSettings {
+  host: string;
+  port: number;
+  useSsl: boolean;
+  fromEmail: string;
+  authUser: string;
+  hasPassword: boolean;
+  updatedAt: string;
 }
 
 export interface ProjectDocument {

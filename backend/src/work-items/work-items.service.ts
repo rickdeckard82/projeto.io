@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { GlobalRole } from '@prisma/client';
+import { ActivityType, Prisma, StatusCategory } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateItemDto } from './dto/create-item.dto';
 import { UpdateItemDto } from './dto/update-item.dto';
@@ -8,15 +8,19 @@ import { AuthenticatedUser } from '../common/decorators/current-user.decorator';
 
 /**
  * Include padrão usado ao carregar um work item: traz os responsáveis (com dados básicos do
- * usuário), as etiquetas, o status atual e os sub-itens diretos, para que a UI monte o cartão/
- * detalhe do item em uma única consulta, sem N+1.
+ * usuário), as etiquetas, o status atual, o autor e os sub-itens diretos, para que a UI monte o
+ * cartão/detalhe do item em uma única consulta, sem N+1.
  */
 const ITEM_INCLUDE = {
   assignees: { include: { user: { select: { id: true, email: true, fullName: true, avatarUrl: true } } } },
   labels: { include: { label: true } },
   status: true,
+  createdBy: { select: { id: true, email: true, fullName: true, avatarUrl: true } },
   subItems: true,
 };
+
+/** Seleção de usuário reaproveitada nas entradas do histórico de atividade de um item. */
+const ACTIVITY_USER_SELECT = { select: { id: true, fullName: true, avatarUrl: true } };
 
 /**
  * Igual a {@link ITEM_INCLUDE}, mas também traz `id`/`name` do projeto do item — necessário na
@@ -93,7 +97,7 @@ export class WorkItemsService {
       await this.assertItemBelongsToProject(dto.parentId, projectId);
     }
 
-    return this.prisma.workItem.create({
+    const created = await this.prisma.workItem.create({
       data: {
         projectId,
         title: dto.title,
@@ -107,26 +111,37 @@ export class WorkItemsService {
       },
       include: ITEM_INCLUDE,
     });
+
+    await this.logActivity(created.id, creator.id, ActivityType.CREATED);
+
+    return created;
   }
 
   /**
-   * Lista os itens de trabalho mais recentemente atualizados que o usuário pode ver, para
-   * alimentar a lista "itens recentes" da home. Administradores enxergam itens de todos os
-   * projetos; demais usuários só veem itens de projetos dos quais são membros (`project.members`).
-   * Note que isso não replica a regra de "projeto público" do `ProjectMemberGuard" — aqui a
-   * visibilidade é sempre por membership explícita, mesmo para projetos públicos.
+   * Lista as tarefas pendentes atribuídas ao usuário autenticado, para alimentar a seção
+   * "Recentes" da home. "Pendente" significa que o status atual do item não é de categoria
+   * Concluído nem Cancelado, e que o projeto ao qual pertence não está arquivado (projeto
+   * arquivado sai do fluxo ativo de trabalho, então suas tarefas não devem aparecer como
+   * pendências). Ordena por vencimento (mais próximos primeiro, sem vencimento por último) ou
+   * por prioridade (mais urgente primeiro), sempre com a outra dimensão como critério de
+   * desempate.
    * @param user - usuário autenticado que está consultando
    * @param limit - quantidade máxima de itens a retornar
-   * @returns itens visíveis ao usuário, ordenados por `updatedAt` decrescente (mais recentes primeiro)
+   * @param sortBy - critério de ordenação principal: `'dueDate'` (padrão) ou `'priority'`
+   * @returns tarefas pendentes atribuídas ao usuário em projetos ativos, ordenadas conforme `sortBy`
    */
-  async listRecentForUser(user: AuthenticatedUser, limit: number) {
-    const where =
-      user.globalRole === GlobalRole.ADMIN ? {} : { project: { members: { some: { userId: user.id } } } };
+  async listPendingForUser(user: AuthenticatedUser, limit: number, sortBy: 'dueDate' | 'priority' = 'dueDate') {
+    const orderBy: Prisma.WorkItemOrderByWithRelationInput[] =
+      sortBy === 'priority' ? [{ priority: 'desc' }, { dueDate: 'asc' }] : [{ dueDate: 'asc' }, { priority: 'desc' }];
 
     return this.prisma.workItem.findMany({
-      where,
+      where: {
+        assignees: { some: { userId: user.id } },
+        status: { category: { notIn: [StatusCategory.COMPLETED, StatusCategory.CANCELLED] } },
+        project: { archivedAt: null },
+      },
       include: RECENT_ITEM_INCLUDE,
-      orderBy: { updatedAt: 'desc' },
+      orderBy,
       take: limit,
     });
   }
@@ -148,14 +163,17 @@ export class WorkItemsService {
   /**
    * Atualiza os campos editáveis de um item (título, descrição, prioridade, datas e pai). Impede
    * que um item se torne pai de si mesmo e, ao trocar de pai, garante que o novo pai pertence ao
-   * mesmo projeto do item — a hierarquia de sub-itens nunca cruza projetos.
+   * mesmo projeto do item — a hierarquia de sub-itens nunca cruza projetos. Registra no histórico
+   * de atividade cada campo que de fato mudou (título e prioridade guardam o valor anterior/novo;
+   * descrição só registra que foi editada, sem guardar o texto, para não poluir o histórico).
    * @param id - id do item a atualizar
    * @param dto - campos a atualizar (campos ausentes/`undefined` preservam o valor atual)
+   * @param actor - usuário autenticado que está editando (autor das entradas de atividade geradas)
    * @returns o item atualizado, com relações carregadas via {@link ITEM_INCLUDE}
    * @throws NotFoundException - se o item não existir
    * @throws BadRequestException - se `dto.parentId` for o próprio item, ou se o novo pai não pertencer ao mesmo projeto
    */
-  async update(id: string, dto: UpdateItemDto) {
+  async update(id: string, dto: UpdateItemDto, actor: AuthenticatedUser) {
     const item = await this.findOne(id);
 
     if (dto.parentId) {
@@ -165,7 +183,7 @@ export class WorkItemsService {
       await this.assertItemBelongsToProject(dto.parentId, item.projectId);
     }
 
-    return this.prisma.workItem.update({
+    const updated = await this.prisma.workItem.update({
       where: { id },
       data: {
         title: dto.title,
@@ -177,21 +195,61 @@ export class WorkItemsService {
       },
       include: ITEM_INCLUDE,
     });
+
+    if (dto.title !== undefined && dto.title !== item.title) {
+      await this.logActivity(id, actor.id, ActivityType.TITLE_CHANGED, { from: item.title, to: dto.title });
+    }
+    if (dto.description !== undefined && dto.description !== item.description) {
+      await this.logActivity(id, actor.id, ActivityType.DESCRIPTION_CHANGED);
+    }
+    if (dto.priority !== undefined && dto.priority !== item.priority) {
+      await this.logActivity(id, actor.id, ActivityType.PRIORITY_CHANGED, { from: item.priority, to: dto.priority });
+    }
+
+    return updated;
   }
 
   /**
    * Move o item para outra coluna do kanban (troca de status). É o método acionado pelo
-   * drag-and-drop do board no frontend.
+   * drag-and-drop do board no frontend. Se o novo status for de conclusão/cancelamento e o item
+   * tiver sub-itens, exige que todos os sub-itens já estejam concluídos ou cancelados antes de
+   * permitir a mudança — um item "pai" só fecha depois que todo o trabalho filho fechou.
    * @param id - id do item
    * @param statusId - id do novo status
+   * @param actor - usuário autenticado que está movendo o item (autor da entrada de atividade gerada)
    * @returns o item atualizado
    * @throws NotFoundException - se o item não existir
-   * @throws BadRequestException - se o status informado não pertencer ao mesmo projeto do item
+   * @throws BadRequestException - se o status informado não pertencer ao mesmo projeto do item, ou se houver sub-itens ainda não concluídos/cancelados e o novo status for de conclusão/cancelamento
    */
-  async updateStatus(id: string, statusId: string) {
+  async updateStatus(id: string, statusId: string, actor: AuthenticatedUser) {
     const item = await this.findOne(id);
-    await this.assertStatusBelongsToProject(statusId, item.projectId);
-    return this.prisma.workItem.update({ where: { id }, data: { statusId }, include: ITEM_INCLUDE });
+    const status = await this.assertStatusBelongsToProject(statusId, item.projectId);
+
+    if (status.category === StatusCategory.COMPLETED || status.category === StatusCategory.CANCELLED) {
+      const subItems = await this.prisma.workItem.findMany({
+        where: { parentId: id },
+        include: { status: true },
+      });
+      const unfinished = subItems.filter(
+        (s) => s.status.category !== StatusCategory.COMPLETED && s.status.category !== StatusCategory.CANCELLED,
+      );
+      if (unfinished.length > 0) {
+        throw new BadRequestException(
+          'Não é possível concluir ou cancelar este item enquanto houver sub-itens não finalizados ou cancelados.',
+        );
+      }
+    }
+
+    const updated = await this.prisma.workItem.update({ where: { id }, data: { statusId }, include: ITEM_INCLUDE });
+
+    if (item.statusId !== statusId) {
+      await this.logActivity(id, actor.id, ActivityType.STATUS_CHANGED, {
+        from: item.status.name,
+        to: status.name,
+      });
+    }
+
+    return updated;
   }
 
   /**
@@ -199,11 +257,14 @@ export class WorkItemsService {
    * vínculos atuais e recria os novos dentro de uma transação, para evitar estado parcial).
    * @param id - id do item
    * @param userIds - ids dos usuários que passarão a ser os únicos responsáveis pelo item
+   * @param actor - usuário autenticado que está alterando os responsáveis (autor das entradas de atividade geradas)
    * @returns o item atualizado, com a nova lista de responsáveis
    * @throws NotFoundException - se o item não existir
    */
-  async updateAssignees(id: string, userIds: string[]) {
-    await this.findOne(id);
+  async updateAssignees(id: string, userIds: string[], actor: AuthenticatedUser) {
+    const item = await this.findOne(id);
+    const previousIds = item.assignees.map((a) => a.userId);
+
     await this.prisma.$transaction([
       this.prisma.itemAssignee.deleteMany({ where: { workItemId: id } }),
       this.prisma.itemAssignee.createMany({
@@ -211,6 +272,23 @@ export class WorkItemsService {
         skipDuplicates: true,
       }),
     ]);
+
+    const added = userIds.filter((uid) => !previousIds.includes(uid));
+    const removed = previousIds.filter((uid) => !userIds.includes(uid));
+    if (added.length > 0 || removed.length > 0) {
+      const users = await this.prisma.user.findMany({
+        where: { id: { in: [...added, ...removed] } },
+        select: { id: true, fullName: true },
+      });
+      const nameOf = (uid: string) => users.find((u) => u.id === uid)?.fullName;
+      for (const uid of added) {
+        await this.logActivity(id, actor.id, ActivityType.ASSIGNEE_ADDED, { userName: nameOf(uid) });
+      }
+      for (const uid of removed) {
+        await this.logActivity(id, actor.id, ActivityType.ASSIGNEE_REMOVED, { userName: nameOf(uid) });
+      }
+    }
+
     return this.findOne(id);
   }
 
@@ -220,15 +298,18 @@ export class WorkItemsService {
    * é validada individualmente contra o projeto do item antes da troca.
    * @param id - id do item
    * @param labelIds - ids das etiquetas que passarão a ser as únicas associadas ao item
+   * @param actor - usuário autenticado que está alterando as etiquetas (autor das entradas de atividade geradas)
    * @returns o item atualizado, com a nova lista de etiquetas
    * @throws NotFoundException - se o item não existir
    * @throws BadRequestException - se alguma etiqueta informada não pertencer ao projeto do item
    */
-  async updateLabels(id: string, labelIds: string[]) {
+  async updateLabels(id: string, labelIds: string[], actor: AuthenticatedUser) {
     const item = await this.findOne(id);
     for (const labelId of labelIds) {
       await this.assertLabelBelongsToProject(labelId, item.projectId);
     }
+    const previousIds = item.labels.map((l) => l.labelId);
+
     await this.prisma.$transaction([
       this.prisma.itemLabel.deleteMany({ where: { workItemId: id } }),
       this.prisma.itemLabel.createMany({
@@ -236,6 +317,25 @@ export class WorkItemsService {
         skipDuplicates: true,
       }),
     ]);
+
+    const added = labelIds.filter((lid) => !previousIds.includes(lid));
+    const removed = previousIds.filter((lid) => !labelIds.includes(lid));
+    if (added.length > 0 || removed.length > 0) {
+      const labelRows = await this.prisma.label.findMany({
+        where: { id: { in: [...added, ...removed] } },
+        select: { id: true, name: true, color: true },
+      });
+      const infoOf = (lid: string) => labelRows.find((l) => l.id === lid);
+      for (const lid of added) {
+        const label = infoOf(lid);
+        await this.logActivity(id, actor.id, ActivityType.LABEL_ADDED, { name: label?.name, color: label?.color });
+      }
+      for (const lid of removed) {
+        const label = infoOf(lid);
+        await this.logActivity(id, actor.id, ActivityType.LABEL_REMOVED, { name: label?.name, color: label?.color });
+      }
+    }
+
     return this.findOne(id);
   }
 
@@ -251,12 +351,55 @@ export class WorkItemsService {
     return { message: 'Item removido' };
   }
 
-  /** Garante que o status informado existe e pertence ao projeto esperado, evitando que um item receba um status de outro projeto. */
+  /**
+   * Lista o histórico de atividade de um item (eventos automáticos como mudança de status/
+   * prioridade/etiquetas/responsáveis, mais os comentários), em ordem cronológica crescente, para
+   * montar a timeline "Atividade" no detalhe do item.
+   * @param workItemId - id do item
+   * @returns entradas de atividade com o autor (`user`) de cada uma
+   */
+  async listActivities(workItemId: string) {
+    return this.prisma.itemActivity.findMany({
+      where: { workItemId },
+      include: { user: ACTIVITY_USER_SELECT },
+      orderBy: { createdAt: 'asc' },
+    });
+  }
+
+  /**
+   * Adiciona um comentário ao item, registrado como mais uma entrada na timeline de atividade
+   * (`type: COMMENT`).
+   * @param workItemId - id do item
+   * @param message - texto do comentário
+   * @param actor - usuário autenticado que está comentando
+   * @returns a entrada de atividade criada, com o autor (`user`)
+   * @throws NotFoundException - se o item não existir
+   */
+  async addComment(workItemId: string, message: string, actor: AuthenticatedUser) {
+    await this.findOne(workItemId);
+    return this.prisma.itemActivity.create({
+      data: { workItemId, userId: actor.id, type: ActivityType.COMMENT, message },
+      include: { user: ACTIVITY_USER_SELECT },
+    });
+  }
+
+  /** Registra uma entrada no histórico de atividade de um item. `metadata` guarda os detalhes específicos de cada tipo de evento (ex.: valor anterior/novo) usados pelo frontend para montar a mensagem exibida. */
+  private async logActivity(
+    workItemId: string,
+    userId: string,
+    type: ActivityType,
+    metadata?: Prisma.InputJsonValue,
+  ) {
+    await this.prisma.itemActivity.create({ data: { workItemId, userId, type, metadata } });
+  }
+
+  /** Garante que o status informado existe e pertence ao projeto esperado, evitando que um item receba um status de outro projeto; retorna o status encontrado para reaproveitamento (ex.: checar sua `category`). */
   private async assertStatusBelongsToProject(statusId: string, projectId: string) {
     const status = await this.prisma.status.findUnique({ where: { id: statusId } });
     if (!status || status.projectId !== projectId) {
       throw new BadRequestException('Status inválido para este projeto');
     }
+    return status;
   }
 
   /** Garante que o item (usado como pai) existe e pertence ao projeto esperado, evitando hierarquias de sub-itens entre projetos diferentes. */

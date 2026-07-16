@@ -9,10 +9,13 @@ import { canEditItem } from '../../lib/permissions';
 import { useWorkItems } from '../../hooks/useWorkItems';
 import { Button } from '../common/Button';
 import { Spinner } from '../common/Spinner';
+import { Toast } from '../common/Toast';
+import { Avatar } from '../common/Avatar';
 import { PrioritySelect } from './PrioritySelect';
 import { AssigneePicker } from './AssigneePicker';
 import { LabelPicker } from './LabelPicker';
 import { SubItemList } from './SubItemList';
+import { ActivityFeed } from './ActivityFeed';
 
 export function ItemDetailModal({
   projectId,
@@ -42,6 +45,7 @@ export function ItemDetailModal({
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (item) {
@@ -50,7 +54,10 @@ export function ItemDetailModal({
     }
   }, [item?.id]);
 
-  const invalidateItem = () => queryClient.invalidateQueries({ queryKey: queryKeys.item(itemId) });
+  const invalidateItem = () => {
+    queryClient.invalidateQueries({ queryKey: queryKeys.item(itemId) });
+    queryClient.invalidateQueries({ queryKey: queryKeys.itemActivities(itemId) });
+  };
 
   const statusMutation = useMutation({
     mutationFn: (statusId: string) => updateItemStatus(itemId, statusId),
@@ -58,6 +65,7 @@ export function ItemDetailModal({
       invalidateItem();
       queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'items'] });
     },
+    onError: (err: any) => setError(err?.response?.data?.message || 'Não foi possível mover o item.'),
   });
 
   const createSubItem = async (subTitle: string) => {
@@ -73,10 +81,11 @@ export function ItemDetailModal({
   };
 
   return (
-    <Dialog.Root open onOpenChange={(open) => !open && onClose()}>
-      <Dialog.Portal>
+    <>
+      <Dialog.Root open onOpenChange={(open) => !open && onClose()}>
+        <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/60" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 max-h-[85vh] w-full max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-lg border border-slate-800 bg-slate-900 p-6 shadow-xl">
+        <Dialog.Content className="thin-scrollbar fixed left-1/2 top-1/2 max-h-[85vh] w-full max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-lg border border-slate-800 bg-slate-900 p-6 shadow-xl">
           {isLoading || !item ? (
             <Spinner />
           ) : (
@@ -92,6 +101,12 @@ export function ItemDetailModal({
                 <Dialog.Close asChild>
                   <button className="text-slate-500 hover:text-slate-300">✕</button>
                 </Dialog.Close>
+              </div>
+
+              <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                <span>Criado por</span>
+                <Avatar name={item.createdBy.fullName} src={item.createdBy.avatarUrl} size={16} />
+                <span className="text-slate-300">{item.createdBy.fullName}</span>
               </div>
 
               <div className="flex flex-wrap gap-4 text-xs text-slate-400">
@@ -181,6 +196,11 @@ export function ItemDetailModal({
                 />
               </div>
 
+              <div className="border-t border-slate-800 pt-4">
+                <label className="mb-2 block text-xs text-slate-400">Atividade</label>
+                <ActivityFeed itemId={itemId} canComment={editable} />
+              </div>
+
               {editable && (
                 <div className="flex justify-end border-t border-slate-800 pt-3">
                   <Button
@@ -196,5 +216,7 @@ export function ItemDetailModal({
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
+    {error && <Toast message={error} onClose={() => setError(null)} />}
+    </>
   );
 }

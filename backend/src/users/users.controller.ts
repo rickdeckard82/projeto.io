@@ -16,10 +16,22 @@ import { CurrentUser, AuthenticatedUser } from '../common/decorators/current-use
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  /** Lista todos os usuários cadastrados. */
+  /** Lista todos os usuários cadastrados (dados completos, incluindo e-mail). Restrito a administradores — para os seletores de responsável/membro usados por qualquer usuário, ver `GET /users/directory`. */
+  @Roles(GlobalRole.ADMIN)
   @Get()
   list() {
     return this.usersService.list();
+  }
+
+  /**
+   * Lista mínima de usuários (id, nome, avatar — sem e-mail) para os seletores de pessoa
+   * (responsável de item, líder de projeto, adicionar membro), abertos a qualquer usuário
+   * autenticado. Separado de `GET /users` para não expor e-mail além do necessário
+   * (minimização de dados, LGPD art. 6º, III).
+   */
+  @Get('directory')
+  directory() {
+    return this.usersService.directory();
   }
 
   /** Cria um novo usuário. Restrito a administradores. */

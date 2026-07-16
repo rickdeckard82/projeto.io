@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { listUsers } from '../../api/users';
+import { listUserDirectory } from '../../api/users';
 import { addProjectMember } from '../../api/projects';
 import { queryKeys } from '../../api/queryKeys';
 import { Button } from '../common/Button';
@@ -17,7 +17,7 @@ export function AddMemberDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const { data: users } = useQuery({ queryKey: queryKeys.users, queryFn: listUsers });
+  const { data: users } = useQuery({ queryKey: queryKeys.userDirectory, queryFn: listUserDirectory });
   const [selectedUserId, setSelectedUserId] = useState('');
   const queryClient = useQueryClient();
 
@@ -46,7 +46,7 @@ export function AddMemberDialog({
             <option value="">Selecione um usuário</option>
             {availableUsers.map((u) => (
               <option key={u.id} value={u.id}>
-                {u.fullName} ({u.email})
+                {u.fullName}
               </option>
             ))}
           </select>

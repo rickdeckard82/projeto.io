@@ -34,6 +34,20 @@ export class UsersService {
   }
 
   /**
+   * Lista mínima de usuários (sem e-mail) para os seletores de pessoa usados por qualquer
+   * usuário autenticado (responsável de item, líder de projeto, adicionar membro) —
+   * minimização de dados (LGPD art. 6º, III): esses seletores não precisam do e-mail para
+   * funcionar, só `GET /users` (admin) precisa.
+   * @returns Lista de usuários com apenas id, nome e avatar.
+   */
+  async directory() {
+    return this.prisma.user.findMany({
+      select: { id: true, fullName: true, avatarUrl: true },
+      orderBy: { fullName: 'asc' },
+    });
+  }
+
+  /**
    * Reúne todos os dados pessoais do usuário para atender ao direito de acesso/portabilidade
    * (LGPD art. 18, II e V): perfil, tarefas criadas e atribuídas, documentos criados/editados,
    * atividade registrada em itens e participação em projetos. Todas as consultas são filtradas

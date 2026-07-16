@@ -14,6 +14,13 @@ export interface User {
   createdAt?: string;
 }
 
+/** Versão mínima de `User` (sem e-mail) usada pelos seletores de pessoa — ver `GET /users/directory`. */
+export interface UserDirectoryEntry {
+  id: string;
+  fullName: string;
+  avatarUrl: string | null;
+}
+
 export interface Project {
   id: string;
   name: string;

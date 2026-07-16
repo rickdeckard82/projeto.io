@@ -1,8 +1,15 @@
 import { apiClient } from './client';
-import { GlobalRole, User } from '../types';
+import { GlobalRole, User, UserDirectoryEntry } from '../types';
 
+/** Lista completa de usuários (inclui e-mail). Restrita a Admin — para seletores de pessoa, use `listUserDirectory`. */
 export async function listUsers(): Promise<User[]> {
   const res = await apiClient.get('/users');
+  return res.data;
+}
+
+/** Lista mínima de usuários (id, nome, avatar — sem e-mail) para seletores de pessoa. Aberta a qualquer usuário autenticado. */
+export async function listUserDirectory(): Promise<UserDirectoryEntry[]> {
+  const res = await apiClient.get('/users/directory');
   return res.data;
 }
 

@@ -2,7 +2,7 @@ import { CSSProperties, useState } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { Check, CornerDownRight, Layers, Plus, Tag, UserPlus } from 'lucide-react';
-import { Label, Priority, StatusCategory, User, WorkItem } from '../../types';
+import { Label, Priority, StatusCategory, UserDirectoryEntry, WorkItem } from '../../types';
 import { Avatar } from '../common/Avatar';
 import { Badge } from '../common/Badge';
 import { COVER_COLOR_PALETTE } from '../../lib/projectDefaults';
@@ -241,7 +241,7 @@ function AssigneeMenu({
   disabled,
   onToggle,
 }: {
-  users: User[];
+  users: UserDirectoryEntry[];
   selectedIds: string[];
   disabled: boolean;
   onToggle: (userId: string) => void;
@@ -308,7 +308,7 @@ export function KanbanCard({
   item: WorkItem;
   canEdit: boolean;
   labels: Label[];
-  users: User[];
+  users: UserDirectoryEntry[];
   parentTitle?: string;
   onOpen: () => void;
   onChangePriority: (priority: Priority) => void;

@@ -1,6 +1,6 @@
 import { FormEvent, useState } from 'react';
 import { useDroppable } from '@dnd-kit/core';
-import { Label, Priority, Status, User, WorkItem } from '../../types';
+import { Label, Priority, Status, UserDirectoryEntry, WorkItem } from '../../types';
 import { KanbanCard } from './KanbanCard';
 
 export function KanbanColumn({
@@ -23,7 +23,7 @@ export function KanbanColumn({
   canCreate: boolean;
   canEdit: boolean;
   labels: Label[];
-  users: User[];
+  users: UserDirectoryEntry[];
   getParentTitle: (parentId: string) => string | undefined;
   onOpen: (id: string) => void;
   onCreate: (title: string) => Promise<void>;

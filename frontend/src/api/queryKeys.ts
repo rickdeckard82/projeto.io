@@ -2,6 +2,7 @@ export const queryKeys = {
   me: ['me'] as const,
   recentItems: (sortBy: 'dueDate' | 'priority' = 'dueDate') => ['me', 'recent-items', sortBy] as const,
   users: ['users'] as const,
+  userDirectory: ['users', 'directory'] as const,
   allowedDomains: ['allowed-domains'] as const,
   smtpSettings: ['smtp-settings'] as const,
   privacySettings: ['privacy-settings'] as const,

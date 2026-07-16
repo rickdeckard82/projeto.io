@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { listUsers } from '../../api/users';
+import { listUserDirectory } from '../../api/users';
 import { listLabels } from '../../api/labels';
 import { queryKeys } from '../../api/queryKeys';
 import { useWorkItems } from '../../hooks/useWorkItems';
@@ -16,7 +16,7 @@ export function ItemListTable({ projectId }: { projectId: string }) {
   const [labelId, setLabelId] = useState('');
   const [openItemId, setOpenItemId] = useState<string | null>(null);
 
-  const { data: users } = useQuery({ queryKey: queryKeys.users, queryFn: listUsers });
+  const { data: users } = useQuery({ queryKey: queryKeys.userDirectory, queryFn: listUserDirectory });
   const { data: labels } = useQuery({
     queryKey: queryKeys.projectLabels(projectId),
     queryFn: () => listLabels(projectId),

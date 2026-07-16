@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { listUsers } from '../../api/users';
+import { listUserDirectory } from '../../api/users';
 import { queryKeys } from '../../api/queryKeys';
 
 export function AssigneePicker({
@@ -11,7 +11,7 @@ export function AssigneePicker({
   onChange: (userIds: string[]) => void;
   disabled?: boolean;
 }) {
-  const { data: users } = useQuery({ queryKey: queryKeys.users, queryFn: listUsers });
+  const { data: users } = useQuery({ queryKey: queryKeys.userDirectory, queryFn: listUserDirectory });
 
   const toggle = (userId: string) => {
     if (selectedUserIds.includes(userId)) {

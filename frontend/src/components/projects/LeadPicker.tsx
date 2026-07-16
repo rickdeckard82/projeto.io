@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { UserRound } from 'lucide-react';
-import { listUsers } from '../../api/users';
+import { listUserDirectory } from '../../api/users';
 import { queryKeys } from '../../api/queryKeys';
 import { Avatar } from '../common/Avatar';
 
@@ -12,7 +12,7 @@ export function LeadPicker({
   value: string | null;
   onChange: (userId: string) => void;
 }) {
-  const { data: users } = useQuery({ queryKey: queryKeys.users, queryFn: listUsers });
+  const { data: users } = useQuery({ queryKey: queryKeys.userDirectory, queryFn: listUserDirectory });
   const selected = users?.find((u) => u.id === value);
 
   return (

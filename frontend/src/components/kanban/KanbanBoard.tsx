@@ -3,7 +3,7 @@ import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, u
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { listProjectStatuses } from '../../api/projects';
 import { createLabel, listLabels } from '../../api/labels';
-import { listUsers } from '../../api/users';
+import { listUserDirectory } from '../../api/users';
 import { queryKeys } from '../../api/queryKeys';
 import { useAuth } from '../../auth/AuthContext';
 import { canEditItem } from '../../lib/permissions';
@@ -43,7 +43,7 @@ export function KanbanBoard({ projectId }: { projectId: string }) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.projectLabels(projectId) }),
   });
 
-  const { data: users } = useQuery({ queryKey: queryKeys.users, queryFn: listUsers });
+  const { data: users } = useQuery({ queryKey: queryKeys.userDirectory, queryFn: listUserDirectory });
 
   const {
     items,

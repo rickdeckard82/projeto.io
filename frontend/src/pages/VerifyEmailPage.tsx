@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { verifyEmail } from '../api/auth';
 import { Spinner } from '../components/common/Spinner';
 import logo from '../assets/projeto-io-logo.svg';
+import { APP_VERSION } from '../lib/appInfo';
 
 type Status = 'loading' | 'success' | 'error';
 
@@ -62,7 +63,7 @@ export function VerifyEmailPage() {
       </div>
 
       <footer className="pb-6 text-center text-xs text-slate-600">
-        Pulsar © 2026 Projeto.io • v0.1.0
+        Pulsar © 2026 Projeto.io • v{APP_VERSION}
         <br />
         <Link to="/privacidade" target="_blank" className="hover:text-slate-400">
           Política de Privacidade

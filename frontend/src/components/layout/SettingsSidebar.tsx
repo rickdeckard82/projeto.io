@@ -1,6 +1,7 @@
 import { Link, NavLink } from 'react-router-dom';
 import { Globe, Home, Lock, Mail, Shield, User as UserIcon, Users } from 'lucide-react';
 import { RoleGate } from '../../auth/RoleGate';
+import { APP_VERSION } from '../../lib/appInfo';
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   `flex items-center gap-2 rounded-md px-3 py-2 text-sm ${
@@ -52,7 +53,7 @@ export function SettingsSidebar() {
       </nav>
 
       <footer className="px-3 py-3 text-center text-[11px] text-slate-600">
-        Pulsar © 2026 Projeto.io • v0.1.0
+        Pulsar © 2026 Projeto.io • v{APP_VERSION}
         <br />
         <Link to="/privacidade" target="_blank" className="hover:text-slate-400">
           Política de Privacidade

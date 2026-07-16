@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthContext';
 import { resendVerification } from '../api/auth';
 import { Button } from '../components/common/Button';
 import logo from '../assets/projeto-io-logo.svg';
+import { APP_VERSION } from '../lib/appInfo';
 
 export function RegisterPage() {
   const { register } = useAuth();
@@ -111,7 +112,7 @@ export function RegisterPage() {
       </div>
 
       <footer className="pb-6 text-center text-xs text-slate-600">
-        Pulsar © 2026 Projeto.io • v0.1.0
+        Pulsar © 2026 Projeto.io • v{APP_VERSION}
         <br />
         <Link to="/privacidade" target="_blank" className="hover:text-slate-400">
           Política de Privacidade

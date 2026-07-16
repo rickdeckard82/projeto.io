@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Archive, ChevronDown, ChevronRight, FileText, FolderKanban, Home, ListTodo } from 'lucide-react';
 import { listProjects } from '../../api/projects';
 import { queryKeys } from '../../api/queryKeys';
+import { APP_VERSION } from '../../lib/appInfo';
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   `flex items-center gap-2 rounded-md px-3 py-2 text-sm ${
@@ -96,7 +97,7 @@ export function Sidebar() {
       </nav>
 
       <footer className="px-3 py-3 text-center text-[11px] text-slate-600">
-        Pulsar © 2026 Projeto.io • v0.1.0
+        Pulsar © 2026 Projeto.io • v{APP_VERSION}
         <br />
         <Link to="/privacidade" target="_blank" className="hover:text-slate-400">
           Política de Privacidade

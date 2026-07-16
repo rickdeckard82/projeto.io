@@ -1,5 +1,5 @@
 import { FormEvent, useState } from 'react';
-import { WorkItem } from '../../types';
+import { WorkItemSummary } from '../../types';
 import { Button } from '../common/Button';
 
 export function SubItemList({
@@ -8,7 +8,7 @@ export function SubItemList({
   onCreate,
   onOpen,
 }: {
-  subItems: WorkItem[];
+  subItems: WorkItemSummary[];
   canEdit: boolean;
   onCreate: (title: string) => Promise<void>;
   onOpen: (id: string) => void;
@@ -38,7 +38,7 @@ export function SubItemList({
               className="flex w-full items-center justify-between px-3 py-2 text-left text-sm text-slate-300 hover:bg-slate-800"
             >
               <span>{sub.title}</span>
-              <span className="text-xs text-slate-500">{sub.status?.name}</span>
+              <span className="text-xs text-slate-500">{sub.status.name}</span>
             </button>
           </li>
         ))}

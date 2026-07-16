@@ -18,7 +18,7 @@ const ITEM_INCLUDE = {
   status: true,
   createdBy: { select: { id: true, email: true, fullName: true, avatarUrl: true } },
   statusLockedBy: { select: { id: true, fullName: true, avatarUrl: true } },
-  subItems: true,
+  subItems: { include: { status: true } },
 };
 
 /** Seleção de usuário reaproveitada nas entradas do histórico de atividade de um item. */

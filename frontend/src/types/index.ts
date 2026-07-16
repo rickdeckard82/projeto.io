@@ -57,6 +57,28 @@ export interface Label {
   color: string;
 }
 
+/**
+ * Shape de um sub-item dentro de `WorkItem.subItems` — o backend traz os sub-itens com um
+ * include raso (`subItems: { include: { status: true } }`), então eles não carregam
+ * `assignees`/`labels`/`createdBy`/`statusLockedBy`/`subItems` aninhados como o item pai.
+ */
+export interface WorkItemSummary {
+  id: string;
+  projectId: string;
+  title: string;
+  description: string | null;
+  statusId: string;
+  status: Status;
+  priority: Priority;
+  parentId: string | null;
+  startDate: string | null;
+  dueDate: string | null;
+  createdById: string;
+  statusLockedById: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface WorkItem {
   id: string;
   projectId: string;
@@ -76,7 +98,7 @@ export interface WorkItem {
   updatedAt: string;
   assignees: { user: User }[];
   labels: { label: Label }[];
-  subItems: WorkItem[];
+  subItems: WorkItemSummary[];
 }
 
 export type ActivityType =

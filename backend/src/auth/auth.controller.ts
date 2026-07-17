@@ -1,9 +1,13 @@
 import { Body, Controller, Get, Post, Query, Req, Res } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { AuthService, AuthTokens } from './auth.service';
+import { TwoFactorService } from './two-factor.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ResendVerificationDto } from './dto/resend-verification.dto';
+import { TwoFactorEnableDto } from './dto/two-factor-enable.dto';
+import { TwoFactorDisableDto } from './dto/two-factor-disable.dto';
+import { TwoFactorVerifyDto } from './dto/two-factor-verify.dto';
 import { Public } from '../common/decorators/public.decorator';
 import { CurrentUser, AuthenticatedUser } from '../common/decorators/current-user.decorator';
 
@@ -42,7 +46,10 @@ function setAuthCookies(res: Response, tokens: AuthTokens) {
  */
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly twoFactorService: TwoFactorService,
+  ) {}
 
   /**
    * Cadastra um novo usuário. Não inicia sessão automaticamente: a conta só fica
@@ -80,18 +87,71 @@ export class AuthController {
   }
 
   /**
-   * Autentica um usuário existente e inicia a sessão, setando os cookies de
-   * access/refresh token na resposta.
+   * Autentica um usuário existente. Se a conta não tiver 2FA ativado, já inicia a sessão
+   * (cookies de access/refresh token). Se tiver, **não** seta cookie nenhum ainda — devolve
+   * `requiresTwoFactor: true` + um token de desafio de uso único, que o frontend envia para
+   * `POST /auth/2fa/verify` junto com o código do app autenticador para completar o login.
    * @param dto - credenciais de login (e-mail e senha)
-   * @param res - usado apenas para setar os cookies httpOnly (passthrough)
-   * @returns mensagem de confirmação
+   * @param res - usado apenas para setar os cookies httpOnly quando o login completa nesta etapa (passthrough)
+   * @returns mensagem de confirmação, ou `{ requiresTwoFactor: true, challengeToken }`
    */
   @Public()
   @Post('login')
   async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
-    const tokens = await this.authService.login(dto);
+    const result = await this.authService.login(dto);
+    if ('requiresTwoFactor' in result) {
+      return result;
+    }
+    setAuthCookies(res, result);
+    return { message: 'Login realizado com sucesso' };
+  }
+
+  /**
+   * Completa o login de uma conta com 2FA ativado: troca o token de desafio + código (do app
+   * autenticador ou um código de recuperação) pelos cookies de sessão de verdade.
+   * @param dto - token de desafio recebido no `POST /auth/login`, e o código informado pelo usuário
+   * @param res - usado apenas para setar os cookies httpOnly (passthrough)
+   * @returns mensagem de confirmação
+   */
+  @Public()
+  @Post('2fa/verify')
+  async verifyTwoFactor(@Body() dto: TwoFactorVerifyDto, @Res({ passthrough: true }) res: Response) {
+    const tokens = await this.twoFactorService.verifyChallenge(dto.challengeToken, dto.code);
     setAuthCookies(res, tokens);
     return { message: 'Login realizado com sucesso' };
+  }
+
+  /**
+   * Inicia a configuração de 2FA da própria conta: gera um novo segredo TOTP e devolve o QR
+   * code para escanear (mais o segredo em texto, como alternativa de entrada manual).
+   * @param user - usuário autenticado
+   * @returns `{ qrCodeDataUrl, secret }`
+   */
+  @Post('2fa/setup')
+  async setupTwoFactor(@CurrentUser() user: AuthenticatedUser) {
+    return this.twoFactorService.setup(user.id);
+  }
+
+  /**
+   * Confirma a configuração pendente de 2FA com um código do app autenticador, ativando-o.
+   * @param dto - código de 6 dígitos gerado pelo app
+   * @param user - usuário autenticado
+   * @returns mensagem de confirmação e os códigos de recuperação (mostrados só uma vez)
+   */
+  @Post('2fa/enable')
+  async enableTwoFactor(@Body() dto: TwoFactorEnableDto, @CurrentUser() user: AuthenticatedUser) {
+    return this.twoFactorService.enable(user.id, dto.code);
+  }
+
+  /**
+   * Desativa o 2FA da própria conta, mediante confirmação da senha atual.
+   * @param dto - senha atual, para confirmar a ação
+   * @param user - usuário autenticado
+   * @returns mensagem de confirmação
+   */
+  @Post('2fa/disable')
+  async disableTwoFactor(@Body() dto: TwoFactorDisableDto, @CurrentUser() user: AuthenticatedUser) {
+    return this.twoFactorService.disable(user.id, dto.password);
   }
 
   /**

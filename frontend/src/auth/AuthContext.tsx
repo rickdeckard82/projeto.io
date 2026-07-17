@@ -1,12 +1,20 @@
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
-import { fetchMe, login as loginApi, logout as logoutApi, register as registerApi } from '../api/auth';
+import {
+  fetchMe,
+  login as loginApi,
+  LoginResult,
+  logout as logoutApi,
+  register as registerApi,
+  verifyTwoFactor as verifyTwoFactorApi,
+} from '../api/auth';
 import { socket } from '../lib/socket';
 import { User } from '../types';
 
 interface AuthContextValue {
   user: User | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<LoginResult>;
+  verifyTwoFactor: (challengeToken: string, code: string) => Promise<void>;
   register: (email: string, password: string, fullName: string) => Promise<{ message: string }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -42,7 +50,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user]);
 
   const login = async (email: string, password: string) => {
-    await loginApi({ email, password });
+    const result = await loginApi({ email, password });
+    // Só há sessão pra hidratar se o login completou nesta etapa — se a conta tem 2FA,
+    // `requiresTwoFactor` vem true e ainda não existe cookie de sessão nenhum (ver `verifyTwoFactor`).
+    if (!result.requiresTwoFactor) {
+      await refreshUser();
+    }
+    return result;
+  };
+
+  const verifyTwoFactor = async (challengeToken: string, code: string) => {
+    await verifyTwoFactorApi({ challengeToken, code });
     await refreshUser();
   };
 
@@ -58,7 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, register, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, isLoading, login, verifyTwoFactor, register, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

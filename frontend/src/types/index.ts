@@ -12,6 +12,7 @@ export interface User {
   globalRole: GlobalRole;
   isActive?: boolean;
   createdAt?: string;
+  twoFactorEnabled?: boolean;
 }
 
 /** Versão mínima de `User` (sem e-mail) usada pelos seletores de pessoa — ver `GET /users/directory`. */

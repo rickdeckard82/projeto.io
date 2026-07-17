@@ -16,6 +16,9 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { MailerService } from '../mail/mailer.service';
 import { hashToken } from '../common/utils/token-hash.util';
+import { TWO_FACTOR_CHALLENGE_PURPOSE } from './two-factor-challenge.constants';
+
+const TWO_FACTOR_CHALLENGE_TTL = '5m';
 
 const ACCESS_TOKEN_TTL = '15m';
 const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -102,15 +105,18 @@ export class AuthService {
   }
 
   /**
-   * Autentica um usuário existente por e-mail/senha e emite um novo par de tokens. Além do
-   * usuário inativo/inexistente (mensagem genérica, para não vazar qual condição falhou), um
-   * e-mail ainda não confirmado também bloqueia o login — mas com uma mensagem específica,
-   * checada só depois da senha validar, para não revelar o estado de contas de terceiros.
+   * Autentica um usuário existente por e-mail/senha. Além do usuário inativo/inexistente
+   * (mensagem genérica, para não vazar qual condição falhou), um e-mail ainda não confirmado
+   * também bloqueia o login — mas com uma mensagem específica, checada só depois da senha
+   * validar, para não revelar o estado de contas de terceiros. Se a conta tiver 2FA ativado, não
+   * emite os tokens de sessão ainda: devolve um token de desafio de uso único (verificado depois
+   * por `TwoFactorService.verifyChallenge`) para completar o login na segunda etapa (código do
+   * app autenticador).
    * @param dto - e-mail e senha em texto plano informados no login
-   * @returns par `{ accessToken, refreshToken }` da nova sessão
+   * @returns par `{ accessToken, refreshToken }` da nova sessão, ou `{ requiresTwoFactor: true, challengeToken }` se a conta tiver 2FA ativado
    * @throws UnauthorizedException - credenciais inválidas, usuário inexistente/inativo, ou e-mail não confirmado
    */
-  async login(dto: LoginDto) {
+  async login(dto: LoginDto): Promise<AuthTokens | { requiresTwoFactor: true; challengeToken: string }> {
     const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
     if (!user || !user.isActive) {
       throw new UnauthorizedException('Credenciais inválidas');
@@ -123,6 +129,14 @@ export class AuthService {
 
     if (!user.emailVerifiedAt) {
       throw new UnauthorizedException('Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada.');
+    }
+
+    if (user.twoFactorEnabled) {
+      const challengeToken = this.jwtService.sign(
+        { sub: user.id, purpose: TWO_FACTOR_CHALLENGE_PURPOSE },
+        { secret: process.env.JWT_ACCESS_SECRET || 'dev-access-secret', expiresIn: TWO_FACTOR_CHALLENGE_TTL },
+      );
+      return { requiresTwoFactor: true, challengeToken };
     }
 
     return this.issueTokens(user.id, user.email);
@@ -269,6 +283,7 @@ export class AuthService {
       fullName: user.fullName,
       avatarUrl: user.avatarUrl,
       globalRole: user.globalRole,
+      twoFactorEnabled: user.twoFactorEnabled,
     };
   }
 
@@ -296,12 +311,14 @@ export class AuthService {
   /**
    * Gera o par de tokens de uma sessão (access + refresh) e persiste o
    * refresh token (como hash, nunca em texto plano) para permitir revogação
-   * e rotação futuras. Usado por `login` e `refresh`.
+   * e rotação futuras. Usado por `login`/`refresh`, e por `TwoFactorService.verifyChallenge`
+   * (não é `private` por causa desse último caso — só quem já validou credenciais/2FA deve
+   * chamar isso, então continua não exposto por nenhuma rota diretamente).
    * @param userId - id do usuário para quem os tokens serão emitidos
    * @param email - e-mail do usuário, embutido apenas no access token
    * @returns par `{ accessToken, refreshToken }` assinados
    */
-  private async issueTokens(userId: string, email: string): Promise<AuthTokens> {
+  async issueTokens(userId: string, email: string): Promise<AuthTokens> {
     const accessToken = this.jwtService.sign(
       { sub: userId, email },
       { secret: process.env.JWT_ACCESS_SECRET || 'dev-access-secret', expiresIn: ACCESS_TOKEN_TTL },

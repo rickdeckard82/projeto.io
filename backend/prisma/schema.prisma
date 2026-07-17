@@ -59,6 +59,14 @@ model User {
   verificationTokenExpiresAt DateTime? @map("verification_token_expires_at")
   verificationEmailSentAt    DateTime? @map("verification_email_sent_at")
 
+  /// Segredo TOTP criptografado (AES-256-GCM, ver `crypto.util.ts`) — presente antes mesmo de
+  /// `twoFactorEnabled` virar true (gravado no /auth/2fa/setup, só confirmado no /enable).
+  twoFactorSecret        String?  @map("two_factor_secret")
+  twoFactorEnabled       Boolean  @default(false) @map("two_factor_enabled")
+  /// Hashes (SHA-256) dos códigos de recuperação ainda não usados; cada um é removido da lista
+  /// ao ser consumido (uso único).
+  twoFactorRecoveryCodes String[] @default([]) @map("two_factor_recovery_codes")
+
   refreshTokens   RefreshToken[]
   ownedProjects   Project[]        @relation("ProjectOwner")
   projectMembers  ProjectMember[]

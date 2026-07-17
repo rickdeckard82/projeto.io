@@ -66,6 +66,7 @@ Falhas de envio de e-mail (SMTP incorreto, credenciais inválidas etc.) ficam re
 20. Acesse `/privacidade` deslogado e confirme que carrega; preencha **Configurações → Privacidade (LGPD)** como Admin e confirme que a página pública reflete o que foi salvo.
 21. Como Admin, promova um usuário a **Senior**. Logado como esse usuário, confirme que consegue criar projeto, criar item, arquivar/desarquivar projeto e adicionar membro — mas não consegue editar/excluir o projeto nem remover um membro (esses botões nem aparecem na UI).
 22. Na página inicial, crie uma nota em "Notas" (abaixo de "Recentes"); logue como outro usuário e confirme que ela aparece pra ele também. Em `/notes`, confirme que só quem criou (ou um Admin) vê os botões de editar/apagar em cada nota.
+23. Em **Configurações → Segurança**, ative a autenticação de dois fatores: escaneie o QR code com um app autenticador (Google Authenticator, Authy, etc.), confirme com o código, e guarde os códigos de recuperação mostrados. Saia e faça login de novo — confirme que agora pede o código de dois fatores antes de entrar. Teste também um código de recuperação (deve funcionar uma única vez) e, em Segurança, desativar o 2FA informando a senha.
 
 ## Deploy em produção (domínio próprio + Nginx Proxy Manager)
 

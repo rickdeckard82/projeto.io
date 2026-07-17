@@ -1,5 +1,5 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-import { GlobalRole } from '@prisma/client';
+import { GlobalRole } from '../../generated/prisma/client.js';
 
 export interface AuthenticatedUser {
   id: string;

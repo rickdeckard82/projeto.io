@@ -1,11 +1,11 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
-import { GlobalRole } from '@prisma/client';
-import { LabelsService } from './labels.service';
-import { CreateLabelDto } from './dto/create-label.dto';
-import { UpdateLabelDto } from './dto/update-label.dto';
-import { Roles } from '../common/decorators/roles.decorator';
-import { ProjectResource } from '../common/decorators/project-resource.decorator';
-import { ProjectMemberGuard } from '../common/guards/project-member.guard';
+import { GlobalRole } from '../generated/prisma/client.js';
+import { LabelsService } from './labels.service.js';
+import { CreateLabelDto } from './dto/create-label.dto.js';
+import { UpdateLabelDto } from './dto/update-label.dto.js';
+import { Roles } from '../common/decorators/roles.decorator.js';
+import { ProjectResource } from '../common/decorators/project-resource.decorator.js';
+import { ProjectMemberGuard } from '../common/guards/project-member.guard.js';
 
 /**
  * Endpoints de etiquetas aninhadas sob um projeto (`/projects/:projectId/labels`): listagem e

@@ -1,6 +1,6 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { WorkItemsService } from './work-items.service';
-import { CurrentUser, AuthenticatedUser } from '../common/decorators/current-user.decorator';
+import { WorkItemsService } from './work-items.service.js';
+import { CurrentUser, AuthenticatedUser } from '../common/decorators/current-user.decorator.js';
 
 /**
  * Endpoint de "tarefas pendentes atribuídas ao usuário atual" (`/me/recent-items`), usado pela

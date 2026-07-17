@@ -1,5 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
-import { Public } from '../common/decorators/public.decorator';
+import { Public } from '../common/decorators/public.decorator.js';
 
 /** Endpoint de health check, sem autenticação, consumido por `docker-entrypoint.sh` e monitoramento de uptime. */
 @Controller('health')

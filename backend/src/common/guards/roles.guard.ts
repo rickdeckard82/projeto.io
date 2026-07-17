@@ -1,7 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { GlobalRole } from '@prisma/client';
-import { ROLES_KEY } from '../decorators/roles.decorator';
+import { GlobalRole } from '../../generated/prisma/client.js';
+import { ROLES_KEY } from '../decorators/roles.decorator.js';
 
 /**
  * Guard global (registrado via `APP_GUARD`) que restringe rotas marcadas com

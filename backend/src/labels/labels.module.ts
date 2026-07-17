@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { ProjectLabelsController, LabelsController } from './labels.controller';
-import { LabelsService } from './labels.service';
+import { ProjectLabelsController, LabelsController } from './labels.controller.js';
+import { LabelsService } from './labels.service.js';
 
 @Module({
   controllers: [ProjectLabelsController, LabelsController],

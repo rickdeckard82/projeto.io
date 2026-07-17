@@ -1,5 +1,5 @@
 import { IsEnum } from 'class-validator';
-import { GlobalRole } from '@prisma/client';
+import { GlobalRole } from '../../generated/prisma/client.js';
 
 export class UpdateRoleDto {
   @IsEnum(GlobalRole)

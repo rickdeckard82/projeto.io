@@ -1,15 +1,15 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
-import { GlobalRole } from '@prisma/client';
-import { WorkItemsService } from './work-items.service';
-import { UpdateItemDto } from './dto/update-item.dto';
-import { UpdateItemStatusDto } from './dto/update-item-status.dto';
-import { UpdateItemAssigneesDto } from './dto/update-item-assignees.dto';
-import { UpdateItemLabelsDto } from './dto/update-item-labels.dto';
-import { CreateCommentDto } from './dto/create-comment.dto';
-import { Roles } from '../common/decorators/roles.decorator';
-import { ProjectResource } from '../common/decorators/project-resource.decorator';
-import { ProjectMemberGuard } from '../common/guards/project-member.guard';
-import { CurrentUser, AuthenticatedUser } from '../common/decorators/current-user.decorator';
+import { GlobalRole } from '../generated/prisma/client.js';
+import { WorkItemsService } from './work-items.service.js';
+import { UpdateItemDto } from './dto/update-item.dto.js';
+import { UpdateItemStatusDto } from './dto/update-item-status.dto.js';
+import { UpdateItemAssigneesDto } from './dto/update-item-assignees.dto.js';
+import { UpdateItemLabelsDto } from './dto/update-item-labels.dto.js';
+import { CreateCommentDto } from './dto/create-comment.dto.js';
+import { Roles } from '../common/decorators/roles.decorator.js';
+import { ProjectResource } from '../common/decorators/project-resource.decorator.js';
+import { ProjectMemberGuard } from '../common/guards/project-member.guard.js';
+import { CurrentUser, AuthenticatedUser } from '../common/decorators/current-user.decorator.js';
 
 /**
  * Endpoints de um item de trabalho individual, endereçado só por `itemId` (`/items/:itemId`),

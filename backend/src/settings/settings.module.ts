@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
-import { AllowedDomainsController } from './allowed-domains.controller';
-import { AllowedDomainsService } from './allowed-domains.service';
-import { SmtpSettingsController } from './smtp-settings.controller';
-import { SmtpSettingsService } from './smtp-settings.service';
-import { PrivacySettingsController } from './privacy-settings.controller';
-import { PrivacySettingsService } from './privacy-settings.service';
+import { AllowedDomainsController } from './allowed-domains.controller.js';
+import { AllowedDomainsService } from './allowed-domains.service.js';
+import { SmtpSettingsController } from './smtp-settings.controller.js';
+import { SmtpSettingsService } from './smtp-settings.service.js';
+import { PrivacySettingsController } from './privacy-settings.controller.js';
+import { PrivacySettingsService } from './privacy-settings.service.js';
 
 @Module({
   controllers: [AllowedDomainsController, SmtpSettingsController, PrivacySettingsController],

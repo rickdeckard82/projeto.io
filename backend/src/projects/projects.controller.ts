@@ -1,12 +1,12 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
-import { GlobalRole } from '@prisma/client';
-import { ProjectsService } from './projects.service';
-import { CreateProjectDto } from './dto/create-project.dto';
-import { UpdateProjectDto } from './dto/update-project.dto';
-import { Roles } from '../common/decorators/roles.decorator';
-import { ProjectResource } from '../common/decorators/project-resource.decorator';
-import { ProjectMemberGuard } from '../common/guards/project-member.guard';
-import { CurrentUser, AuthenticatedUser } from '../common/decorators/current-user.decorator';
+import { GlobalRole } from '../generated/prisma/client.js';
+import { ProjectsService } from './projects.service.js';
+import { CreateProjectDto } from './dto/create-project.dto.js';
+import { UpdateProjectDto } from './dto/update-project.dto.js';
+import { Roles } from '../common/decorators/roles.decorator.js';
+import { ProjectResource } from '../common/decorators/project-resource.decorator.js';
+import { ProjectMemberGuard } from '../common/guards/project-member.guard.js';
+import { CurrentUser, AuthenticatedUser } from '../common/decorators/current-user.decorator.js';
 
 /**
  * Controller REST para gestão de projetos (`/projects`). A leitura individual e as mutações

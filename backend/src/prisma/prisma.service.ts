@@ -1,14 +1,20 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient } from '../generated/prisma/client.js';
 
 /**
  * Wrapper injetável do `PrismaClient`, usado em toda a aplicação como ponto único de acesso ao
  * banco. Estende `PrismaClient` diretamente (em vez de compor) para que os módulos consumidores
  * usem a mesma API do client gerado (`this.prisma.workItem.findMany(...)`, etc.) sem camada
- * extra.
+ * extra. A partir do Prisma 7, o client não conecta mais direto via `DATABASE_URL` do schema —
+ * precisa de um driver adapter explícito.
  */
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
+  constructor() {
+    super({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) });
+  }
+
   /**
    * Conecta ao banco explicitamente quando o módulo Nest é inicializado, em vez de depender da
    * conexão lazy do Prisma — assim falhas de conexão aparecem cedo, na subida da aplicação, e não

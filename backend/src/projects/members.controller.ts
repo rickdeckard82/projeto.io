@@ -1,10 +1,10 @@
 import { Body, Controller, Delete, Get, Param, Post, UseGuards } from '@nestjs/common';
-import { GlobalRole } from '@prisma/client';
-import { ProjectsService } from './projects.service';
-import { AddMemberDto } from './dto/add-member.dto';
-import { Roles } from '../common/decorators/roles.decorator';
-import { ProjectResource } from '../common/decorators/project-resource.decorator';
-import { ProjectMemberGuard } from '../common/guards/project-member.guard';
+import { GlobalRole } from '../generated/prisma/client.js';
+import { ProjectsService } from './projects.service.js';
+import { AddMemberDto } from './dto/add-member.dto.js';
+import { Roles } from '../common/decorators/roles.decorator.js';
+import { ProjectResource } from '../common/decorators/project-resource.decorator.js';
+import { ProjectMemberGuard } from '../common/guards/project-member.guard.js';
 
 /**
  * Controller REST para gestão de membros de um projeto (`/projects/:id/members`).

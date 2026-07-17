@@ -1,5 +1,5 @@
 import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, Matches, MinLength } from 'class-validator';
-import { GlobalRole } from '@prisma/client';
+import { GlobalRole } from '../../generated/prisma/client.js';
 
 export class CreateUserDto {
   @IsEmail()

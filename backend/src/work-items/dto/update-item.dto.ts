@@ -1,5 +1,5 @@
 import { IsDateString, IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
-import { Priority } from '@prisma/client';
+import { Priority } from '../../generated/prisma/client.js';
 
 export class UpdateItemDto {
   @IsOptional()

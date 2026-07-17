@@ -1,11 +1,11 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { ActivityType, GlobalRole, Prisma, StatusCategory } from '@prisma/client';
-import { PrismaService } from '../prisma/prisma.service';
-import { CreateItemDto } from './dto/create-item.dto';
-import { UpdateItemDto } from './dto/update-item.dto';
-import { QueryItemsDto } from './dto/query-items.dto';
-import { AuthenticatedUser } from '../common/decorators/current-user.decorator';
-import { RealtimeGateway } from '../realtime/realtime.gateway';
+import { ActivityType, GlobalRole, Prisma, StatusCategory } from '../generated/prisma/client.js';
+import { PrismaService } from '../prisma/prisma.service.js';
+import { CreateItemDto } from './dto/create-item.dto.js';
+import { UpdateItemDto } from './dto/update-item.dto.js';
+import { QueryItemsDto } from './dto/query-items.dto.js';
+import { AuthenticatedUser } from '../common/decorators/current-user.decorator.js';
+import { RealtimeGateway } from '../realtime/realtime.gateway.js';
 
 /**
  * Include padrão usado ao carregar um work item: traz os responsáveis (com dados básicos do

@@ -1,12 +1,12 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { GlobalRole } from '@prisma/client';
-import { PrismaService } from '../prisma/prisma.service';
-import { CreateProjectDto } from './dto/create-project.dto';
-import { UpdateProjectDto } from './dto/update-project.dto';
-import { UpdateStatusDto } from './dto/update-status.dto';
-import { DEFAULT_STATUSES } from './default-statuses';
-import { pickCoverColor, suggestProjectKey } from './project-key.util';
-import { AuthenticatedUser } from '../common/decorators/current-user.decorator';
+import { GlobalRole } from '../generated/prisma/client.js';
+import { PrismaService } from '../prisma/prisma.service.js';
+import { CreateProjectDto } from './dto/create-project.dto.js';
+import { UpdateProjectDto } from './dto/update-project.dto.js';
+import { UpdateStatusDto } from './dto/update-status.dto.js';
+import { DEFAULT_STATUSES } from './default-statuses.js';
+import { pickCoverColor, suggestProjectKey } from './project-key.util.js';
+import { AuthenticatedUser } from '../common/decorators/current-user.decorator.js';
 
 /**
  * Serviço de domínio para gestão de projetos: CRUD, arquivamento, membros e colunas do kanban (statuses).

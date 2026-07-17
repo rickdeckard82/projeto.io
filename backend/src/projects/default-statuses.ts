@@ -1,4 +1,4 @@
-import { StatusCategory } from '@prisma/client';
+import { StatusCategory } from '../generated/prisma/client.js';
 
 /**
  * As 5 colunas padrão do kanban, semeadas automaticamente para todo novo projeto por

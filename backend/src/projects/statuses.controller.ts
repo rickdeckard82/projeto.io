@@ -1,10 +1,10 @@
 import { Body, Controller, Param, Patch, UseGuards } from '@nestjs/common';
-import { GlobalRole } from '@prisma/client';
-import { ProjectsService } from './projects.service';
-import { UpdateStatusDto } from './dto/update-status.dto';
-import { Roles } from '../common/decorators/roles.decorator';
-import { ProjectResource } from '../common/decorators/project-resource.decorator';
-import { ProjectMemberGuard } from '../common/guards/project-member.guard';
+import { GlobalRole } from '../generated/prisma/client.js';
+import { ProjectsService } from './projects.service.js';
+import { UpdateStatusDto } from './dto/update-status.dto.js';
+import { Roles } from '../common/decorators/roles.decorator.js';
+import { ProjectResource } from '../common/decorators/project-resource.decorator.js';
+import { ProjectMemberGuard } from '../common/guards/project-member.guard.js';
 
 /**
  * Controller REST para gestão das colunas (statuses) do kanban de um projeto

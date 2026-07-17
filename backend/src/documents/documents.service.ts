@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { CreateDocumentDto } from './dto/create-document.dto';
-import { UpdateDocumentDto } from './dto/update-document.dto';
-import { AuthenticatedUser } from '../common/decorators/current-user.decorator';
+import { PrismaService } from '../prisma/prisma.service.js';
+import { CreateDocumentDto } from './dto/create-document.dto.js';
+import { UpdateDocumentDto } from './dto/update-document.dto.js';
+import { AuthenticatedUser } from '../common/decorators/current-user.decorator.js';
 
 /**
  * Regras de negócio de documentos (páginas de conteúdo markdown puro por projeto). O conteúdo em

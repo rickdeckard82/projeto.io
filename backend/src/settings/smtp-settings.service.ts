@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { UpdateSmtpSettingsDto } from './dto/update-smtp-settings.dto';
-import { encrypt } from '../common/utils/crypto.util';
+import { PrismaService } from '../prisma/prisma.service.js';
+import { UpdateSmtpSettingsDto } from './dto/update-smtp-settings.dto.js';
+import { encrypt } from '../common/utils/crypto.util.js';
 
 const SINGLETON_ID = 'singleton';
 

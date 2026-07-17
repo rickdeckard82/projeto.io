@@ -1,15 +1,15 @@
 import { Body, Controller, Get, Post, Query, Req, Res } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { AuthService, AuthTokens } from './auth.service';
-import { TwoFactorService } from './two-factor.service';
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
-import { ResendVerificationDto } from './dto/resend-verification.dto';
-import { TwoFactorEnableDto } from './dto/two-factor-enable.dto';
-import { TwoFactorDisableDto } from './dto/two-factor-disable.dto';
-import { TwoFactorVerifyDto } from './dto/two-factor-verify.dto';
-import { Public } from '../common/decorators/public.decorator';
-import { CurrentUser, AuthenticatedUser } from '../common/decorators/current-user.decorator';
+import { AuthService, AuthTokens } from './auth.service.js';
+import { TwoFactorService } from './two-factor.service.js';
+import { RegisterDto } from './dto/register.dto.js';
+import { LoginDto } from './dto/login.dto.js';
+import { ResendVerificationDto } from './dto/resend-verification.dto.js';
+import { TwoFactorEnableDto } from './dto/two-factor-enable.dto.js';
+import { TwoFactorDisableDto } from './dto/two-factor-disable.dto.js';
+import { TwoFactorVerifyDto } from './dto/two-factor-verify.dto.js';
+import { Public } from '../common/decorators/public.decorator.js';
+import { CurrentUser, AuthenticatedUser } from '../common/decorators/current-user.decorator.js';
 
 const ACCESS_COOKIE = 'access_token';
 const REFRESH_COOKIE = 'refresh_token';

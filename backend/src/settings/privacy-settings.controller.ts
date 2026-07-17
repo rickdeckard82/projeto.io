@@ -1,9 +1,9 @@
 import { Body, Controller, Get, Patch } from '@nestjs/common';
-import { GlobalRole } from '@prisma/client';
-import { PrivacySettingsService } from './privacy-settings.service';
-import { UpdatePrivacySettingsDto } from './dto/update-privacy-settings.dto';
-import { Roles } from '../common/decorators/roles.decorator';
-import { Public } from '../common/decorators/public.decorator';
+import { GlobalRole } from '../generated/prisma/client.js';
+import { PrivacySettingsService } from './privacy-settings.service.js';
+import { UpdatePrivacySettingsDto } from './dto/update-privacy-settings.dto.js';
+import { Roles } from '../common/decorators/roles.decorator.js';
+import { Public } from '../common/decorators/public.decorator.js';
 
 /**
  * Controller REST para a configuração de privacidade/LGPD (`/settings/privacy`), singleton.

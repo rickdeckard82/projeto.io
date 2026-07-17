@@ -7,8 +7,8 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { GlobalRole } from '@prisma/client';
-import { PrismaService } from '../prisma/prisma.service';
+import { GlobalRole } from '../generated/prisma/client.js';
+import { PrismaService } from '../prisma/prisma.service.js';
 
 function parseCookies(header?: string): Record<string, string> {
   if (!header) return {};

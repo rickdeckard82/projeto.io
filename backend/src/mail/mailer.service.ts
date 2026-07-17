@@ -1,7 +1,7 @@
 import { Injectable, ServiceUnavailableException } from '@nestjs/common';
-import * as nodemailer from 'nodemailer';
-import { PrismaService } from '../prisma/prisma.service';
-import { decrypt } from '../common/utils/crypto.util';
+import nodemailer from 'nodemailer';
+import { PrismaService } from '../prisma/prisma.service.js';
+import { decrypt } from '../common/utils/crypto.util.js';
 
 /**
  * Envio de e-mails transacionais (confirmação de cadastro), usando a configuração de SMTP

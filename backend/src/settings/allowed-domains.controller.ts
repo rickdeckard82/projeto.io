@@ -1,8 +1,8 @@
 import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
-import { GlobalRole } from '@prisma/client';
-import { AllowedDomainsService } from './allowed-domains.service';
-import { CreateAllowedDomainDto } from './dto/create-allowed-domain.dto';
-import { Roles } from '../common/decorators/roles.decorator';
+import { GlobalRole } from '../generated/prisma/client.js';
+import { AllowedDomainsService } from './allowed-domains.service.js';
+import { CreateAllowedDomainDto } from './dto/create-allowed-domain.dto.js';
+import { Roles } from '../common/decorators/roles.decorator.js';
 
 /**
  * Controller REST para a lista de domínios de e-mail autorizados a se autocadastrar

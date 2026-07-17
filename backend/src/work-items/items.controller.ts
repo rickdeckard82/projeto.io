@@ -1,12 +1,12 @@
 import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
-import { GlobalRole } from '@prisma/client';
-import { WorkItemsService } from './work-items.service';
-import { CreateItemDto } from './dto/create-item.dto';
-import { QueryItemsDto } from './dto/query-items.dto';
-import { Roles } from '../common/decorators/roles.decorator';
-import { ProjectResource } from '../common/decorators/project-resource.decorator';
-import { ProjectMemberGuard } from '../common/guards/project-member.guard';
-import { CurrentUser, AuthenticatedUser } from '../common/decorators/current-user.decorator';
+import { GlobalRole } from '../generated/prisma/client.js';
+import { WorkItemsService } from './work-items.service.js';
+import { CreateItemDto } from './dto/create-item.dto.js';
+import { QueryItemsDto } from './dto/query-items.dto.js';
+import { Roles } from '../common/decorators/roles.decorator.js';
+import { ProjectResource } from '../common/decorators/project-resource.decorator.js';
+import { ProjectMemberGuard } from '../common/guards/project-member.guard.js';
+import { CurrentUser, AuthenticatedUser } from '../common/decorators/current-user.decorator.js';
 
 /**
  * Endpoints de itens de trabalho aninhados sob um projeto (`/projects/:projectId/items`):

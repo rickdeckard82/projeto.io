@@ -7,14 +7,14 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { authenticator } from 'otplib';
-import * as QRCode from 'qrcode';
-import * as bcrypt from 'bcryptjs';
+import QRCode from 'qrcode';
+import bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
-import { PrismaService } from '../prisma/prisma.service';
-import { AuthService, AuthTokens } from './auth.service';
-import { encrypt, decrypt } from '../common/utils/crypto.util';
-import { hashToken } from '../common/utils/token-hash.util';
-import { TWO_FACTOR_CHALLENGE_PURPOSE } from './two-factor-challenge.constants';
+import { PrismaService } from '../prisma/prisma.service.js';
+import { AuthService, AuthTokens } from './auth.service.js';
+import { encrypt, decrypt } from '../common/utils/crypto.util.js';
+import { hashToken } from '../common/utils/token-hash.util.js';
+import { TWO_FACTOR_CHALLENGE_PURPOSE } from './two-factor-challenge.constants.js';
 
 const RECOVERY_CODE_COUNT = 8;
 

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { UpdatePrivacySettingsDto } from './dto/update-privacy-settings.dto';
+import { PrismaService } from '../prisma/prisma.service.js';
+import { UpdatePrivacySettingsDto } from './dto/update-privacy-settings.dto.js';
 
 const SINGLETON_ID = 'singleton';
 

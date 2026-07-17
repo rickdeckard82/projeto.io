@@ -1,6 +1,6 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { CreateAllowedDomainDto } from './dto/create-allowed-domain.dto';
+import { PrismaService } from '../prisma/prisma.service.js';
+import { CreateAllowedDomainDto } from './dto/create-allowed-domain.dto.js';
 
 /**
  * Gestão da lista de domínios de e-mail autorizados a se autocadastrar (`/auth/register`).

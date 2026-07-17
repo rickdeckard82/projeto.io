@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { CreateLabelDto } from './dto/create-label.dto';
-import { UpdateLabelDto } from './dto/update-label.dto';
+import { PrismaService } from '../prisma/prisma.service.js';
+import { CreateLabelDto } from './dto/create-label.dto.js';
+import { UpdateLabelDto } from './dto/update-label.dto.js';
 
 /**
  * Regras de negócio de etiquetas (labels) de projeto, usadas para categorizar/filtrar itens de

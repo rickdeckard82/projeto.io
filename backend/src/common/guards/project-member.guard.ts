@@ -1,11 +1,11 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { GlobalRole } from '@prisma/client';
-import { PrismaService } from '../../prisma/prisma.service';
+import { GlobalRole } from '../../generated/prisma/client.js';
+import { PrismaService } from '../../prisma/prisma.service.js';
 import {
   PROJECT_RESOURCE_KEY,
   ProjectResourceMeta,
-} from '../decorators/project-resource.decorator';
+} from '../decorators/project-resource.decorator.js';
 
 /**
  * Enforces project-scoped access: Admins bypass membership entirely.

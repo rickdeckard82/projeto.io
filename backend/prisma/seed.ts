@@ -1,7 +1,8 @@
-import { PrismaClient, GlobalRole } from '@prisma/client';
-import * as bcrypt from 'bcryptjs';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient, GlobalRole } from '../src/generated/prisma/client.js';
+import bcrypt from 'bcryptjs';
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) });
 
 async function main() {
   const adminEmail = process.env.SEED_ADMIN_EMAIL || 'admin@example.com';

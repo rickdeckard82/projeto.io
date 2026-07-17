@@ -29,7 +29,7 @@ export function LoginPage() {
       if (result.requiresTwoFactor && result.challengeToken) {
         setChallengeToken(result.challengeToken);
       } else {
-        navigate('/projects');
+        navigate('/');
       }
     } catch (err: any) {
       const message = err?.response?.data?.message || 'Falha ao entrar';
@@ -47,7 +47,7 @@ export function LoginPage() {
     setLoading(true);
     try {
       await verifyTwoFactor(challengeToken, code);
-      navigate('/projects');
+      navigate('/');
     } catch (err: any) {
       setError(err?.response?.data?.message || 'Código inválido');
     } finally {

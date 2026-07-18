@@ -16,6 +16,7 @@ export const queryKeys = {
   item: (id: string) => ['items', id] as const,
   itemActivities: (id: string) => ['items', id, 'activities'] as const,
   projectDocuments: (id: string) => ['projects', id, 'documents'] as const,
+  projectMetrics: (id: string) => ['projects', id, 'metrics'] as const,
   document: (id: string) => ['documents', id] as const,
   notes: (limit?: number) => ['notes', limit] as const,
 };

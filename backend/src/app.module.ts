@@ -12,6 +12,7 @@ import { DocumentsModule } from './documents/documents.module';
 import { SettingsModule } from './settings/settings.module';
 import { MailModule } from './mail/mail.module';
 import { NotesModule } from './notes/notes.module';
+import { MetricsModule } from './metrics/metrics.module';
 import { HealthController } from './health/health.controller';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
@@ -30,6 +31,7 @@ import { RolesGuard } from './common/guards/roles.guard';
     SettingsModule,
     MailModule,
     NotesModule,
+    MetricsModule,
   ],
   controllers: [HealthController],
   providers: [

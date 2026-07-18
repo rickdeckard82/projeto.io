@@ -165,6 +165,23 @@ export interface PrivacySettings {
   updatedAt: string;
 }
 
+export interface ProjectMetricsUserStat {
+  userId: string;
+  fullName: string;
+  avatarUrl: string | null;
+  assigned: number;
+  completed: number;
+  cancelled: number;
+}
+
+export interface ProjectMetrics {
+  totalItems: number;
+  byCategory: Record<StatusCategory, number>;
+  avgCompletionHours: number | null;
+  projectDurationDays: number;
+  perUser: ProjectMetricsUserStat[];
+}
+
 export interface ProjectDocument {
   id: string;
   projectId: string;

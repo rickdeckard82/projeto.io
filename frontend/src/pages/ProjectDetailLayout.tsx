@@ -12,6 +12,7 @@ const tabs = [
   { to: 'board', label: 'Quadro' },
   { to: 'list', label: 'Lista' },
   { to: 'documents', label: 'Documentos' },
+  { to: 'metrics', label: 'Métricas' },
 ];
 
 export function ProjectDetailLayout() {

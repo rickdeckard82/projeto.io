@@ -159,7 +159,10 @@ export class ProjectsService {
   }
 
   /**
-   * Arquiva um projeto (soft-archive via `archivedAt`), sem removê-lo do banco.
+   * Arquiva um projeto (soft-archive via `archivedAt`), sem removê-lo do banco. Emite
+   * `project:changed` (via {@link RealtimeGateway.emitProjectChanged}) para quem estiver com o
+   * board aberto — a notificação é só UX; quem garante que ninguém escreve mais nos itens do
+   * projeto é `WorkItemsService.assertProjectNotArchived`.
    * @param id - Id do projeto a arquivar.
    * @returns Projeto atualizado.
    * @throws NotFoundException - quando não existe projeto com o id informado.
@@ -172,7 +175,8 @@ export class ProjectsService {
   }
 
   /**
-   * Reverte o arquivamento de um projeto, limpando `archivedAt`.
+   * Reverte o arquivamento de um projeto, limpando `archivedAt`. Também emite `project:changed`
+   * (ver {@link archive}) para quem estiver com o board aberto.
    * @param id - Id do projeto a desarquivar.
    * @returns Projeto atualizado.
    * @throws NotFoundException - quando não existe projeto com o id informado.

@@ -81,6 +81,7 @@ export class WorkItemsService {
    * @param dto - dados do item a criar
    * @param creator - usuário autenticado que está criando o item (vira `createdById`)
    * @returns o item criado, com relações carregadas via {@link ITEM_INCLUDE}
+   * @throws ForbiddenException - se o projeto estiver arquivado (ver {@link assertProjectNotArchived})
    * @throws BadRequestException - se o projeto não tiver nenhum status configurado, se o `statusId` informado não pertencer ao projeto, ou se o `parentId` informado não pertencer ao projeto
    */
   async create(projectId: string, dto: CreateItemDto, creator: AuthenticatedUser) {
@@ -179,6 +180,7 @@ export class WorkItemsService {
    * @param actor - usuário autenticado que está editando (autor das entradas de atividade geradas)
    * @returns o item atualizado, com relações carregadas via {@link ITEM_INCLUDE}
    * @throws NotFoundException - se o item não existir
+   * @throws ForbiddenException - se o projeto do item estiver arquivado
    * @throws BadRequestException - se `dto.parentId` for o próprio item, ou se o novo pai não pertencer ao mesmo projeto
    */
   async update(id: string, dto: UpdateItemDto, actor: AuthenticatedUser) {
@@ -236,7 +238,7 @@ export class WorkItemsService {
    * @param actor - usuário autenticado que está movendo o item (autor da entrada de atividade gerada)
    * @returns o item atualizado
    * @throws NotFoundException - se o item não existir
-   * @throws ForbiddenException - se o item estiver travado por outro usuário (em "Em andamento") e quem está tentando mudar não for nem quem travou nem um Admin
+   * @throws ForbiddenException - se o projeto do item estiver arquivado, ou se o item estiver travado por outro usuário (em "Em andamento") e quem está tentando mudar não for nem quem travou nem um Admin
    * @throws BadRequestException - se o status informado não pertencer ao mesmo projeto do item, ou se houver sub-itens ainda não concluídos/cancelados e o novo status for de conclusão/cancelamento
    */
   async updateStatus(id: string, statusId: string, actor: AuthenticatedUser) {
@@ -296,6 +298,7 @@ export class WorkItemsService {
    * @param actor - usuário autenticado que está alterando os responsáveis (autor das entradas de atividade geradas)
    * @returns o item atualizado, com a nova lista de responsáveis
    * @throws NotFoundException - se o item não existir
+   * @throws ForbiddenException - se o projeto do item estiver arquivado
    */
   async updateAssignees(id: string, userIds: string[], actor: AuthenticatedUser) {
     const item = await this.findOne(id);
@@ -340,6 +343,7 @@ export class WorkItemsService {
    * @param actor - usuário autenticado que está alterando as etiquetas (autor das entradas de atividade geradas)
    * @returns o item atualizado, com a nova lista de etiquetas
    * @throws NotFoundException - se o item não existir
+   * @throws ForbiddenException - se o projeto do item estiver arquivado
    * @throws BadRequestException - se alguma etiqueta informada não pertencer ao projeto do item
    */
   async updateLabels(id: string, labelIds: string[], actor: AuthenticatedUser) {
@@ -386,6 +390,7 @@ export class WorkItemsService {
    * @param id - id do item a remover
    * @returns mensagem de confirmação
    * @throws NotFoundException - se o item não existir
+   * @throws ForbiddenException - se o projeto do item estiver arquivado
    */
   async remove(id: string) {
     const item = await this.findOne(id);
@@ -418,6 +423,7 @@ export class WorkItemsService {
    * @param actor - usuário autenticado que está comentando
    * @returns a entrada de atividade criada, com o autor (`user`)
    * @throws NotFoundException - se o item não existir
+   * @throws ForbiddenException - se o projeto do item estiver arquivado
    */
   async addComment(workItemId: string, message: string, actor: AuthenticatedUser) {
     const item = await this.findOne(workItemId);

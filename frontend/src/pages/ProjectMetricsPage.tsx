@@ -1,7 +1,8 @@
-import { useParams } from 'react-router-dom';
+import { Navigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { getProjectMetrics } from '../api/metrics';
 import { queryKeys } from '../api/queryKeys';
+import { useAuth } from '../auth/AuthContext';
 import { Spinner } from '../components/common/Spinner';
 import { EmptyState } from '../components/common/EmptyState';
 import { Avatar } from '../components/common/Avatar';
@@ -46,11 +47,16 @@ function StatCard({ label, value }: { label: string; value: string }) {
 
 export function ProjectMetricsPage() {
   const { projectId } = useParams<{ projectId: string }>();
+  const { user } = useAuth();
   const { data: metrics, isLoading } = useQuery({
     queryKey: queryKeys.projectMetrics(projectId!),
     queryFn: () => getProjectMetrics(projectId!),
     enabled: !!projectId,
   });
+
+  if (user && user.globalRole !== 'ADMIN' && user.globalRole !== 'SENIOR') {
+    return <Navigate to={`/projects/${projectId}/board`} replace />;
+  }
 
   if (isLoading) return <Spinner />;
   if (!metrics) return null;

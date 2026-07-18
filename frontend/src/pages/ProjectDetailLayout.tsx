@@ -12,7 +12,6 @@ const tabs = [
   { to: 'board', label: 'Quadro' },
   { to: 'list', label: 'Lista' },
   { to: 'documents', label: 'Documentos' },
-  { to: 'metrics', label: 'Métricas' },
 ];
 
 export function ProjectDetailLayout() {
@@ -95,6 +94,18 @@ export function ProjectDetailLayout() {
             {tab.label}
           </NavLink>
         ))}
+        <RoleGate allow={['ADMIN', 'SENIOR']}>
+          <NavLink
+            to="metrics"
+            className={({ isActive }) =>
+              `px-3 py-2 text-sm ${
+                isActive ? 'border-b-2 border-indigo-500 text-white' : 'text-slate-400 hover:text-slate-200'
+              }`
+            }
+          >
+            Métricas
+          </NavLink>
+        </RoleGate>
         <RoleGate allow={['ADMIN', 'SENIOR']}>
           <NavLink
             to="settings"

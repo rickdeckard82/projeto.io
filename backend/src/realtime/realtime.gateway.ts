@@ -120,6 +120,17 @@ export class RealtimeGateway implements OnGatewayConnection {
   }
 
   /**
+   * Notifica quem está na sala do projeto que o próprio projeto mudou de estado (hoje, só usado
+   * para arquivar/desarquivar) — sem isso, quem já estava com o board aberto continuava
+   * arrastando/editando itens normalmente até recarregar a página, mesmo depois de outro usuário
+   * arquivar o projeto. O cliente reage revalidando os dados do projeto e saindo da tela se ele
+   * tiver acabado de ser arquivado.
+   */
+  emitProjectChanged(projectId: string) {
+    this.server?.to(`project:${projectId}`).emit('project:changed', { projectId });
+  }
+
+  /**
    * Reimplementa, para o contexto de socket (sem `ExecutionContext`/request HTTP), a mesma regra
    * de leitura do `ProjectMemberGuard`: Admin sempre pode; membro do projeto pode; sem nenhum dos
    * dois, só se o projeto for público.

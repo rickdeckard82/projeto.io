@@ -7,6 +7,7 @@ import { UpdateStatusDto } from './dto/update-status.dto';
 import { DEFAULT_STATUSES } from './default-statuses';
 import { pickCoverColor, suggestProjectKey } from './project-key.util';
 import { AuthenticatedUser } from '../common/decorators/current-user.decorator';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
 
 /**
  * Serviço de domínio para gestão de projetos: CRUD, arquivamento, membros e colunas do kanban (statuses).
@@ -15,7 +16,10 @@ import { AuthenticatedUser } from '../common/decorators/current-user.decorator';
  */
 @Injectable()
 export class ProjectsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly realtimeGateway: RealtimeGateway,
+  ) {}
 
   /**
    * Lista projetos visíveis para o usuário atual, filtrando por arquivamento e por acesso.
@@ -162,7 +166,9 @@ export class ProjectsService {
    */
   async archive(id: string) {
     await this.findOne(id);
-    return this.prisma.project.update({ where: { id }, data: { archivedAt: new Date() } });
+    const project = await this.prisma.project.update({ where: { id }, data: { archivedAt: new Date() } });
+    this.realtimeGateway.emitProjectChanged(id);
+    return project;
   }
 
   /**
@@ -173,7 +179,9 @@ export class ProjectsService {
    */
   async unarchive(id: string) {
     await this.findOne(id);
-    return this.prisma.project.update({ where: { id }, data: { archivedAt: null } });
+    const project = await this.prisma.project.update({ where: { id }, data: { archivedAt: null } });
+    this.realtimeGateway.emitProjectChanged(id);
+    return project;
   }
 
   /**

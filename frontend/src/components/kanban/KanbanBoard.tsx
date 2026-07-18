@@ -93,10 +93,26 @@ export function KanbanBoard({ projectId }: { projectId: string }) {
               users={users || []}
               getParentTitle={(parentId) => itemsById.get(parentId)?.title}
               onOpen={setOpenItemId}
-              onCreate={(title) => createItem({ title, statusId: status.id }).then(() => {})}
-              onChangePriority={(id, priority) => updateItem({ id, data: { priority } })}
-              onChangeAssignees={(id, userIds) => updateItemAssignees({ id, userIds })}
-              onChangeLabels={(id, labelIds) => updateItemLabels({ id, labelIds })}
+              onCreate={(title) =>
+                createItem({ title, statusId: status.id })
+                  .then(() => {})
+                  .catch((err) => setError(extractErrorMessage(err, 'Não foi possível criar o item.')))
+              }
+              onChangePriority={(id, priority) =>
+                updateItem({ id, data: { priority } }).catch((err) =>
+                  setError(extractErrorMessage(err, 'Não foi possível alterar a prioridade.')),
+                )
+              }
+              onChangeAssignees={(id, userIds) =>
+                updateItemAssignees({ id, userIds }).catch((err) =>
+                  setError(extractErrorMessage(err, 'Não foi possível alterar os responsáveis.')),
+                )
+              }
+              onChangeLabels={(id, labelIds) =>
+                updateItemLabels({ id, labelIds }).catch((err) =>
+                  setError(extractErrorMessage(err, 'Não foi possível alterar as etiquetas.')),
+                )
+              }
               onCreateLabel={(name, color) => createLabelMutation.mutateAsync({ name, color })}
             />
           ))}

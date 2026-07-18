@@ -81,9 +81,12 @@ export class WorkItemsService {
    * @param dto - dados do item a criar
    * @param creator - usuário autenticado que está criando o item (vira `createdById`)
    * @returns o item criado, com relações carregadas via {@link ITEM_INCLUDE}
+   * @throws ForbiddenException - se o projeto estiver arquivado (ver {@link assertProjectNotArchived})
    * @throws BadRequestException - se o projeto não tiver nenhum status configurado, se o `statusId` informado não pertencer ao projeto, ou se o `parentId` informado não pertencer ao projeto
    */
   async create(projectId: string, dto: CreateItemDto, creator: AuthenticatedUser) {
+    await this.assertProjectNotArchived(projectId);
+
     let statusId = dto.statusId;
     if (!statusId) {
       const firstStatus = await this.prisma.status.findFirst({
@@ -177,10 +180,12 @@ export class WorkItemsService {
    * @param actor - usuário autenticado que está editando (autor das entradas de atividade geradas)
    * @returns o item atualizado, com relações carregadas via {@link ITEM_INCLUDE}
    * @throws NotFoundException - se o item não existir
+   * @throws ForbiddenException - se o projeto do item estiver arquivado
    * @throws BadRequestException - se `dto.parentId` for o próprio item, ou se o novo pai não pertencer ao mesmo projeto
    */
   async update(id: string, dto: UpdateItemDto, actor: AuthenticatedUser) {
     const item = await this.findOne(id);
+    await this.assertProjectNotArchived(item.projectId);
 
     if (dto.parentId) {
       if (dto.parentId === id) {
@@ -233,11 +238,12 @@ export class WorkItemsService {
    * @param actor - usuário autenticado que está movendo o item (autor da entrada de atividade gerada)
    * @returns o item atualizado
    * @throws NotFoundException - se o item não existir
-   * @throws ForbiddenException - se o item estiver travado por outro usuário (em "Em andamento") e quem está tentando mudar não for nem quem travou nem um Admin
+   * @throws ForbiddenException - se o projeto do item estiver arquivado, ou se o item estiver travado por outro usuário (em "Em andamento") e quem está tentando mudar não for nem quem travou nem um Admin
    * @throws BadRequestException - se o status informado não pertencer ao mesmo projeto do item, ou se houver sub-itens ainda não concluídos/cancelados e o novo status for de conclusão/cancelamento
    */
   async updateStatus(id: string, statusId: string, actor: AuthenticatedUser) {
     const item = await this.findOne(id);
+    await this.assertProjectNotArchived(item.projectId);
     const status = await this.assertStatusBelongsToProject(statusId, item.projectId);
 
     if (
@@ -292,9 +298,11 @@ export class WorkItemsService {
    * @param actor - usuário autenticado que está alterando os responsáveis (autor das entradas de atividade geradas)
    * @returns o item atualizado, com a nova lista de responsáveis
    * @throws NotFoundException - se o item não existir
+   * @throws ForbiddenException - se o projeto do item estiver arquivado
    */
   async updateAssignees(id: string, userIds: string[], actor: AuthenticatedUser) {
     const item = await this.findOne(id);
+    await this.assertProjectNotArchived(item.projectId);
     const previousIds = item.assignees.map((a) => a.userId);
 
     await this.prisma.$transaction([
@@ -335,10 +343,12 @@ export class WorkItemsService {
    * @param actor - usuário autenticado que está alterando as etiquetas (autor das entradas de atividade geradas)
    * @returns o item atualizado, com a nova lista de etiquetas
    * @throws NotFoundException - se o item não existir
+   * @throws ForbiddenException - se o projeto do item estiver arquivado
    * @throws BadRequestException - se alguma etiqueta informada não pertencer ao projeto do item
    */
   async updateLabels(id: string, labelIds: string[], actor: AuthenticatedUser) {
     const item = await this.findOne(id);
+    await this.assertProjectNotArchived(item.projectId);
     for (const labelId of labelIds) {
       await this.assertLabelBelongsToProject(labelId, item.projectId);
     }
@@ -380,9 +390,11 @@ export class WorkItemsService {
    * @param id - id do item a remover
    * @returns mensagem de confirmação
    * @throws NotFoundException - se o item não existir
+   * @throws ForbiddenException - se o projeto do item estiver arquivado
    */
   async remove(id: string) {
     const item = await this.findOne(id);
+    await this.assertProjectNotArchived(item.projectId);
     await this.prisma.workItem.delete({ where: { id } });
     this.realtimeGateway.emitItemsChanged(item.projectId);
     return { message: 'Item removido' };
@@ -411,9 +423,11 @@ export class WorkItemsService {
    * @param actor - usuário autenticado que está comentando
    * @returns a entrada de atividade criada, com o autor (`user`)
    * @throws NotFoundException - se o item não existir
+   * @throws ForbiddenException - se o projeto do item estiver arquivado
    */
   async addComment(workItemId: string, message: string, actor: AuthenticatedUser) {
     const item = await this.findOne(workItemId);
+    await this.assertProjectNotArchived(item.projectId);
     const created = await this.prisma.itemActivity.create({
       data: { workItemId, userId: actor.id, type: ActivityType.COMMENT, message },
       include: { user: ACTIVITY_USER_SELECT },
@@ -430,6 +444,21 @@ export class WorkItemsService {
     metadata?: Prisma.InputJsonValue,
   ) {
     await this.prisma.itemActivity.create({ data: { workItemId, userId, type, metadata } });
+  }
+
+  /**
+   * Garante que o projeto do item não está arquivado antes de aceitar qualquer escrita — sem essa
+   * checagem, um usuário com o board já aberto continuava criando/editando/movendo itens
+   * normalmente depois que outro usuário arquivava o projeto, até recarregar a página (o aviso em
+   * tempo real do arquivamento, feito por {@link RealtimeGateway.emitProjectChanged}, é só UX;
+   * esta é a garantia de verdade, do lado do servidor).
+   * @throws ForbiddenException - se o projeto estiver arquivado
+   */
+  private async assertProjectNotArchived(projectId: string) {
+    const project = await this.prisma.project.findUnique({ where: { id: projectId }, select: { archivedAt: true } });
+    if (project?.archivedAt) {
+      throw new ForbiddenException('Este projeto está arquivado — não é possível fazer alterações nele.');
+    }
   }
 
   /** Garante que o status informado existe e pertence ao projeto esperado, evitando que um item receba um status de outro projeto; retorna o status encontrado para reaproveitamento (ex.: checar sua `category`). */

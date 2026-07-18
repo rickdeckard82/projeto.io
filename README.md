@@ -44,7 +44,7 @@ Falhas de envio de e-mail (SMTP incorreto, credenciais inválidas etc.) ficam re
 
 ## Fluxo de verificação manual
 
-1. Logue como Admin com as credenciais do seed.
+1. Logue como Admin com as credenciais do seed — confirme que o login leva para a página inicial (`/`), não para a lista de projetos.
 2. Registre um segundo usuário (fica como Membro por padrão) em `/register`.
 3. Como Admin, crie um projeto em "Novo Projeto".
 4. Em "Configurações" do projeto, adicione o Membro criado.
@@ -67,6 +67,8 @@ Falhas de envio de e-mail (SMTP incorreto, credenciais inválidas etc.) ficam re
 21. Como Admin, promova um usuário a **Senior**. Logado como esse usuário, confirme que consegue criar projeto, criar item, arquivar/desarquivar projeto e adicionar membro — mas não consegue editar/excluir o projeto nem remover um membro (esses botões nem aparecem na UI).
 22. Na página inicial, crie uma nota em "Notas" (abaixo de "Recentes"); logue como outro usuário e confirme que ela aparece pra ele também. Em `/notes`, confirme que só quem criou (ou um Admin) vê os botões de editar/apagar em cada nota.
 23. Em **Configurações → Segurança**, ative a autenticação de dois fatores: escaneie o QR code com um app autenticador (Google Authenticator, Authy, etc.), confirme com o código, e guarde os códigos de recuperação mostrados. Saia e faça login de novo — confirme que agora pede o código de dois fatores antes de entrar. Teste também um código de recuperação (deve funcionar uma única vez) e, em Segurança, desativar o 2FA informando a senha.
+24. Abra o quadro de um projeto ativo em duas janelas/navegadores com usuários diferentes (ambos membros do projeto). Em uma, arquive o projeto (**Configurações → Arquivar**). A outra janela deve mostrar um aviso ("projeto foi arquivado por outro usuário") e voltar sozinha para a lista de projetos, sem precisar recarregar; confirme também que tentar mover/criar/editar um item desse projeto (mesmo direto pela API) passa a retornar erro. Abrir um projeto que já estava arquivado direto pela página **Arquivos** continua funcionando normalmente (só leitura).
+25. Acesse a aba **Métricas** de um projeto como Admin ou Senior e confirme os números (total de itens, concluídos/cancelados, tempo médio até concluir, duração do projeto, resumo por responsável). Logado como Membro ou Visualizador, confirme que a aba não aparece e que acessar a URL (`/projects/:id/metrics`) direto redireciona para o quadro.
 
 ## Deploy em produção (domínio próprio + Nginx Proxy Manager)
 

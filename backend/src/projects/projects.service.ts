@@ -7,6 +7,7 @@ import { UpdateStatusDto } from './dto/update-status.dto.js';
 import { DEFAULT_STATUSES } from './default-statuses.js';
 import { pickCoverColor, suggestProjectKey } from './project-key.util.js';
 import { AuthenticatedUser } from '../common/decorators/current-user.decorator.js';
+import { RealtimeGateway } from '../realtime/realtime.gateway.js';
 
 /**
  * Serviço de domínio para gestão de projetos: CRUD, arquivamento, membros e colunas do kanban (statuses).
@@ -15,7 +16,10 @@ import { AuthenticatedUser } from '../common/decorators/current-user.decorator.j
  */
 @Injectable()
 export class ProjectsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly realtimeGateway: RealtimeGateway,
+  ) {}
 
   /**
    * Lista projetos visíveis para o usuário atual, filtrando por arquivamento e por acesso.
@@ -155,25 +159,33 @@ export class ProjectsService {
   }
 
   /**
-   * Arquiva um projeto (soft-archive via `archivedAt`), sem removê-lo do banco.
+   * Arquiva um projeto (soft-archive via `archivedAt`), sem removê-lo do banco. Emite
+   * `project:changed` (via {@link RealtimeGateway.emitProjectChanged}) para quem estiver com o
+   * board aberto — a notificação é só UX; quem garante que ninguém escreve mais nos itens do
+   * projeto é `WorkItemsService.assertProjectNotArchived`.
    * @param id - Id do projeto a arquivar.
    * @returns Projeto atualizado.
    * @throws NotFoundException - quando não existe projeto com o id informado.
    */
   async archive(id: string) {
     await this.findOne(id);
-    return this.prisma.project.update({ where: { id }, data: { archivedAt: new Date() } });
+    const project = await this.prisma.project.update({ where: { id }, data: { archivedAt: new Date() } });
+    this.realtimeGateway.emitProjectChanged(id);
+    return project;
   }
 
   /**
-   * Reverte o arquivamento de um projeto, limpando `archivedAt`.
+   * Reverte o arquivamento de um projeto, limpando `archivedAt`. Também emite `project:changed`
+   * (ver {@link archive}) para quem estiver com o board aberto.
    * @param id - Id do projeto a desarquivar.
    * @returns Projeto atualizado.
    * @throws NotFoundException - quando não existe projeto com o id informado.
    */
   async unarchive(id: string) {
     await this.findOne(id);
-    return this.prisma.project.update({ where: { id }, data: { archivedAt: null } });
+    const project = await this.prisma.project.update({ where: { id }, data: { archivedAt: null } });
+    this.realtimeGateway.emitProjectChanged(id);
+    return project;
   }
 
   /**

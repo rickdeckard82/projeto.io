@@ -58,6 +58,15 @@ export interface Label {
   color: string;
 }
 
+export interface Module {
+  id: string;
+  projectId: string;
+  name: string;
+  description: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 /**
  * Shape de um sub-item dentro de `WorkItem.subItems` — o backend traz os sub-itens com um
  * include raso (`subItems: { include: { status: true } }`), então eles não carregam
@@ -89,6 +98,8 @@ export interface WorkItem {
   status: Status;
   priority: Priority;
   parentId: string | null;
+  moduleId: string | null;
+  module: Pick<Module, 'id' | 'name'> | null;
   startDate: string | null;
   dueDate: string | null;
   createdById: string;

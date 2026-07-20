@@ -5,6 +5,7 @@ export interface ItemFilters {
   statusId?: string;
   assigneeId?: string;
   labelId?: string;
+  moduleId?: string;
   parentId?: string;
 }
 
@@ -19,6 +20,7 @@ export interface CreateItemInput {
   statusId?: string;
   priority?: Priority;
   parentId?: string;
+  moduleId?: string;
   startDate?: string;
   dueDate?: string;
 }

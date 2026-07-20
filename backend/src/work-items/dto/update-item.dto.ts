@@ -19,6 +19,10 @@ export class UpdateItemDto {
   parentId?: string | null;
 
   @IsOptional()
+  @IsUUID()
+  moduleId?: string | null;
+
+  @IsOptional()
   @IsDateString()
   startDate?: string;
 

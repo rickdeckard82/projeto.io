@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Archive, ChevronDown, ChevronRight, FileText, FolderKanban, Home, ListTodo, StickyNote } from 'lucide-react';
+import { Archive, Boxes, ChevronDown, ChevronRight, FileText, FolderKanban, Home, ListTodo, StickyNote } from 'lucide-react';
 import { listProjects } from '../../api/projects';
+import { listModules } from '../../api/modules';
 import { queryKeys } from '../../api/queryKeys';
 import { APP_VERSION } from '../../lib/appInfo';
 
@@ -18,6 +19,26 @@ const subLinkClass = ({ isActive }: { isActive: boolean }) =>
 
 function SectionLabel({ children }: { children: string }) {
   return <p className="mb-1 mt-4 px-3 text-xs font-semibold uppercase tracking-wide text-slate-600">{children}</p>;
+}
+
+/** Sub-links dos módulos de um projeto expandido — só busca quando o projeto está expandido, para não disparar uma query por projeto na lista inteira. */
+function ProjectModuleLinks({ projectId, isExpanded }: { projectId: string; isExpanded: boolean }) {
+  const { data: modules } = useQuery({
+    queryKey: queryKeys.projectModules(projectId),
+    queryFn: () => listModules(projectId),
+    enabled: isExpanded,
+  });
+
+  return (
+    <>
+      {modules?.map((moduleItem) => (
+        <NavLink key={moduleItem.id} to={`/projects/${projectId}/modules/${moduleItem.id}`} className={subLinkClass}>
+          <Boxes size={14} />
+          <span className="truncate">{moduleItem.name}</span>
+        </NavLink>
+      ))}
+    </>
+  );
 }
 
 export function Sidebar() {
@@ -93,6 +114,7 @@ export function Sidebar() {
                     <FileText size={14} />
                     Páginas
                   </NavLink>
+                  <ProjectModuleLinks projectId={project.id} isExpanded={isExpanded} />
                 </div>
               )}
             </div>

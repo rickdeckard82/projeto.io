@@ -91,10 +91,10 @@ export class ProjectMemberGuard implements CanActivate {
   /**
    * Traduz o id de um recurso de rota para o id do projeto ao qual ele
    * pertence. Para `kind: 'project'` o próprio id já é o projeto; para os
-   * demais tipos (`workItem`, `document`, `label`) faz um lookup pontual
+   * demais tipos (`workItem`, `document`, `label`, `module`) faz um lookup pontual
    * (`select: { projectId: true }`) na respectiva tabela.
    * @param kind - tipo do recurso referenciado pelo parâmetro de rota
-   * @param resourceId - id do recurso (projeto, work item, documento ou label)
+   * @param resourceId - id do recurso (projeto, work item, documento, label ou módulo)
    * @returns id do projeto correspondente, ou `null` se o recurso não existir
    */
   private async resolveProjectId(
@@ -124,6 +124,13 @@ export class ProjectMemberGuard implements CanActivate {
           select: { projectId: true },
         });
         return label?.projectId ?? null;
+      }
+      case 'module': {
+        const module = await this.prisma.module.findUnique({
+          where: { id: resourceId },
+          select: { projectId: true },
+        });
+        return module?.projectId ?? null;
       }
       default:
         return null;

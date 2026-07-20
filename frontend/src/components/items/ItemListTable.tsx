@@ -11,7 +11,7 @@ import { Avatar } from '../common/Avatar';
 import { priorityColor, priorityLabel } from './PrioritySelect';
 import { ItemDetailModal } from './ItemDetailModal';
 
-export function ItemListTable({ projectId }: { projectId: string }) {
+export function ItemListTable({ projectId, moduleId }: { projectId: string; moduleId?: string }) {
   const [assigneeId, setAssigneeId] = useState('');
   const [labelId, setLabelId] = useState('');
   const [openItemId, setOpenItemId] = useState<string | null>(null);
@@ -26,6 +26,7 @@ export function ItemListTable({ projectId }: { projectId: string }) {
     parentId: 'null',
     assigneeId: assigneeId || undefined,
     labelId: labelId || undefined,
+    moduleId,
   });
 
   return (

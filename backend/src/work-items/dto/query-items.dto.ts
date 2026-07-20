@@ -14,5 +14,9 @@ export class QueryItemsDto {
   labelId?: string;
 
   @IsOptional()
+  @IsUUID()
+  moduleId?: string;
+
+  @IsOptional()
   parentId?: string; // pass "null" string to filter top-level items
 }

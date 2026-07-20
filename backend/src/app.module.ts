@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module.js';
 import { UsersModule } from './users/users.module.js';
 import { ProjectsModule } from './projects/projects.module.js';
 import { LabelsModule } from './labels/labels.module.js';
+import { ModulesModule } from './modules/modules.module.js';
 import { WorkItemsModule } from './work-items/work-items.module.js';
 import { DocumentsModule } from './documents/documents.module.js';
 import { SettingsModule } from './settings/settings.module.js';
@@ -26,6 +27,7 @@ import { RolesGuard } from './common/guards/roles.guard.js';
     UsersModule,
     ProjectsModule,
     LabelsModule,
+    ModulesModule,
     WorkItemsModule,
     DocumentsModule,
     SettingsModule,

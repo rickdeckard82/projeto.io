@@ -13,6 +13,7 @@ import { ProjectDetailLayout } from './pages/ProjectDetailLayout';
 import { ProjectBoardPage } from './pages/ProjectBoardPage';
 import { ProjectListViewPage } from './pages/ProjectListViewPage';
 import { ProjectDocumentsPage } from './pages/ProjectDocumentsPage';
+import { ModuleDetailPage } from './pages/ModuleDetailPage';
 import { ProjectMetricsPage } from './pages/ProjectMetricsPage';
 import { DocumentEditorPage } from './pages/DocumentEditorPage';
 import { ProjectSettingsPage } from './pages/ProjectSettingsPage';
@@ -54,6 +55,7 @@ export default function App() {
             <Route path="list" element={<ProjectListViewPage />} />
             <Route path="documents" element={<ProjectDocumentsPage />} />
             <Route path="documents/:documentId" element={<DocumentEditorPage />} />
+            <Route path="modules/:moduleId" element={<ModuleDetailPage />} />
             <Route path="metrics" element={<ProjectMetricsPage />} />
             <Route path="settings" element={<ProjectSettingsPage />} />
           </Route>

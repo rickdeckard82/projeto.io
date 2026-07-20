@@ -1,6 +1,6 @@
 import { SetMetadata } from '@nestjs/common';
 
-export type ProjectResourceKind = 'project' | 'workItem' | 'document' | 'label';
+export type ProjectResourceKind = 'project' | 'workItem' | 'document' | 'label' | 'module';
 
 export const PROJECT_RESOURCE_KEY = 'projectResource';
 

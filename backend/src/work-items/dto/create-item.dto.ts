@@ -23,6 +23,10 @@ export class CreateItemDto {
   parentId?: string;
 
   @IsOptional()
+  @IsUUID()
+  moduleId?: string;
+
+  @IsOptional()
   @IsDateString()
   startDate?: string;
 

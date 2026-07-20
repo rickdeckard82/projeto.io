@@ -19,7 +19,7 @@ function extractErrorMessage(error: unknown, fallback: string): string {
   return message || fallback;
 }
 
-export function KanbanBoard({ projectId }: { projectId: string }) {
+export function KanbanBoard({ projectId, moduleId }: { projectId: string; moduleId?: string }) {
   const { user } = useAuth();
   const canCreate = user ? canEditItem(user.globalRole) : false;
   const [openItemId, setOpenItemId] = useState<string | null>(null);
@@ -53,7 +53,7 @@ export function KanbanBoard({ projectId }: { projectId: string }) {
     updateItemStatus,
     updateItemAssignees,
     updateItemLabels,
-  } = useWorkItems(projectId);
+  } = useWorkItems(projectId, { moduleId });
 
   if (statusesLoading || itemsLoading) return <Spinner />;
 
@@ -94,7 +94,7 @@ export function KanbanBoard({ projectId }: { projectId: string }) {
               getParentTitle={(parentId) => itemsById.get(parentId)?.title}
               onOpen={setOpenItemId}
               onCreate={(title) =>
-                createItem({ title, statusId: status.id })
+                createItem({ title, statusId: status.id, moduleId })
                   .then(() => {})
                   .catch((err) => setError(extractErrorMessage(err, 'Não foi possível criar o item.')))
               }

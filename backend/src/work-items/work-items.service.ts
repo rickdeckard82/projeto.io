@@ -16,6 +16,7 @@ const ITEM_INCLUDE = {
   assignees: { include: { user: { select: { id: true, email: true, fullName: true, avatarUrl: true } } } },
   labels: { include: { label: true } },
   status: true,
+  module: { select: { id: true, name: true } },
   createdBy: { select: { id: true, email: true, fullName: true, avatarUrl: true } },
   statusLockedBy: { select: { id: true, fullName: true, avatarUrl: true } },
   subItems: { include: { status: true } },
@@ -53,7 +54,7 @@ export class WorkItemsService {
    * (sem pai), enquanto um id filtra os sub-itens daquele pai; omitir o parâmetro não filtra por
    * hierarquia.
    * @param projectId - projeto ao qual os itens pertencem
-   * @param query - filtros opcionais (`statusId`, `assigneeId`, `labelId`, `parentId`)
+   * @param query - filtros opcionais (`statusId`, `assigneeId`, `labelId`, `moduleId`, `parentId`)
    * @returns itens do projeto que casam com os filtros, ordenados por data de criação (mais antigos primeiro)
    */
   async list(projectId: string, query: QueryItemsDto) {
@@ -61,6 +62,7 @@ export class WorkItemsService {
     if (query.statusId) where.statusId = query.statusId;
     if (query.assigneeId) where.assignees = { some: { userId: query.assigneeId } };
     if (query.labelId) where.labels = { some: { labelId: query.labelId } };
+    if (query.moduleId) where.moduleId = query.moduleId;
     if (query.parentId === 'null') where.parentId = null;
     else if (query.parentId) where.parentId = query.parentId;
 
@@ -82,7 +84,7 @@ export class WorkItemsService {
    * @param creator - usuário autenticado que está criando o item (vira `createdById`)
    * @returns o item criado, com relações carregadas via {@link ITEM_INCLUDE}
    * @throws ForbiddenException - se o projeto estiver arquivado (ver {@link assertProjectNotArchived})
-   * @throws BadRequestException - se o projeto não tiver nenhum status configurado, se o `statusId` informado não pertencer ao projeto, ou se o `parentId` informado não pertencer ao projeto
+   * @throws BadRequestException - se o projeto não tiver nenhum status configurado, se o `statusId` informado não pertencer ao projeto, se o `parentId` informado não pertencer ao projeto, ou se o `moduleId` informado não pertencer ao projeto
    */
   async create(projectId: string, dto: CreateItemDto, creator: AuthenticatedUser) {
     await this.assertProjectNotArchived(projectId);
@@ -105,6 +107,10 @@ export class WorkItemsService {
       await this.assertItemBelongsToProject(dto.parentId, projectId);
     }
 
+    if (dto.moduleId) {
+      await this.assertModuleBelongsToProject(dto.moduleId, projectId);
+    }
+
     const created = await this.prisma.workItem.create({
       data: {
         projectId,
@@ -113,6 +119,7 @@ export class WorkItemsService {
         statusId,
         priority: dto.priority,
         parentId: dto.parentId,
+        moduleId: dto.moduleId,
         startDate: dto.startDate ? new Date(dto.startDate) : undefined,
         dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
         createdById: creator.id,
@@ -181,7 +188,7 @@ export class WorkItemsService {
    * @returns o item atualizado, com relações carregadas via {@link ITEM_INCLUDE}
    * @throws NotFoundException - se o item não existir
    * @throws ForbiddenException - se o projeto do item estiver arquivado
-   * @throws BadRequestException - se `dto.parentId` for o próprio item, ou se o novo pai não pertencer ao mesmo projeto
+   * @throws BadRequestException - se `dto.parentId` for o próprio item, se o novo pai não pertencer ao mesmo projeto, ou se `dto.moduleId` não pertencer ao mesmo projeto
    */
   async update(id: string, dto: UpdateItemDto, actor: AuthenticatedUser) {
     const item = await this.findOne(id);
@@ -194,6 +201,10 @@ export class WorkItemsService {
       await this.assertItemBelongsToProject(dto.parentId, item.projectId);
     }
 
+    if (dto.moduleId) {
+      await this.assertModuleBelongsToProject(dto.moduleId, item.projectId);
+    }
+
     const updated = await this.prisma.workItem.update({
       where: { id },
       data: {
@@ -201,6 +212,7 @@ export class WorkItemsService {
         description: dto.description,
         priority: dto.priority,
         parentId: dto.parentId === undefined ? undefined : dto.parentId,
+        moduleId: dto.moduleId === undefined ? undefined : dto.moduleId,
         startDate: dto.startDate ? new Date(dto.startDate) : undefined,
         dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
       },
@@ -483,6 +495,14 @@ export class WorkItemsService {
     const label = await this.prisma.label.findUnique({ where: { id: labelId } });
     if (!label || label.projectId !== projectId) {
       throw new BadRequestException('Etiqueta inválida para este projeto');
+    }
+  }
+
+  /** Garante que o módulo informado existe e pertence ao projeto esperado, evitando que um item seja associado a um módulo de outro projeto. */
+  private async assertModuleBelongsToProject(moduleId: string, projectId: string) {
+    const module = await this.prisma.module.findUnique({ where: { id: moduleId } });
+    if (!module || module.projectId !== projectId) {
+      throw new BadRequestException('Módulo inválido para este projeto');
     }
   }
 }

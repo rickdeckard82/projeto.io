@@ -115,6 +115,7 @@ model Project {
   items    WorkItem[]
   labels   Label[]
   documents Document[]
+  modules   Module[]
 
   @@map("projects")
 }
@@ -148,6 +149,24 @@ model Status {
   @@map("statuses")
 }
 
+/// Agrupamento opcional de itens dentro de um projeto (ex.: "Sprint 1", "Backend"). Reaproveita as
+/// mesmas colunas de status do projeto — um módulo não tem kanban próprio, é só um recorte dos
+/// itens do projeto (`WorkItem.moduleId`). Ver `ModulesService`.
+model Module {
+  id          String   @id @default(uuid())
+  projectId   String   @map("project_id")
+  name        String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  project Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  items   WorkItem[]
+
+  @@unique([projectId, name])
+  @@map("modules")
+}
+
 model WorkItem {
   id          String    @id @default(uuid())
   projectId   String    @map("project_id")
@@ -156,6 +175,9 @@ model WorkItem {
   statusId    String    @map("status_id")
   priority    Priority  @default(NONE)
   parentId    String?   @map("parent_id")
+  /// Módulo ao qual o item pertence, opcional — um item pode existir sem módulo (visão geral do
+  /// projeto continua mostrando todos os itens, com ou sem módulo).
+  moduleId    String?   @map("module_id")
   startDate   DateTime? @map("start_date")
   dueDate     DateTime? @map("due_date")
   createdById String    @map("created_by_id")
@@ -170,6 +192,7 @@ model WorkItem {
 
   project       Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
   status        Status         @relation(fields: [statusId], references: [id], onDelete: Restrict)
+  module        Module?        @relation(fields: [moduleId], references: [id], onDelete: SetNull)
   createdBy     User           @relation("WorkItemCreatedBy", fields: [createdById], references: [id])
   statusLockedBy User?         @relation("WorkItemStatusLockedBy", fields: [statusLockedById], references: [id], onDelete: SetNull)
   parent        WorkItem?      @relation("SubItems", fields: [parentId], references: [id], onDelete: SetNull)
@@ -181,6 +204,7 @@ model WorkItem {
   @@index([projectId])
   @@index([statusId])
   @@index([parentId])
+  @@index([moduleId])
   @@map("work_items")
 }
 

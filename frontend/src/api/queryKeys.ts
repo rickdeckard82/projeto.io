@@ -11,6 +11,8 @@ export const queryKeys = {
   projectMembers: (id: string) => ['projects', id, 'members'] as const,
   projectStatuses: (id: string) => ['projects', id, 'statuses'] as const,
   projectLabels: (id: string) => ['projects', id, 'labels'] as const,
+  projectModules: (id: string) => ['projects', id, 'modules'] as const,
+  module: (id: string) => ['modules', id] as const,
   projectItems: (id: string, filters?: Record<string, string | undefined>) =>
     ['projects', id, 'items', filters] as const,
   item: (id: string) => ['items', id] as const,

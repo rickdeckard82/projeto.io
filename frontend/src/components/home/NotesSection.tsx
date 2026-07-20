@@ -12,8 +12,9 @@ import { NoteDialog } from '../notes/NoteDialog';
 const HOME_PREVIEW_LIMIT = 6;
 
 /**
- * Resumo do mural de notas na página inicial: mostra as mais recentes e permite criar uma nova
- * rapidamente. Editar/excluir só na página dedicada (`/notes`), acessível pelo link "Ver todas".
+ * Resumo das notas pessoais na página inicial: mostra as mais recentes do próprio usuário e
+ * permite criar uma nova rapidamente. Editar/excluir só na página dedicada (`/notes`), acessível
+ * pelo link "Ver todas".
  */
 export function NotesSection() {
   const queryClient = useQueryClient();
@@ -46,7 +47,7 @@ export function NotesSection() {
       {isLoading && <Spinner />}
 
       {!isLoading && (!notes || notes.length === 0) && (
-        <EmptyState title="Nenhuma nota ainda" description="Crie a primeira nota compartilhada com a equipe." />
+        <EmptyState title="Nenhuma nota ainda" description="Crie sua primeira nota — só você a vê." />
       )}
 
       {!isLoading && notes && notes.length > 0 && (

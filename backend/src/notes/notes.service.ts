@@ -1,5 +1,4 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { GlobalRole } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateNoteDto } from './dto/create-note.dto.js';
 import { UpdateNoteDto } from './dto/update-note.dto.js';
@@ -8,21 +7,23 @@ import { AuthenticatedUser } from '../common/decorators/current-user.decorator.j
 const CREATOR_SELECT = { select: { id: true, fullName: true, avatarUrl: true } };
 
 /**
- * Notas de texto livre não vinculadas a projeto — um mural compartilhado visível a qualquer
- * usuário autenticado (usado na página inicial). Qualquer usuário autenticado pode criar; só
- * quem criou (ou um Admin) pode editar/apagar.
+ * Notas de texto livre não vinculadas a projeto — cada uma é privada: só quem criou a nota a vê,
+ * edita ou apaga (sem exceção nem para Admin — é um bloco de notas pessoal, não um mural
+ * compartilhado).
  */
 @Injectable()
 export class NotesService {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * Lista as notas, mais recentes primeiro.
+   * Lista as notas do próprio usuário, mais recentes primeiro.
+   * @param author - usuário autenticado que está listando (só vê as próprias notas)
    * @param limit - quantidade máxima de notas a retornar (ex.: preview da home); sem limite, retorna todas.
-   * @returns notas com o autor (`createdBy`)
+   * @returns notas do usuário, com o autor (`createdBy`)
    */
-  async list(limit?: number) {
+  async list(author: AuthenticatedUser, limit?: number) {
     return this.prisma.note.findMany({
+      where: { createdById: author.id },
       orderBy: { createdAt: 'desc' },
       take: limit,
       include: { createdBy: CREATOR_SELECT },
@@ -43,13 +44,13 @@ export class NotesService {
   }
 
   /**
-   * Atualiza uma nota existente.
+   * Atualiza uma nota existente. Restrito a quem a criou.
    * @param id - id da nota
    * @param dto - campos a atualizar (conteúdo e/ou cor)
    * @param actor - usuário autenticado que está editando
    * @returns a nota atualizada, com o autor (`createdBy`)
    * @throws NotFoundException - se a nota não existir
-   * @throws ForbiddenException - se quem está editando não for o autor nem um Admin
+   * @throws ForbiddenException - se quem está editando não for o autor
    */
   async update(id: string, dto: UpdateNoteDto, actor: AuthenticatedUser) {
     const note = await this.findOne(id);
@@ -63,12 +64,12 @@ export class NotesService {
   }
 
   /**
-   * Remove definitivamente uma nota.
+   * Remove definitivamente uma nota. Restrito a quem a criou.
    * @param id - id da nota
    * @param actor - usuário autenticado que está removendo
    * @returns mensagem de confirmação
    * @throws NotFoundException - se a nota não existir
-   * @throws ForbiddenException - se quem está removendo não for o autor nem um Admin
+   * @throws ForbiddenException - se quem está removendo não for o autor
    */
   async remove(id: string, actor: AuthenticatedUser) {
     const note = await this.findOne(id);
@@ -87,9 +88,9 @@ export class NotesService {
     return note;
   }
 
-  /** Só o autor da nota ou um Admin pode editá-la/removê-la. */
+  /** Só o autor da nota pode editá-la/removê-la — nota é privada, sem exceção nem para Admin. */
   private assertCanModify(createdById: string, actor: AuthenticatedUser) {
-    if (createdById !== actor.id && actor.globalRole !== GlobalRole.ADMIN) {
+    if (createdById !== actor.id) {
       throw new ForbiddenException('Você só pode editar ou remover notas que você criou');
     }
   }

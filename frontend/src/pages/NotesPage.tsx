@@ -3,7 +3,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { StickyNote } from 'lucide-react';
 import { createNote, deleteNote, listNotes, updateNote } from '../api/notes';
 import { queryKeys } from '../api/queryKeys';
-import { useAuth } from '../auth/AuthContext';
 import { Note } from '../types';
 import { Button } from '../components/common/Button';
 import { Spinner } from '../components/common/Spinner';
@@ -13,7 +12,6 @@ import { NoteCard } from '../components/notes/NoteCard';
 import { NoteDialog } from '../components/notes/NoteDialog';
 
 export function NotesPage() {
-  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
@@ -62,22 +60,14 @@ export function NotesPage() {
       {isLoading && <Spinner />}
 
       {!isLoading && (!notes || notes.length === 0) && (
-        <EmptyState title="Nenhuma nota ainda" description="Crie a primeira nota compartilhada com a equipe." />
+        <EmptyState title="Nenhuma nota ainda" description="Crie sua primeira nota — só você a vê." />
       )}
 
       {!isLoading && notes && notes.length > 0 && (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {notes.map((note) => {
-            const canModify = user?.id === note.createdById || user?.globalRole === 'ADMIN';
-            return (
-              <NoteCard
-                key={note.id}
-                note={note}
-                onEdit={canModify ? () => openEdit(note) : undefined}
-                onDelete={canModify ? () => setDeleteTarget(note) : undefined}
-              />
-            );
-          })}
+          {notes.map((note) => (
+            <NoteCard key={note.id} note={note} onEdit={() => openEdit(note)} onDelete={() => setDeleteTarget(note)} />
+          ))}
         </div>
       )}
 

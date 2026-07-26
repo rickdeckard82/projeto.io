@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { ActivityType, GlobalRole, Prisma, StatusCategory } from '../generated/prisma/client.js';
+import { ActivityType, GlobalRole, Prisma, RecurrenceUnit, StatusCategory } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateItemDto } from './dto/create-item.dto.js';
 import { UpdateItemDto } from './dto/update-item.dto.js';
@@ -24,6 +24,38 @@ const ITEM_INCLUDE = {
 
 /** Seleção de usuário reaproveitada nas entradas do histórico de atividade de um item. */
 const ACTIVITY_USER_SELECT = { select: { id: true, fullName: true, avatarUrl: true } };
+
+/**
+ * Resolve a combinação final de `recurrenceUnit`/`recurrenceInterval` a partir do que foi
+ * informado: sem `unit`, o item não é recorrente e `interval` não faz sentido sozinho (ambos
+ * viram `null`); com `unit` mas sem `interval`, assume `1` (ex.: só "WEEK" = a cada 1 semana).
+ */
+function normalizeRecurrence(
+  unit: RecurrenceUnit | undefined,
+  interval: number | undefined,
+): { unit: RecurrenceUnit | null; interval: number | null } {
+  if (!unit) return { unit: null, interval: null };
+  return { unit, interval: interval ?? 1 };
+}
+
+/** Soma `interval` unidades de `unit` a `date`, sem alterar `date`. Mês trata corretamente o fim do mês (ex.: 31/jan + 1 mês = 28/fev, não 3/mar). */
+function addRecurrenceInterval(date: Date, unit: RecurrenceUnit, interval: number): Date {
+  const result = new Date(date);
+  if (unit === 'DAY') {
+    result.setDate(result.getDate() + interval);
+    return result;
+  }
+  if (unit === 'WEEK') {
+    result.setDate(result.getDate() + interval * 7);
+    return result;
+  }
+  const originalDay = result.getDate();
+  result.setDate(1);
+  result.setMonth(result.getMonth() + interval);
+  const daysInTargetMonth = new Date(result.getFullYear(), result.getMonth() + 1, 0).getDate();
+  result.setDate(Math.min(originalDay, daysInTargetMonth));
+  return result;
+}
 
 /**
  * Igual a {@link ITEM_INCLUDE}, mas também traz `id`/`name` do projeto do item — necessário na
@@ -112,6 +144,7 @@ export class WorkItemsService {
     }
 
     const initialStatus = await this.prisma.status.findUniqueOrThrow({ where: { id: statusId } });
+    const recurrence = normalizeRecurrence(dto.recurrenceUnit, dto.recurrenceInterval);
 
     const created = await this.prisma.workItem.create({
       data: {
@@ -126,6 +159,8 @@ export class WorkItemsService {
         dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
         createdById: creator.id,
         inProgressSince: initialStatus.category === StatusCategory.STARTED ? new Date() : undefined,
+        recurrenceUnit: recurrence.unit,
+        recurrenceInterval: recurrence.interval,
       },
       include: ITEM_INCLUDE,
     });
@@ -208,6 +243,14 @@ export class WorkItemsService {
       await this.assertModuleBelongsToProject(dto.moduleId, item.projectId);
     }
 
+    const recurrenceGiven = dto.recurrenceUnit !== undefined || dto.recurrenceInterval !== undefined;
+    const recurrence = recurrenceGiven
+      ? normalizeRecurrence(
+          (dto.recurrenceUnit !== undefined ? dto.recurrenceUnit : item.recurrenceUnit) ?? undefined,
+          (dto.recurrenceInterval !== undefined ? dto.recurrenceInterval : item.recurrenceInterval) ?? undefined,
+        )
+      : undefined;
+
     const updated = await this.prisma.workItem.update({
       where: { id },
       data: {
@@ -218,6 +261,8 @@ export class WorkItemsService {
         moduleId: dto.moduleId === undefined ? undefined : dto.moduleId,
         startDate: dto.startDate ? new Date(dto.startDate) : undefined,
         dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
+        recurrenceUnit: recurrenceGiven ? recurrence!.unit : undefined,
+        recurrenceInterval: recurrenceGiven ? recurrence!.interval : undefined,
       },
       include: ITEM_INCLUDE,
     });
@@ -251,6 +296,10 @@ export class WorkItemsService {
    * tarefa que já está sendo trabalhada por alguém. Sair de `STARTED` (concluir, cancelar, ou
    * voltar) limpa a trava.
    *
+   * Um item que já chegou em `COMPLETED`/`CANCELLED` fica travado — ninguém além de um Admin
+   * consegue movê-lo de novo (nem para outro status de conclusão/cancelamento, nem de volta ao
+   * fluxo ativo), para o board não virar um lugar onde tarefas "fechadas" continuam sendo mexidas.
+   *
    * Junto disso, mede quanto tempo o item passa "em andamento": ao entrar em `STARTED` grava
    * `inProgressSince`; ao sair, soma o intervalo decorrido em `inProgressSeconds` e limpa
    * `inProgressSince` — cobre também o caso de o item sair e voltar pra `STARTED` mais de uma vez.
@@ -261,7 +310,7 @@ export class WorkItemsService {
    * @param actor - usuário autenticado que está movendo o item (autor da entrada de atividade gerada)
    * @returns o item atualizado
    * @throws NotFoundException - se o item não existir
-   * @throws ForbiddenException - se o projeto do item estiver arquivado, ou se o item estiver travado por outro usuário (em "Em andamento") e quem está tentando mudar não for nem quem travou nem um Admin
+   * @throws ForbiddenException - se o projeto do item estiver arquivado, se o item estiver travado por outro usuário (em "Em andamento") e quem está tentando mudar não for nem quem travou nem um Admin, ou se o item já estiver concluído/cancelado e quem está tentando mudar não for Admin
    * @throws BadRequestException - se o status informado não pertencer ao mesmo projeto do item, se o item ainda estiver no Backlog sem nenhum responsável definido, ou se houver sub-itens ainda não concluídos/cancelados e o novo status for de conclusão/cancelamento
    */
   async updateStatus(id: string, statusId: string, actor: AuthenticatedUser) {
@@ -282,6 +331,14 @@ export class WorkItemsService {
 
     if (item.status.category === StatusCategory.BACKLOG && status.category !== StatusCategory.BACKLOG && item.assignees.length === 0) {
       throw new BadRequestException('Defina ao menos um responsável antes de tirar este item do Backlog.');
+    }
+
+    if (
+      item.statusId !== statusId &&
+      (item.status.category === StatusCategory.COMPLETED || item.status.category === StatusCategory.CANCELLED) &&
+      actor.globalRole !== GlobalRole.ADMIN
+    ) {
+      throw new ForbiddenException('Este item já está concluído ou cancelado e não pode mais ser movido — só um Admin pode reabri-lo.');
     }
 
     if (status.category === StatusCategory.COMPLETED || status.category === StatusCategory.CANCELLED) {
@@ -330,9 +387,68 @@ export class WorkItemsService {
       });
     }
 
+    if (status.category === StatusCategory.COMPLETED && item.recurrenceUnit) {
+      await this.generateNextOccurrence(item, item.recurrenceUnit, item.recurrenceInterval ?? 1, actor);
+    }
+
     this.realtimeGateway.emitItemsChanged(item.projectId);
     this.realtimeGateway.emitActivityChanged(item.projectId, id);
     return updated;
+  }
+
+  /**
+   * Cria a próxima ocorrência de um item recorrente ao ser concluído. Copia título, descrição,
+   * prioridade, módulo, etiquetas e a própria recorrência (para a série continuar) — não copia
+   * responsáveis de propósito, a nova ocorrência começa sem dono definido. Entra sempre no
+   * primeiro status do projeto (menor `position`, o mesmo padrão usado por {@link create} quando
+   * nenhum `statusId` é informado). Datas avançam `interval` unidades de `unit` a partir das datas
+   * do item concluído; sem nenhuma data original, a nova ocorrência ganha um `dueDate` calculado a
+   * partir de agora, para dar um alvo — ver {@link addRecurrenceInterval}.
+   * @param completedItem - o item que acabou de ser concluído (já com relações carregadas)
+   * @param unit - unidade de recorrência do item concluído
+   * @param interval - intervalo (em `unit`) do item concluído
+   * @param actor - usuário que concluiu o item (autor da nova ocorrência)
+   */
+  private async generateNextOccurrence(
+    completedItem: Awaited<ReturnType<typeof this.findOne>>,
+    unit: RecurrenceUnit,
+    interval: number,
+    actor: AuthenticatedUser,
+  ) {
+    const firstStatus = await this.prisma.status.findFirst({
+      where: { projectId: completedItem.projectId },
+      orderBy: { position: 'asc' },
+    });
+    if (!firstStatus) return;
+
+    const hasStart = !!completedItem.startDate;
+    const hasDue = !!completedItem.dueDate;
+    const basis = completedItem.dueDate ?? completedItem.startDate ?? new Date();
+    const nextDueDate = hasDue || (!hasStart && !hasDue) ? addRecurrenceInterval(basis, unit, interval) : undefined;
+    const nextStartDate = hasStart ? addRecurrenceInterval(completedItem.startDate!, unit, interval) : undefined;
+
+    const next = await this.prisma.workItem.create({
+      data: {
+        projectId: completedItem.projectId,
+        title: completedItem.title,
+        description: completedItem.description,
+        statusId: firstStatus.id,
+        priority: completedItem.priority,
+        moduleId: completedItem.moduleId,
+        startDate: nextStartDate,
+        dueDate: nextDueDate,
+        createdById: actor.id,
+        recurrenceUnit: unit,
+        recurrenceInterval: interval,
+        labels: { createMany: { data: completedItem.labels.map((l) => ({ labelId: l.labelId })) } },
+      },
+    });
+
+    await this.logActivity(next.id, actor.id, ActivityType.CREATED);
+    await this.logActivity(completedItem.id, actor.id, ActivityType.RECURRENCE_GENERATED, {
+      newItemId: next.id,
+      newItemTitle: next.title,
+    });
   }
 
   /**

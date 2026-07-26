@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import { ItemActivity, Priority, RecentWorkItem, WorkItem } from '../types';
+import { ItemActivity, Priority, RecentWorkItem, RecurrenceUnit, WorkItem } from '../types';
 
 export interface ItemFilters {
   statusId?: string;
@@ -23,6 +23,8 @@ export interface CreateItemInput {
   moduleId?: string;
   startDate?: string;
   dueDate?: string;
+  recurrenceUnit?: RecurrenceUnit;
+  recurrenceInterval?: number;
 }
 
 export async function createItem(projectId: string, data: CreateItemInput): Promise<WorkItem> {
@@ -35,7 +37,13 @@ export async function getItem(id: string): Promise<WorkItem> {
   return res.data;
 }
 
-export async function updateItem(id: string, data: Partial<CreateItemInput>): Promise<WorkItem> {
+/** Igual a `CreateItemInput`, mas com a recorrência aceitando `null` explícito para desligá-la. */
+export type UpdateItemInput = Partial<Omit<CreateItemInput, 'recurrenceUnit' | 'recurrenceInterval'>> & {
+  recurrenceUnit?: RecurrenceUnit | null;
+  recurrenceInterval?: number | null;
+};
+
+export async function updateItem(id: string, data: UpdateItemInput): Promise<WorkItem> {
   const res = await apiClient.patch(`/items/${id}`, data);
   return res.data;
 }

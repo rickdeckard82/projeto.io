@@ -5,6 +5,7 @@ import {
   MessageSquare,
   Pencil,
   Plus,
+  Repeat,
   Sparkles,
   Tag,
   Text,
@@ -32,6 +33,7 @@ const ACTIVITY_ICON: Record<ItemActivity['type'], typeof Plus> = {
   ASSIGNEE_ADDED: UserPlusIcon,
   ASSIGNEE_REMOVED: UserMinus,
   COMMENT: MessageSquare,
+  RECURRENCE_GENERATED: Repeat,
 };
 
 function describeActivity(activity: ItemActivity): string {
@@ -59,6 +61,8 @@ function describeActivity(activity: ItemActivity): string {
       return `removeu ${meta.userName} dos responsáveis`;
     case 'COMMENT':
       return 'comentou';
+    case 'RECURRENCE_GENERATED':
+      return `gerou a próxima ocorrência: "${meta.newItemTitle}"`;
     default:
       return '';
   }

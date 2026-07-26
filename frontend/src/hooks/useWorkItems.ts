@@ -9,6 +9,7 @@ import {
   ItemFilters,
   listItems,
   updateItem,
+  UpdateItemInput,
   updateItemAssignees,
   updateItemLabels,
   updateItemStatus,
@@ -60,7 +61,7 @@ export function useWorkItems(projectId: string, filters: ItemFilters = {}) {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<CreateItemInput> }) => updateItem(id, data),
+    mutationFn: ({ id, data }: { id: string; data: UpdateItemInput }) => updateItem(id, data),
     onSuccess: invalidate,
   });
 

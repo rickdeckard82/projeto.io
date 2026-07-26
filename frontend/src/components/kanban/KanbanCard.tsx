@@ -1,7 +1,7 @@
 import { CSSProperties, useState } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { Check, CornerDownRight, Layers, Lock, Plus, Tag, UserPlus } from 'lucide-react';
+import { Check, CornerDownRight, Layers, Lock, Plus, Repeat, Tag, UserPlus } from 'lucide-react';
 import { Label, Priority, StatusCategory, UserDirectoryEntry, WorkItem } from '../../types';
 import { Avatar } from '../common/Avatar';
 import { Badge } from '../common/Badge';
@@ -42,7 +42,10 @@ export function KanbanCardPreview({ item, parentTitle }: { item: WorkItem; paren
           {parentTitle}
         </p>
       )}
-      <p className="text-sm text-slate-100">{item.title}</p>
+      <p className="flex items-center gap-1 text-sm text-slate-100">
+        {item.recurrenceUnit && <Repeat size={11} className="shrink-0 text-slate-500" />}
+        <span className="truncate">{item.title}</span>
+      </p>
       <div className="mt-2 flex flex-wrap items-center gap-1">
         {item.priority !== 'NONE' && (
           <span
@@ -321,7 +324,12 @@ export function KanbanCard({
   onCreateLabel: (name: string, color: string) => Promise<Label>;
 }) {
   const isLockedByOther = !!item.statusLockedById && item.statusLockedById !== currentUserId && !isAdmin;
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: item.id, disabled: isLockedByOther });
+  const isClosedForNonAdmin =
+    (item.status.category === 'COMPLETED' || item.status.category === 'CANCELLED') && !isAdmin;
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: item.id,
+    disabled: isLockedByOther || isClosedForNonAdmin,
+  });
 
   const glowColor = STATUS_GLOW[item.status.category];
   const style = glowStyle(item.status.category);
@@ -365,7 +373,14 @@ export function KanbanCard({
           {item.statusLockedBy.fullName}
         </p>
       )}
-      <p className="text-sm text-slate-100">{item.title}</p>
+      <p className="flex items-center gap-1 text-sm text-slate-100">
+        {item.recurrenceUnit && (
+          <span title="Tarefa recorrente" className="shrink-0 text-slate-500">
+            <Repeat size={11} />
+          </span>
+        )}
+        <span className="truncate">{item.title}</span>
+      </p>
       <div className="mt-2 flex flex-wrap items-center gap-1">
         {(canEdit || item.priority !== 'NONE') && (
           <PriorityMenu value={item.priority} disabled={!canEdit} onChange={onChangePriority} />

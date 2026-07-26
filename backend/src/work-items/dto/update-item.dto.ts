@@ -1,5 +1,5 @@
-import { IsDateString, IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
-import { Priority } from '../../generated/prisma/client.js';
+import { IsDateString, IsEnum, IsInt, IsOptional, IsString, IsUUID, Min } from 'class-validator';
+import { Priority, RecurrenceUnit } from '../../generated/prisma/client.js';
 
 export class UpdateItemDto {
   @IsOptional()
@@ -29,4 +29,14 @@ export class UpdateItemDto {
   @IsOptional()
   @IsDateString()
   dueDate?: string;
+
+  /** `null` desliga a recorrência; omitido preserva o valor atual; um valor a liga/reconfigura. */
+  @IsOptional()
+  @IsEnum(RecurrenceUnit)
+  recurrenceUnit?: RecurrenceUnit | null;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  recurrenceInterval?: number | null;
 }

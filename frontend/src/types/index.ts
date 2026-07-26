@@ -4,6 +4,9 @@ export type StatusCategory = 'BACKLOG' | 'UNSTARTED' | 'STARTED' | 'COMPLETED' |
 
 export type Priority = 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
 
+/** "A cada N dias" (recorrência personalizada) é só `DAY` com `recurrenceInterval` > 1 — não existe unidade "custom" separada, a UI decide como apresentar cada combinação. */
+export type RecurrenceUnit = 'DAY' | 'WEEK' | 'MONTH';
+
 export interface User {
   id: string;
   email: string;
@@ -110,6 +113,9 @@ export interface WorkItem {
   inProgressSeconds: number;
   /** Preenchido enquanto o item estiver em "Em andamento" agora — desde quando, para somar ao `inProgressSeconds` acumulado. */
   inProgressSince: string | null;
+  /** Presença = item recorrente; ao ser concluído, o backend gera automaticamente a próxima ocorrência. */
+  recurrenceUnit: RecurrenceUnit | null;
+  recurrenceInterval: number | null;
   createdAt: string;
   updatedAt: string;
   assignees: { user: User }[];
@@ -137,7 +143,8 @@ export type ActivityType =
   | 'LABEL_REMOVED'
   | 'ASSIGNEE_ADDED'
   | 'ASSIGNEE_REMOVED'
-  | 'COMMENT';
+  | 'COMMENT'
+  | 'RECURRENCE_GENERATED';
 
 export interface ItemActivity {
   id: string;

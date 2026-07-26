@@ -41,6 +41,16 @@ enum ActivityType {
   ASSIGNEE_ADDED
   ASSIGNEE_REMOVED
   COMMENT
+  RECURRENCE_GENERATED
+}
+
+/// Unidade de intervalo de uma tarefa recorrente (ver `WorkItem.recurrenceUnit`). "A cada N dias"
+/// (recorrência personalizada) é só `DAY` com `recurrenceInterval` maior que 1 — não existe uma
+/// unidade "CUSTOM" separada, o formulário do frontend que decide como apresentar cada combinação.
+enum RecurrenceUnit {
+  DAY
+  WEEK
+  MONTH
 }
 
 model User {
@@ -200,6 +210,16 @@ model WorkItem {
   /// valor final é o tempo real "em andamento" da tarefa — a base do cálculo de métricas por item
   /// e do tempo de execução do projeto (`MetricsService`).
   inProgressSeconds Int @default(0) @map("in_progress_seconds")
+
+  /// Presença de `recurrenceUnit` é o que marca o item como recorrente; `null` = não recorrente.
+  /// Quando o item é movido para um status de categoria COMPLETED, `WorkItemsService.updateStatus`
+  /// cria automaticamente a próxima ocorrência (mesmo título/descrição/prioridade/etiquetas/módulo
+  /// e a própria recorrência, para a série continuar; responsáveis não são copiados de propósito —
+  /// a próxima ocorrência começa sem dono definido) com `startDate`/`dueDate` avançados por
+  /// `recurrenceInterval` unidades de `recurrenceUnit` a partir das datas do item concluído (ou a
+  /// partir de agora, em `dueDate`, se o item não tinha nenhuma data).
+  recurrenceUnit     RecurrenceUnit? @map("recurrence_unit")
+  recurrenceInterval Int?            @map("recurrence_interval")
 
   project       Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
   status        Status         @relation(fields: [statusId], references: [id], onDelete: Restrict)

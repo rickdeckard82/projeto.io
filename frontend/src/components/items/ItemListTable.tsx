@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { Repeat } from 'lucide-react';
+import { formatDate } from '../../lib/dateFormat';
 import { listUserDirectory } from '../../api/users';
 import { listLabels } from '../../api/labels';
 import { queryKeys } from '../../api/queryKeys';
@@ -81,7 +83,16 @@ export function ItemListTable({ projectId, moduleId }: { projectId: string; modu
                 onClick={() => setOpenItemId(item.id)}
                 className="cursor-pointer border-b border-slate-900 hover:bg-slate-900"
               >
-                <td className="py-2 text-slate-100">{item.title}</td>
+                <td className="py-2 text-slate-100">
+                  <span className="flex items-center gap-1.5">
+                    {item.recurrenceUnit && (
+                      <span title="Tarefa recorrente" className="shrink-0 text-slate-500">
+                        <Repeat size={12} />
+                      </span>
+                    )}
+                    {item.title}
+                  </span>
+                </td>
                 <td className="text-slate-400">{item.status?.name}</td>
                 <td>
                   {item.priority !== 'NONE' && (
@@ -109,7 +120,7 @@ export function ItemListTable({ projectId, moduleId }: { projectId: string; modu
                     ))}
                   </div>
                 </td>
-                <td className="text-slate-400">{item.dueDate?.slice(0, 10) || '—'}</td>
+                <td className="text-slate-400">{item.dueDate ? formatDate(item.dueDate) : '—'}</td>
               </tr>
             ))}
           </tbody>

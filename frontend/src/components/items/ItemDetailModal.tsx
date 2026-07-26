@@ -13,6 +13,7 @@ import { Spinner } from '../common/Spinner';
 import { Toast } from '../common/Toast';
 import { Avatar } from '../common/Avatar';
 import { PrioritySelect } from './PrioritySelect';
+import { RecurrenceSelect } from './RecurrenceSelect';
 import { AssigneePicker } from './AssigneePicker';
 import { LabelPicker } from './LabelPicker';
 import { SubItemList } from './SubItemList';
@@ -56,6 +57,8 @@ export function ItemDetailModal({
   });
   const isLockedByOther =
     !!item?.statusLockedById && item.statusLockedById !== user?.id && user?.globalRole !== 'ADMIN';
+  const isClosedForNonAdmin =
+    (item?.status.category === 'COMPLETED' || item?.status.category === 'CANCELLED') && user?.globalRole !== 'ADMIN';
 
   const { updateItem, updateItemAssignees, updateItemLabels, deleteItem } = useWorkItems(projectId);
 
@@ -138,10 +141,16 @@ export function ItemDetailModal({
                         {item.statusLockedBy.fullName}
                       </span>
                     )}
+                    {isClosedForNonAdmin && (
+                      <span className="flex items-center gap-1 text-amber-500" title="Concluído/cancelado — só um Admin pode reabrir">
+                        <Lock size={10} />
+                        Encerrado
+                      </span>
+                    )}
                   </label>
                   <select
                     value={item.statusId}
-                    disabled={!editable || isLockedByOther}
+                    disabled={!editable || isLockedByOther || isClosedForNonAdmin}
                     onChange={(e) => statusMutation.mutate(e.target.value)}
                     className="rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-100 disabled:opacity-50"
                   >
@@ -185,6 +194,17 @@ export function ItemDetailModal({
                   <span className="inline-block py-1 text-slate-300">
                     {formatInProgressDuration(effectiveInProgressSeconds(item))}
                   </span>
+                </div>
+                <div>
+                  <label className="mb-1 block">Recorrência</label>
+                  <RecurrenceSelect
+                    unit={item.recurrenceUnit}
+                    interval={item.recurrenceInterval}
+                    disabled={!editable}
+                    onChange={(recurrenceUnit, recurrenceInterval) =>
+                      updateItem({ id: itemId, data: { recurrenceUnit, recurrenceInterval } }).then(invalidateItem)
+                    }
+                  />
                 </div>
               </div>
 

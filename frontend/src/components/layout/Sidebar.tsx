@@ -5,7 +5,9 @@ import { Archive, Boxes, ChevronDown, ChevronRight, FileText, FolderKanban, Home
 import { listProjects } from '../../api/projects';
 import { listModules } from '../../api/modules';
 import { queryKeys } from '../../api/queryKeys';
+import { useAuth } from '../../auth/AuthContext';
 import { APP_VERSION } from '../../lib/appInfo';
+import { filterProjectsByOwnership, ProjectFilter, ProjectFilterMenu } from '../projects/ProjectFilterMenu';
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   `flex items-center gap-2 rounded-md px-3 py-2 text-sm ${
@@ -43,8 +45,11 @@ function ProjectModuleLinks({ projectId, isExpanded }: { projectId: string; isEx
 
 export function Sidebar() {
   const location = useLocation();
+  const { user } = useAuth();
   const { data: projects } = useQuery({ queryKey: queryKeys.projects(false), queryFn: () => listProjects(false) });
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [projectFilter, setProjectFilter] = useState<ProjectFilter>('all');
+  const filteredProjects = filterProjectsByOwnership(projects, projectFilter, user?.id);
 
   useEffect(() => {
     const match = location.pathname.match(/^\/projects\/([^/]+)/);
@@ -84,9 +89,16 @@ export function Sidebar() {
           Notas
         </NavLink>
 
-        <SectionLabel>Projetos</SectionLabel>
-        {projects?.length === 0 && <p className="px-3 py-1 text-xs text-slate-600">Nenhum projeto ativo</p>}
-        {projects?.map((project) => {
+        <div className="mb-1 mt-4 flex items-center justify-between px-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">Projetos</p>
+          <ProjectFilterMenu value={projectFilter} onChange={setProjectFilter} align="right" />
+        </div>
+        {filteredProjects?.length === 0 && (
+          <p className="px-3 py-1 text-xs text-slate-600">
+            {projectFilter === 'all' ? 'Nenhum projeto ativo' : 'Nenhum projeto encontrado para este filtro'}
+          </p>
+        )}
+        {filteredProjects?.map((project) => {
           const isExpanded = expanded.has(project.id);
           const isCurrentProject = location.pathname.startsWith(`/projects/${project.id}`);
 

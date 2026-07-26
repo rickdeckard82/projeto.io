@@ -12,9 +12,9 @@ export function HomePage() {
     <div className="mx-auto max-w-3xl">
       <div className="mb-8">
         <h1 className="text-2xl font-semibold text-slate-100">
-          {getGreeting()}, {user.fullName}
+          {getGreeting(new Date(), user.timezone)}, {user.fullName}
         </h1>
-        <p className="mt-1 text-sm capitalize text-slate-500">{formatLongDate()}</p>
+        <p className="mt-1 text-sm capitalize text-slate-500">{formatLongDate(new Date(), user.timezone)}</p>
       </div>
 
       <div className="mb-8">

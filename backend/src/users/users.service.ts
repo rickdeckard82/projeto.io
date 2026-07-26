@@ -14,6 +14,7 @@ const SAFE_SELECT = {
   avatarUrl: true,
   globalRole: true,
   isActive: true,
+  timezone: true,
   createdAt: true,
 };
 
@@ -157,7 +158,7 @@ export class UsersService {
       throw new ForbiddenException('Você só pode editar o seu próprio perfil');
     }
 
-    const data: { fullName?: string; avatarUrl?: string | null; passwordHash?: string } = {};
+    const data: { fullName?: string; avatarUrl?: string | null; passwordHash?: string; timezone?: string } = {};
     if (dto.fullName) {
       data.fullName = dto.fullName;
     }
@@ -166,6 +167,9 @@ export class UsersService {
     }
     if (dto.password) {
       data.passwordHash = await bcrypt.hash(dto.password, 10);
+    }
+    if (dto.timezone) {
+      data.timezone = dto.timezone;
     }
 
     const user = await this.prisma.user.update({ where: { id }, data, select: SAFE_SELECT });

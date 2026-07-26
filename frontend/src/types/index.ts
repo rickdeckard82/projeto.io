@@ -16,6 +16,8 @@ export interface User {
   isActive?: boolean;
   createdAt?: string;
   twoFactorEnabled?: boolean;
+  /** Fuso horário IANA (ex.: "America/Sao_Paulo") usado para formatar timestamps na UI — ver `lib/dateFormat.ts`. */
+  timezone?: string;
 }
 
 /** Versão mínima de `User` (sem e-mail) usada pelos seletores de pessoa — ver `GET /users/directory`. */

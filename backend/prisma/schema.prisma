@@ -61,6 +61,11 @@ model User {
   avatarUrl    String?    @map("avatar_url")
   globalRole   GlobalRole @default(MEMBER) @map("global_role")
   isActive     Boolean    @default(true) @map("is_active")
+  /// Fuso horário IANA (ex.: "America/Sao_Paulo") usado para formatar timestamps na UI — datas
+  /// "puras" como `WorkItem.dueDate`/`startDate` nunca passam por essa conversão (ver
+  /// `frontend/src/lib/dateFormat.ts`), só timestamps reais (atividade, "atualizado em" etc.).
+  /// Editável em `/settings/profile`; tudo continua gravado em UTC no banco, isso é só exibição.
+  timezone     String     @default("America/Sao_Paulo")
   createdAt    DateTime   @default(now()) @map("created_at")
   updatedAt    DateTime   @updatedAt @map("updated_at")
 

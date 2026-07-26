@@ -284,6 +284,7 @@ export class AuthService {
       avatarUrl: user.avatarUrl,
       globalRole: user.globalRole,
       twoFactorEnabled: user.twoFactorEnabled,
+      timezone: user.timezone,
     };
   }
 

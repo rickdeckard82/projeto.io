@@ -5,14 +5,22 @@ import { updateUser, exportMyData } from '../api/users';
 import { Button } from '../components/common/Button';
 import { Avatar } from '../components/common/Avatar';
 
+/** Lista de fusos IANA reconhecidos pelo próprio runtime — evita manter uma lista estática que ficaria desatualizada. Navegadores sem suporte a `supportedValuesOf` (bem raros hoje) caem só na opção do fuso atual do usuário. */
+function listTimezones(current: string): string[] {
+  const supportedValuesOf = (Intl as unknown as { supportedValuesOf?: (key: string) => string[] }).supportedValuesOf;
+  if (!supportedValuesOf) return [current];
+  return supportedValuesOf('timeZone');
+}
+
 export function ProfileSettingsPage() {
   const { user, refreshUser } = useAuth();
   const [fullName, setFullName] = useState(user?.fullName || '');
   const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || '');
+  const [timezone, setTimezone] = useState(user?.timezone || 'America/Sao_Paulo');
   const [success, setSuccess] = useState(false);
 
   const mutation = useMutation({
-    mutationFn: () => updateUser(user!.id, { fullName, avatarUrl }),
+    mutationFn: () => updateUser(user!.id, { fullName, avatarUrl, timezone }),
     onSuccess: async () => {
       await refreshUser();
       setSuccess(true);
@@ -86,6 +94,23 @@ export function ProfileSettingsPage() {
           onChange={(e) => setFullName(e.target.value)}
           className="mb-4 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
         />
+
+        <label className="mb-1 block text-xs text-slate-400">Fuso horário</label>
+        <select
+          value={timezone}
+          onChange={(e) => setTimezone(e.target.value)}
+          className="mb-4 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+        >
+          {listTimezones(timezone).map((tz) => (
+            <option key={tz} value={tz}>
+              {tz}
+            </option>
+          ))}
+        </select>
+        <p className="-mt-3 mb-4 text-xs text-slate-500">
+          Usado para exibir datas e horários (ex.: atividade, documentos) no seu horário local. O banco continua
+          gravando tudo em UTC.
+        </p>
 
         {mutation.isError && <p className="mb-3 text-sm text-red-400">Falha ao salvar alterações.</p>}
         {success && <p className="mb-3 text-sm text-emerald-400">Alterações salvas.</p>}

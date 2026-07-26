@@ -24,6 +24,7 @@ import { UsersAdminPage } from './pages/UsersAdminPage';
 import { AllowedDomainsSettingsPage } from './pages/AllowedDomainsSettingsPage';
 import { SmtpSettingsPage } from './pages/SmtpSettingsPage';
 import { PrivacySettingsPage } from './pages/PrivacySettingsPage';
+import { ChangelogPage } from './pages/ChangelogPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 
 export default function App() {
@@ -47,6 +48,7 @@ export default function App() {
             <Route path="privacy" element={<PrivacySettingsPage />} />
           </Route>
           <Route path="/notes" element={<NotesPage />} />
+          <Route path="/changelog" element={<ChangelogPage />} />
           <Route path="/projects" element={<ProjectsListPage />} />
           <Route path="/projects/archived" element={<ArchivedProjectsPage />} />
           <Route path="/projects/:projectId" element={<ProjectDetailLayout />}>

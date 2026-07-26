@@ -53,7 +53,10 @@ export function SettingsSidebar() {
       </nav>
 
       <footer className="px-3 py-3 text-center text-[11px] text-slate-600">
-        Pulsar © 2026 Projeto.io • v{APP_VERSION}
+        Pulsar © 2026 Projeto.io •{' '}
+        <Link to="/changelog" className="hover:text-slate-400">
+          v{APP_VERSION}
+        </Link>
         <br />
         <Link to="/privacidade" target="_blank" className="hover:text-slate-400">
           Política de Privacidade

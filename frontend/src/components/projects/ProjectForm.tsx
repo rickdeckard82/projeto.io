@@ -29,6 +29,7 @@ export function ProjectForm({
   const [isPublic, setIsPublic] = useState(false);
   const [ownerId, setOwnerId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (open && user) {
@@ -50,6 +51,7 @@ export function ProjectForm({
     setIcon(ICON_OPTIONS[0]);
     setCoverColor(COVER_COLOR_PALETTE[0]);
     setIsPublic(false);
+    setError(null);
   };
 
   const handleOpenChange = (next: boolean) => {
@@ -66,17 +68,23 @@ export function ProjectForm({
     e.preventDefault();
     if (!name.trim()) return;
     setLoading(true);
+    setError(null);
     try {
       await onSubmit({
         name: name.trim(),
         description: description || undefined,
-        key: key || undefined,
+        // Só manda a key quando o usuário editou o campo à mão — a sugestão automática (a partir
+        // do nome) não é enviada, para o backend poder desambiguar sozinho com sufixo numérico em
+        // caso de colisão (ver resolveProjectKey) em vez de tratar como escolha explícita e barrar.
+        key: keyEdited ? key || undefined : undefined,
         icon,
         coverColor,
         isPublic,
         ownerId: ownerId || undefined,
       });
       reset();
+    } catch (err: any) {
+      setError(err?.response?.data?.message || 'Não foi possível criar o projeto.');
     } finally {
       setLoading(false);
     }
@@ -147,7 +155,8 @@ export function ProjectForm({
               <LeadPicker value={ownerId} onChange={setOwnerId} />
             </div>
 
-            <div className="flex justify-end gap-2">
+            <div className="flex items-center justify-end gap-2">
+              {error && <p className="mr-auto text-xs text-red-400">{error}</p>}
               <Button type="button" variant="secondary" onClick={() => handleOpenChange(false)}>
                 Cancelar
               </Button>

@@ -111,6 +111,8 @@ export class WorkItemsService {
       await this.assertModuleBelongsToProject(dto.moduleId, projectId);
     }
 
+    const initialStatus = await this.prisma.status.findUniqueOrThrow({ where: { id: statusId } });
+
     const created = await this.prisma.workItem.create({
       data: {
         projectId,
@@ -123,6 +125,7 @@ export class WorkItemsService {
         startDate: dto.startDate ? new Date(dto.startDate) : undefined,
         dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
         createdById: creator.id,
+        inProgressSince: initialStatus.category === StatusCategory.STARTED ? new Date() : undefined,
       },
       include: ITEM_INCLUDE,
     });
@@ -236,22 +239,30 @@ export class WorkItemsService {
 
   /**
    * Move o item para outra coluna do kanban (troca de status). É o método acionado pelo
-   * drag-and-drop do board no frontend. Se o novo status for de conclusão/cancelamento e o item
-   * tiver sub-itens, exige que todos os sub-itens já estejam concluídos ou cancelados antes de
-   * permitir a mudança — um item "pai" só fecha depois que todo o trabalho filho fechou.
+   * drag-and-drop do board no frontend. Sair do Backlog exige ao menos um responsável já
+   * atribuído — evita que um item comece a andar sem que fique claro quem é dono dele. Se o novo
+   * status for de conclusão/cancelamento e o item tiver sub-itens, exige que todos os sub-itens já
+   * estejam concluídos ou cancelados antes de permitir a mudança — um item "pai" só fecha depois
+   * que todo o trabalho filho fechou.
    *
    * Trava de "Em andamento": quando alguém move um item para um status de categoria `STARTED`,
    * `statusLockedById` grava quem foi; enquanto o item continuar em `STARTED`, só essa pessoa
    * (ou um Admin) pode mudar o status de novo — evita que outro colega "roube" ou finalize uma
    * tarefa que já está sendo trabalhada por alguém. Sair de `STARTED` (concluir, cancelar, ou
    * voltar) limpa a trava.
+   *
+   * Junto disso, mede quanto tempo o item passa "em andamento": ao entrar em `STARTED` grava
+   * `inProgressSince`; ao sair, soma o intervalo decorrido em `inProgressSeconds` e limpa
+   * `inProgressSince` — cobre também o caso de o item sair e voltar pra `STARTED` mais de uma vez.
+   * Quando o item chega em `COMPLETED`, `inProgressSeconds` é o tempo real "em andamento" da
+   * tarefa, usado por `MetricsService` para as métricas por item e o tempo de execução do projeto.
    * @param id - id do item
    * @param statusId - id do novo status
    * @param actor - usuário autenticado que está movendo o item (autor da entrada de atividade gerada)
    * @returns o item atualizado
    * @throws NotFoundException - se o item não existir
    * @throws ForbiddenException - se o projeto do item estiver arquivado, ou se o item estiver travado por outro usuário (em "Em andamento") e quem está tentando mudar não for nem quem travou nem um Admin
-   * @throws BadRequestException - se o status informado não pertencer ao mesmo projeto do item, ou se houver sub-itens ainda não concluídos/cancelados e o novo status for de conclusão/cancelamento
+   * @throws BadRequestException - se o status informado não pertencer ao mesmo projeto do item, se o item ainda estiver no Backlog sem nenhum responsável definido, ou se houver sub-itens ainda não concluídos/cancelados e o novo status for de conclusão/cancelamento
    */
   async updateStatus(id: string, statusId: string, actor: AuthenticatedUser) {
     const item = await this.findOne(id);
@@ -269,6 +280,10 @@ export class WorkItemsService {
       );
     }
 
+    if (item.status.category === StatusCategory.BACKLOG && status.category !== StatusCategory.BACKLOG && item.assignees.length === 0) {
+      throw new BadRequestException('Defina ao menos um responsável antes de tirar este item do Backlog.');
+    }
+
     if (status.category === StatusCategory.COMPLETED || status.category === StatusCategory.CANCELLED) {
       const subItems = await this.prisma.workItem.findMany({
         where: { parentId: id },
@@ -284,9 +299,27 @@ export class WorkItemsService {
       }
     }
 
+    const now = new Date();
+    const leavingStarted = item.status.category === StatusCategory.STARTED && status.category !== StatusCategory.STARTED;
+    const enteringStarted = item.status.category !== StatusCategory.STARTED && status.category === StatusCategory.STARTED;
+
+    let inProgressSeconds = item.inProgressSeconds;
+    let inProgressSince: Date | null = item.inProgressSince;
+    if (leavingStarted && item.inProgressSince) {
+      inProgressSeconds += Math.round((now.getTime() - item.inProgressSince.getTime()) / 1000);
+      inProgressSince = null;
+    } else if (enteringStarted) {
+      inProgressSince = now;
+    }
+
     const updated = await this.prisma.workItem.update({
       where: { id },
-      data: { statusId, statusLockedById: status.category === StatusCategory.STARTED ? actor.id : null },
+      data: {
+        statusId,
+        statusLockedById: status.category === StatusCategory.STARTED ? actor.id : null,
+        inProgressSince,
+        inProgressSeconds,
+      },
       include: ITEM_INCLUDE,
     });
 

@@ -190,6 +190,17 @@ model WorkItem {
   /// `WorkItemsService.updateStatus`.
   statusLockedById String? @map("status_locked_by_id")
 
+  /// Timestamp de quando o item entrou na categoria STARTED pela vez atual; limpo (`null`) quando
+  /// sai dela. Junto com `inProgressSeconds`, permite medir quanto tempo o item de fato ficou "em
+  /// andamento" mesmo que ele saia e volte pra essa categoria mais de uma vez — ver
+  /// `WorkItemsService.updateStatus`.
+  inProgressSince DateTime? @map("in_progress_since")
+  /// Soma acumulada (em segundos) de todo o tempo que o item já passou em categoria STARTED,
+  /// consolidada cada vez que ele sai dessa categoria. Quando o item chega em COMPLETED, esse
+  /// valor final é o tempo real "em andamento" da tarefa — a base do cálculo de métricas por item
+  /// e do tempo de execução do projeto (`MetricsService`).
+  inProgressSeconds Int @default(0) @map("in_progress_seconds")
+
   project       Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
   status        Status         @relation(fields: [statusId], references: [id], onDelete: Restrict)
   module        Module?        @relation(fields: [moduleId], references: [id], onDelete: SetNull)

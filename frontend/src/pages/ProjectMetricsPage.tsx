@@ -66,11 +66,12 @@ export function ProjectMetricsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <StatCard label="Total de itens" value={String(metrics.totalItems)} />
         <StatCard label="Concluídos" value={String(metrics.byCategory.COMPLETED)} />
         <StatCard label="Cancelados" value={String(metrics.byCategory.CANCELLED)} />
-        <StatCard label="Tempo médio até concluir" value={formatHours(metrics.avgCompletionHours)} />
+        <StatCard label="Tempo médio em andamento até concluir" value={formatHours(metrics.avgInProgressHours)} />
+        <StatCard label="Tempo de execução do projeto" value={formatHours(metrics.totalExecutionHours)} />
         <StatCard label="Duração do projeto" value={formatDays(metrics.projectDurationDays)} />
       </div>
 

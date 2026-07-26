@@ -31,7 +31,7 @@ docker compose up -d --force-recreate backend frontend
 Ver `README.md` ("Deploy em produção") para o passo a passo com domínio próprio + Nginx Proxy Manager (mesmo domínio, roteamento por caminho — `/api` e `/socket.io` para o backend, resto para o frontend). `backend`/`frontend` entram em duas redes Docker (bloco `networks:` no final do `docker-compose.yml`): a interna `projetoio_default` (fala com o `db`) e a externa `proxy` (mesma rede do Nginx Proxy Manager no host, para ele alcançar os serviços sem depender das portas publicadas). `db` fica só na interna. **No NPM, aponte sempre para o `container_name` (`projetoio-frontend`/`projetoio-backend`), nunca para o nome "cru" do serviço (`frontend`/`backend`)** — numa rede `proxy` compartilhada com outros apps do host, o Compose registra um apelido de rede igual ao nome do serviço, e outro app com um serviço de mesmo nome causa colisão de DNS (já aconteceu neste projeto: `projetoio.suaempresa.com.br` estava abrindo o app errado).
 
 ### Criar uma migration do Prisma (schema.prisma alterado)
-`prisma migrate dev` é interativo e falha em ambiente non-TTY sempre que há uma mudança "arriscada" (ex.: nova coluna `UNIQUE`), mesmo rodando via `docker run`. `prisma migrate diff --from-migrations` **exige** `--shadow-database-url` (não há como omitir). Fluxo seguro e testado neste repo:
+`prisma migrate dev` é interativo e falha em ambiente non-TTY sempre que há uma mudança "arriscada" (ex.: nova coluna `UNIQUE`), mesmo rodando via `docker run`. Desde o upgrade para o Prisma v7, `migrate diff --from-migrations` **exige** um shadow database configurado em `datasource.shadowDatabaseUrl` no `prisma.config.ts` — não existe mais flag `--shadow-database-url` na CLI (foi removida; `backend/prisma.config.ts` já lê esse valor de `process.env.SHADOW_DATABASE_URL` direto, sem passar por `env()`, exatamente para isso). Fluxo seguro e testado neste repo:
 
 ```bash
 # 1) Suba o banco (se ainda não estiver rodando)
@@ -42,22 +42,28 @@ docker compose up -d db
 docker exec projetoio-db psql -U app_user -d pm_app -c "CREATE DATABASE pm_app_shadow;"
 
 # 3) Gere apenas o arquivo de migration via diff (sem aplicar)
+# node_modules não existe no host (só dentro das imagens Docker) — rode "npm ci" no mesmo
+# container antes de qualquer comando prisma, senão o npx baixa uma versão do Prisma diferente
+# da fixada no package.json e o resultado do diff pode variar.
 mkdir -p backend/prisma/migrations/<timestamp>_nome
 docker run --rm -v "<CAMINHO_ABSOLUTO>/backend:/app" -w /app --network projetoio_default \
-  -e DATABASE_URL="postgresql://app_user:app_password@db:5432/pm_app" node:20-alpine \
-  sh -c "apk add --no-cache openssl libssl3 >/dev/null 2>&1 && npx prisma migrate diff \
+  -e DATABASE_URL="postgresql://app_user:<SENHA_REAL_DO_.ENV>@db:5432/pm_app" \
+  -e SHADOW_DATABASE_URL="postgresql://app_user:<SENHA_REAL_DO_.ENV>@db:5432/pm_app_shadow" \
+  node:20-alpine \
+  sh -c "apk add --no-cache openssl libssl3 >/dev/null 2>&1 && npm ci >/dev/null 2>&1 && npx prisma migrate diff \
     --from-migrations prisma/migrations \
-    --to-schema-datamodel prisma/schema.prisma \
-    --shadow-database-url postgresql://app_user:app_password@db:5432/pm_app_shadow \
+    --to-schema prisma/schema.prisma \
     --script > prisma/migrations/<timestamp>_nome/migration.sql"
 
 # 4) Aplique de forma não-interativa
 docker run --rm -v "<CAMINHO_ABSOLUTO>/backend:/app" -w /app --network projetoio_default \
-  -e DATABASE_URL="postgresql://app_user:app_password@db:5432/pm_app" node:20-alpine \
-  sh -c "apk add --no-cache openssl libssl3 >/dev/null 2>&1 && npx prisma migrate deploy && npx prisma generate"
+  -e DATABASE_URL="postgresql://app_user:<SENHA_REAL_DO_.ENV>@db:5432/pm_app" node:20-alpine \
+  sh -c "apk add --no-cache openssl libssl3 >/dev/null 2>&1 && npm ci >/dev/null 2>&1 && npx prisma migrate deploy && npx prisma generate"
 ```
 
-**REGRA CRÍTICA — nunca aponte `--shadow-database-url` para `pm_app` (o banco real).** O Prisma usa essa URL como scratch space (recria/derruba estruturas nela); apontar para o banco real já causou perda total de dados neste projeto. Use sempre o banco dedicado `pm_app_shadow` (passo 2, só precisa ser criado uma vez; se não existir o Prisma falha com `P1003` em vez de usar o banco errado).
+**REGRA CRÍTICA — nunca aponte `SHADOW_DATABASE_URL` para `pm_app` (o banco real).** O Prisma usa essa URL como scratch space (recria/derruba estruturas nela); apontar para o banco real já causou perda total de dados neste projeto. Use sempre o banco dedicado `pm_app_shadow` (passo 2, só precisa ser criado uma vez; se não existir o Prisma falha com `P1003` em vez de usar o banco errado).
+
+A senha do passo 3/4 é a que está em `POSTGRES_PASSWORD` no `.env` real do ambiente (não use o `app_password` de exemplo do `.env.example` se o `.env` local tiver um valor gerado).
 
 Alpine (`node:20-alpine`) precisa de `apk add --no-cache openssl libssl3` antes de qualquer comando Prisma, senão o engine falha ao detectar libssl.
 
@@ -105,7 +111,7 @@ Auth usa JWT de acesso (curto) + refresh token persistido (hash SHA-256, via `co
 
 **Notas (`backend/src/notes/`):** bloco de notas pessoal, não vinculado a projeto — `Note` (model livre de FK opcional além do autor) é **privada**: `GET /notes` (sem `@Roles()`/`ProjectMemberGuard`, qualquer usuário autenticado passa) já vem filtrado dentro do `NotesService.list()` por `createdById`, então cada usuário só vê as próprias notas, sem exceção nem para Admin. Qualquer usuário autenticado pode criar (`POST /notes`); editar/remover (`PATCH`/`DELETE /notes/:id`) é restrito a quem criou a nota, checado dentro do próprio `NotesService` (não via decorator, já que é autorização por dono, não por papel — e aqui nem o Admin tem bypass, ao contrário do resto do app). Exibido em duas telas: resumo na home (`components/home/NotesSection.tsx`, só cria) e página completa `/notes` (`NotesPage.tsx`, com editar/apagar).
 
-**Métricas (`backend/src/metrics/`):** `GET /projects/:id/metrics` (restrito a `@Roles(ADMIN, SENIOR)`, além da membership do `ProjectMemberGuard`) devolve métricas agregadas de um projeto, tudo calculado em cima do que já existe em `WorkItem`/`Project` — sem tabela nova nem tracking contínuo de tempo (não existe "cronômetro" de trabalho): contagem de itens por categoria de status, tempo médio até concluir (aproximação via `updatedAt - createdAt` dos itens hoje em `COMPLETED`, já que não há um timestamp explícito de "concluído em"), duração do projeto (`createdAt` até `archivedAt`, ou até agora se ainda ativo) e um resumo por responsável (itens atribuídos/concluídos/cancelados de cada um). No frontend, aba "Métricas" em `ProjectDetailLayout` — visível só a Admin/Senior via `RoleGate` na aba e redirect client-side em `ProjectMetricsPage.tsx` (mesmo padrão de `/settings/allowed-domains` etc.), com o `@Roles()` do backend como garantia real.
+**Métricas (`backend/src/metrics/`):** `GET /projects/:id/metrics` (restrito a `@Roles(ADMIN, SENIOR)`, além da membership do `ProjectMemberGuard`) devolve métricas agregadas de um projeto: contagem de itens por categoria de status, tempo médio "em andamento" até concluir, tempo de execução do projeto, duração de calendário do projeto (`createdAt` até `archivedAt`, ou até agora se ainda ativo) e um resumo por responsável (itens atribuídos/concluídos/cancelados de cada um). Tempo real "em andamento" por item: `WorkItem.inProgressSince`/`inProgressSeconds` (sem tabela nova, só duas colunas) — mantidos por `WorkItemsService.updateStatus` no mesmo espírito da trava de `statusLockedById`: ao entrar em categoria `STARTED`, grava `inProgressSince`; ao sair (concluir, cancelar ou voltar), soma o intervalo decorrido em `inProgressSeconds` e limpa `inProgressSince` — cobre o item saindo e voltando pra `STARTED` mais de uma vez, sem depender de reconstruir o histórico de `ItemActivity`. `MetricsService` usa isso para `avgInProgressHours` (média de `inProgressSeconds` dos itens hoje em `COMPLETED` — valor final, já consolidado) e `totalExecutionHours` (soma do tempo "em andamento" de todos os itens do projeto, incluindo o intervalo ainda em curso dos itens que estão em `STARTED` agora — para não subestimar trabalho em progresso no momento do cálculo). No frontend, `ItemDetailModal` mostra o tempo "em andamento" do item individual; aba "Métricas" em `ProjectDetailLayout` mostra os agregados — visível só a Admin/Senior via `RoleGate` na aba e redirect client-side em `ProjectMetricsPage.tsx` (mesmo padrão de `/settings/allowed-domains` etc.), com o `@Roles()` do backend como garantia real.
 
 ### Frontend (`frontend/src`) — React + Vite
 

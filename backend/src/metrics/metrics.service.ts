@@ -2,15 +2,17 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { StatusCategory } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
-const MS_PER_HOUR = 3_600_000;
 const MS_PER_DAY = 86_400_000;
+const SEC_PER_HOUR = 3_600;
 
 /**
- * Métricas agregadas de um projeto: quantidade de itens por categoria de status, tempo médio até
- * a conclusão, duração do projeto e um resumo por responsável (quantos itens cada um pegou,
- * quantos concluiu/cancelou). Tudo derivado do que já existe em `WorkItem`/`Project` — nenhuma
- * tabela nova, nenhum tracking contínuo de tempo (não existe "cronômetro" de trabalho, só o
- * histórico de mudança de status).
+ * Métricas agregadas de um projeto: quantidade de itens por categoria de status, tempo médio "em
+ * andamento" até a conclusão (por item), tempo de execução do projeto (soma do tempo "em
+ * andamento" de todos os itens), duração de calendário do projeto e um resumo por responsável
+ * (quantos itens cada um pegou, quantos concluiu/cancelou). O tempo "em andamento" vem de
+ * `WorkItem.inProgressSeconds`/`inProgressSince`, mantidos por `WorkItemsService.updateStatus` a
+ * cada transição de status — mede o tempo real que cada item passou em categoria STARTED, mesmo
+ * que ele saia e volte pra essa categoria mais de uma vez.
  */
 @Injectable()
 export class MetricsService {
@@ -33,8 +35,8 @@ export class MetricsService {
     const items = await this.prisma.workItem.findMany({
       where: { projectId },
       select: {
-        createdAt: true,
-        updatedAt: true,
+        inProgressSeconds: true,
+        inProgressSince: true,
         status: { select: { category: true } },
         assignees: { select: { user: { select: { id: true, fullName: true, avatarUrl: true } } } },
       },
@@ -47,7 +49,9 @@ export class MetricsService {
       COMPLETED: 0,
       CANCELLED: 0,
     };
-    const completionDurationsMs: number[] = [];
+    const now = new Date();
+    const inProgressSecondsOfCompleted: number[] = [];
+    let totalExecutionSeconds = 0;
     const userStats = new Map<
       string,
       { userId: string; fullName: string; avatarUrl: string | null; assigned: number; completed: number; cancelled: number }
@@ -56,12 +60,17 @@ export class MetricsService {
     for (const item of items) {
       byCategory[item.status.category]++;
 
-      // Aproximação: como um item concluído/cancelado não muda mais de status na prática
-      // (regras de negócio de sub-item/travas não permitem reabrir), `updatedAt` reflete o
-      // momento em que ele chegou nessa categoria — não há um "tempo de conclusão" explícito
-      // guardado à parte.
+      // Tempo "efetivo" em andamento: o acumulado já consolidado, mais o intervalo em curso se o
+      // item estiver em STARTED agora mesmo (inProgressSince preenchido) — para não subestimar
+      // itens ainda sendo trabalhados no momento do cálculo.
+      const ongoingSeconds = item.inProgressSince ? (now.getTime() - item.inProgressSince.getTime()) / 1000 : 0;
+      const effectiveSeconds = item.inProgressSeconds + ongoingSeconds;
+      totalExecutionSeconds += effectiveSeconds;
+
+      // `inProgressSeconds` de um item COMPLETED já é o tempo final "em andamento" antes da
+      // conclusão — ver `WorkItemsService.updateStatus`.
       if (item.status.category === StatusCategory.COMPLETED) {
-        completionDurationsMs.push(item.updatedAt.getTime() - item.createdAt.getTime());
+        inProgressSecondsOfCompleted.push(item.inProgressSeconds);
       }
 
       for (const { user } of item.assignees) {
@@ -82,16 +91,18 @@ export class MetricsService {
       }
     }
 
-    const avgCompletionHours = completionDurationsMs.length
-      ? completionDurationsMs.reduce((sum, ms) => sum + ms, 0) / completionDurationsMs.length / MS_PER_HOUR
+    const avgInProgressHours = inProgressSecondsOfCompleted.length
+      ? inProgressSecondsOfCompleted.reduce((sum, s) => sum + s, 0) / inProgressSecondsOfCompleted.length / SEC_PER_HOUR
       : null;
 
+    const totalExecutionHours = totalExecutionSeconds / SEC_PER_HOUR;
     const projectDurationDays = ((project.archivedAt ?? new Date()).getTime() - project.createdAt.getTime()) / MS_PER_DAY;
 
     return {
       totalItems: items.length,
       byCategory,
-      avgCompletionHours,
+      avgInProgressHours,
+      totalExecutionHours,
       projectDurationDays,
       perUser: [...userStats.values()].sort((a, b) => b.assigned - a.assigned),
     };

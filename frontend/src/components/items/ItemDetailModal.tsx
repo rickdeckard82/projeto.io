@@ -18,6 +18,20 @@ import { LabelPicker } from './LabelPicker';
 import { SubItemList } from './SubItemList';
 import { ActivityFeed } from './ActivityFeed';
 
+/** Segundos acumulados em "Em andamento", somando o intervalo em curso se o item estiver nesse status agora. */
+function effectiveInProgressSeconds(item: { inProgressSeconds: number; inProgressSince: string | null }): number {
+  const ongoing = item.inProgressSince ? (Date.now() - new Date(item.inProgressSince).getTime()) / 1000 : 0;
+  return item.inProgressSeconds + ongoing;
+}
+
+function formatInProgressDuration(seconds: number): string {
+  if (seconds < 60) return '< 1 min';
+  const hours = seconds / 3600;
+  if (hours < 1) return `${Math.round(seconds / 60)} min`;
+  if (hours < 48) return `${hours.toFixed(1)} h`;
+  return `${(hours / 24).toFixed(1)} dias`;
+}
+
 export function ItemDetailModal({
   projectId,
   itemId,
@@ -165,6 +179,12 @@ export function ItemDetailModal({
                     onBlur={(e) => updateItem({ id: itemId, data: { dueDate: e.target.value || undefined } }).then(invalidateItem)}
                     className="rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-100 disabled:opacity-50"
                   />
+                </div>
+                <div>
+                  <label className="mb-1 block">Tempo em andamento</label>
+                  <span className="inline-block py-1 text-slate-300">
+                    {formatInProgressDuration(effectiveInProgressSeconds(item))}
+                  </span>
                 </div>
               </div>
 

@@ -106,6 +106,10 @@ export interface WorkItem {
   createdBy: User;
   statusLockedById: string | null;
   statusLockedBy: Pick<User, 'id' | 'fullName' | 'avatarUrl'> | null;
+  /** Segundos já acumulados em status "Em andamento" (categoria STARTED), consolidados a cada saída dessa categoria. */
+  inProgressSeconds: number;
+  /** Preenchido enquanto o item estiver em "Em andamento" agora — desde quando, para somar ao `inProgressSeconds` acumulado. */
+  inProgressSince: string | null;
   createdAt: string;
   updatedAt: string;
   assignees: { user: User }[];
@@ -188,7 +192,10 @@ export interface ProjectMetricsUserStat {
 export interface ProjectMetrics {
   totalItems: number;
   byCategory: Record<StatusCategory, number>;
-  avgCompletionHours: number | null;
+  /** Média (em horas) do tempo real que os itens concluídos passaram em "Em andamento" antes de concluir. */
+  avgInProgressHours: number | null;
+  /** Soma (em horas) do tempo "Em andamento" de todos os itens do projeto — inclui itens ainda em andamento. */
+  totalExecutionHours: number;
   projectDurationDays: number;
   perUser: ProjectMetricsUserStat[];
 }

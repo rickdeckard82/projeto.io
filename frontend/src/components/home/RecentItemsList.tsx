@@ -8,6 +8,7 @@ import { EmptyState } from '../common/EmptyState';
 import { Avatar } from '../common/Avatar';
 import { Badge } from '../common/Badge';
 import { relativeTime } from '../../lib/relativeTime';
+import { formatDate } from '../../lib/dateFormat';
 import { priorityColor, priorityLabel } from '../items/PrioritySelect';
 
 type SortBy = 'dueDate' | 'priority';
@@ -63,7 +64,7 @@ export function RecentItemsList() {
                         {priorityLabel(item.priority)}
                       </span>
                     )}
-                    {item.dueDate && <Badge>Vence {new Date(item.dueDate).toLocaleDateString('pt-BR')}</Badge>}
+                    {item.dueDate && <Badge>Vence {formatDate(item.dueDate)}</Badge>}
                     <span>{relativeTime(item.updatedAt)}</span>
                   </p>
                 </div>

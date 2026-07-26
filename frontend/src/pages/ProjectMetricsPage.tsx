@@ -108,6 +108,7 @@ export function ProjectMetricsPage() {
                 <th className="pb-2 font-normal text-right">Atribuídos</th>
                 <th className="pb-2 font-normal text-right">Concluídos</th>
                 <th className="pb-2 font-normal text-right">Cancelados</th>
+                <th className="pb-2 font-normal text-right">Tempo</th>
               </tr>
             </thead>
             <tbody>
@@ -122,6 +123,37 @@ export function ProjectMetricsPage() {
                   <td className="py-2 text-right text-slate-300">{stat.assigned}</td>
                   <td className="py-2 text-right text-emerald-400">{stat.completed}</td>
                   <td className="py-2 text-right text-red-400">{stat.cancelled}</td>
+                  <td className="py-2 text-right text-slate-300">{formatHours(stat.totalHours)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      <div className="rounded-lg border border-slate-800 bg-slate-900 p-4">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-slate-200">Tarefas recorrentes</h2>
+          <span className="text-xs text-slate-400">
+            {metrics.recurringTasks.count} ativa{metrics.recurringTasks.count === 1 ? '' : 's'} ·{' '}
+            {metrics.recurringTasks.totalOccurrences} repetição{metrics.recurringTasks.totalOccurrences === 1 ? '' : 'ões'} no total
+          </span>
+        </div>
+        {metrics.recurringTasks.items.length === 0 ? (
+          <EmptyState title="Nenhuma tarefa recorrente ativa" />
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-800 text-left text-xs text-slate-400">
+                <th className="pb-2 font-normal">Tarefa</th>
+                <th className="pb-2 font-normal text-right">Vezes que já repetiu</th>
+              </tr>
+            </thead>
+            <tbody>
+              {metrics.recurringTasks.items.map((task) => (
+                <tr key={task.id} className="border-b border-slate-800/60 last:border-0">
+                  <td className="py-2 text-slate-200">{task.title}</td>
+                  <td className="py-2 text-right text-slate-300">{task.recurrenceCount}</td>
                 </tr>
               ))}
             </tbody>

@@ -196,6 +196,15 @@ export interface ProjectMetricsUserStat {
   assigned: number;
   completed: number;
   cancelled: number;
+  /** Soma (em horas) do tempo "Em andamento" de todos os itens em que o usuário é responsável — o item inteiro conta para cada responsável, sem dividir entre eles. */
+  totalHours: number;
+}
+
+export interface ProjectMetricsRecurringTask {
+  id: string;
+  title: string;
+  /** Quantas vezes essa série já se repetiu até chegar neste item (0 = item original, nunca repetiu). */
+  recurrenceCount: number;
 }
 
 export interface ProjectMetrics {
@@ -207,6 +216,13 @@ export interface ProjectMetrics {
   totalExecutionHours: number;
   projectDurationDays: number;
   perUser: ProjectMetricsUserStat[];
+  /** Tarefas recorrentes ainda ativas (não concluídas/canceladas) no projeto — no máximo uma por série. */
+  recurringTasks: {
+    count: number;
+    /** Soma de quantas vezes cada série já se repetiu. */
+    totalOccurrences: number;
+    items: ProjectMetricsRecurringTask[];
+  };
 }
 
 export interface ProjectDocument {

@@ -440,6 +440,7 @@ export class WorkItemsService {
         createdById: actor.id,
         recurrenceUnit: unit,
         recurrenceInterval: interval,
+        recurrenceCount: completedItem.recurrenceCount + 1,
         labels: { createMany: { data: completedItem.labels.map((l) => ({ labelId: l.labelId })) } },
       },
     });

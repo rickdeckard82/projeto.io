@@ -17,6 +17,14 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.2.0',
+    date: '2026-07-26',
+    changes: [
+      'Métricas de projeto passam a mostrar o tempo somado de cada responsável (soma do tempo "em andamento" de todas as tarefas em que a pessoa está atribuída).',
+      'Adicionada a métrica de tarefas recorrentes: quantas séries ainda estão ativas e quantas vezes cada uma já se repetiu.',
+    ],
+  },
+  {
     version: '1.1.0',
     date: '2026-07-26',
     changes: [

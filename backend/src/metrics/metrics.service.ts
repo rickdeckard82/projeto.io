@@ -8,11 +8,13 @@ const SEC_PER_HOUR = 3_600;
 /**
  * Métricas agregadas de um projeto: quantidade de itens por categoria de status, tempo médio "em
  * andamento" até a conclusão (por item), tempo de execução do projeto (soma do tempo "em
- * andamento" de todos os itens), duração de calendário do projeto e um resumo por responsável
- * (quantos itens cada um pegou, quantos concluiu/cancelou). O tempo "em andamento" vem de
- * `WorkItem.inProgressSeconds`/`inProgressSince`, mantidos por `WorkItemsService.updateStatus` a
- * cada transição de status — mede o tempo real que cada item passou em categoria STARTED, mesmo
- * que ele saia e volte pra essa categoria mais de uma vez.
+ * andamento" de todos os itens), duração de calendário do projeto, um resumo por responsável
+ * (quantos itens cada um pegou, quantos concluiu/cancelou, e quantas horas somadas dos itens em
+ * que foi responsável) e as tarefas recorrentes ativas do projeto (quantas existem e quantas vezes
+ * cada uma já se repetiu). O tempo "em andamento" vem de `WorkItem.inProgressSeconds`/
+ * `inProgressSince`, mantidos por `WorkItemsService.updateStatus` a cada transição de status —
+ * mede o tempo real que cada item passou em categoria STARTED, mesmo que ele saia e volte pra essa
+ * categoria mais de uma vez.
  */
 @Injectable()
 export class MetricsService {
@@ -35,10 +37,15 @@ export class MetricsService {
     const items = await this.prisma.workItem.findMany({
       where: { projectId },
       select: {
+        id: true,
+        title: true,
         inProgressSeconds: true,
         inProgressSince: true,
         status: { select: { category: true } },
         assignees: { select: { user: { select: { id: true, fullName: true, avatarUrl: true } } } },
+        recurrenceUnit: true,
+        recurrenceInterval: true,
+        recurrenceCount: true,
       },
     });
 
@@ -54,8 +61,17 @@ export class MetricsService {
     let totalExecutionSeconds = 0;
     const userStats = new Map<
       string,
-      { userId: string; fullName: string; avatarUrl: string | null; assigned: number; completed: number; cancelled: number }
+      {
+        userId: string;
+        fullName: string;
+        avatarUrl: string | null;
+        assigned: number;
+        completed: number;
+        cancelled: number;
+        totalSeconds: number;
+      }
     >();
+    const recurringTasks: { id: string; title: string; recurrenceCount: number }[] = [];
 
     for (const item of items) {
       byCategory[item.status.category]++;
@@ -73,6 +89,14 @@ export class MetricsService {
         inProgressSecondsOfCompleted.push(item.inProgressSeconds);
       }
 
+      // "Ativa" = ainda não chegou em COMPLETED/CANCELLED. Como o item anterior de uma série fica
+      // travado em COMPLETED assim que gera a próxima ocorrência (ver trava de item concluído/
+      // cancelado), nunca existe mais de um item ativo por série ao mesmo tempo — não precisa
+      // agrupar por série pra contar certo quantas tarefas recorrentes existem hoje.
+      if (item.recurrenceUnit && item.status.category !== StatusCategory.COMPLETED && item.status.category !== StatusCategory.CANCELLED) {
+        recurringTasks.push({ id: item.id, title: item.title, recurrenceCount: item.recurrenceCount });
+      }
+
       for (const { user } of item.assignees) {
         if (!userStats.has(user.id)) {
           userStats.set(user.id, {
@@ -82,12 +106,17 @@ export class MetricsService {
             assigned: 0,
             completed: 0,
             cancelled: 0,
+            totalSeconds: 0,
           });
         }
         const stats = userStats.get(user.id)!;
         stats.assigned++;
         if (item.status.category === StatusCategory.COMPLETED) stats.completed++;
         if (item.status.category === StatusCategory.CANCELLED) stats.cancelled++;
+        // Soma o tempo "em andamento" de todo item em que o usuário é responsável, sem dividir
+        // entre múltiplos responsáveis do mesmo item — cada responsável "leva" o tempo inteiro do
+        // item, não uma fração dele (não há como saber quem de fato trabalhou quanto).
+        stats.totalSeconds += effectiveSeconds;
       }
     }
 
@@ -104,7 +133,14 @@ export class MetricsService {
       avgInProgressHours,
       totalExecutionHours,
       projectDurationDays,
-      perUser: [...userStats.values()].sort((a, b) => b.assigned - a.assigned),
+      perUser: [...userStats.values()]
+        .map((u) => ({ ...u, totalHours: u.totalSeconds / SEC_PER_HOUR }))
+        .sort((a, b) => b.assigned - a.assigned),
+      recurringTasks: {
+        count: recurringTasks.length,
+        totalOccurrences: recurringTasks.reduce((sum, r) => sum + r.recurrenceCount, 0),
+        items: recurringTasks.sort((a, b) => b.recurrenceCount - a.recurrenceCount),
+      },
     };
   }
 }

@@ -225,6 +225,15 @@ model WorkItem {
   /// partir de agora, em `dueDate`, se o item não tinha nenhuma data).
   recurrenceUnit     RecurrenceUnit? @map("recurrence_unit")
   recurrenceInterval Int?            @map("recurrence_interval")
+  /// Quantas vezes a série já se repetiu até chegar neste item: 0 no item original (nunca
+  /// repetiu), N na N-ésima ocorrência gerada — `generateNextOccurrence` propaga
+  /// `completedItem.recurrenceCount + 1` para a próxima. Como cada ocorrência já nasce fora de
+  /// COMPLETED/CANCELLED e a anterior fica travada nessa categoria (ver trava de item
+  /// concluído/cancelado), a query de `MetricsService` para "tarefas recorrentes ativas" filtra só
+  /// por `recurrenceUnit != null AND status.category NOT IN (COMPLETED, CANCELLED)` — nunca há mais
+  /// de um item "ativo" por série ao mesmo tempo, então não precisa de uma FK própria ligando toda
+  /// a cadeia para saber quantas vezes ela já repetiu.
+  recurrenceCount Int @default(0) @map("recurrence_count")
 
   project       Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
   status        Status         @relation(fields: [statusId], references: [id], onDelete: Restrict)

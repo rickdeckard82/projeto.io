@@ -494,16 +494,13 @@ export class WorkItemsService {
       const nameOf = (uid: string) => users.find((u) => u.id === uid)?.fullName;
       for (const uid of added) {
         await this.logActivity(id, actor.id, ActivityType.ASSIGNEE_ADDED, { userName: nameOf(uid) });
-        // Não notifica quem se auto-atribuiu — a própria ação já é a confirmação.
-        if (uid !== actor.id) {
-          await this.notificationsService.create({
-            userId: uid,
-            type: NotificationType.TASK_ASSIGNED,
-            title: `Você foi atribuído a "${item.title}"`,
-            link: `/projects/${item.projectId}/board?item=${id}`,
-            metadata: { workItemId: id, projectId: item.projectId },
-          });
-        }
+        await this.notificationsService.create({
+          userId: uid,
+          type: NotificationType.TASK_ASSIGNED,
+          title: `Você foi atribuído a "${item.title}"`,
+          link: `/projects/${item.projectId}/board?item=${id}`,
+          metadata: { workItemId: id, projectId: item.projectId },
+        });
       }
       for (const uid of removed) {
         await this.logActivity(id, actor.id, ActivityType.ASSIGNEE_REMOVED, { userName: nameOf(uid) });

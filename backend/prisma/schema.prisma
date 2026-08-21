@@ -53,6 +53,12 @@ enum RecurrenceUnit {
   MONTH
 }
 
+enum NotificationType {
+  TASK_DUE_SOON
+  TASK_OVERDUE
+  TASK_ASSIGNED
+}
+
 model User {
   id           String     @id @default(uuid())
   email        String     @unique
@@ -92,6 +98,8 @@ model User {
   updatedDocs     Document[]       @relation("DocumentUpdatedBy")
   itemActivities  ItemActivity[]
   notes           Note[]
+  notifications           Notification[]
+  notificationPreference  NotificationPreference?
 
   @@map("users")
 }
@@ -235,6 +243,15 @@ model WorkItem {
   /// a cadeia para saber quantas vezes ela já repetiu.
   recurrenceCount Int @default(0) @map("recurrence_count")
 
+  /// Preenchido pelo `DueDateCheckService` na primeira vez que os responsáveis são notificados de
+  /// que faltam ~24h para o prazo (TASK_DUE_SOON) — garante disparo único mesmo com o cron rodando
+  /// de hora em hora. Zerado sempre que `dueDate` muda via `WorkItemsService.update`, senão um
+  /// prazo adiado depois de já notificado nunca dispararia de novo.
+  dueSoonNotifiedAt DateTime? @map("due_soon_notified_at")
+  /// Mesma lógica de `dueSoonNotifiedAt`, para o alerta TASK_OVERDUE (prazo já vencido, item ainda
+  /// não concluído/cancelado).
+  overdueNotifiedAt DateTime? @map("overdue_notified_at")
+
   project       Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
   status        Status         @relation(fields: [statusId], references: [id], onDelete: Restrict)
   module        Module?        @relation(fields: [moduleId], references: [id], onDelete: SetNull)
@@ -250,6 +267,7 @@ model WorkItem {
   @@index([statusId])
   @@index([parentId])
   @@index([moduleId])
+  @@index([dueDate])
   @@map("work_items")
 }
 
@@ -328,6 +346,20 @@ model SmtpSettings {
   @@map("smtp_settings")
 }
 
+/// Configuração única (singleton) do bot do Telegram usado para enviar notificações — mesmo
+/// padrão de `SmtpSettings`: token configurado em tempo de execução via tela de admin
+/// (`/settings/telegram`), não variável de ambiente, para poder ser trocado sem redeploy.
+model TelegramSettings {
+  id                String   @id @default("singleton")
+  botTokenEncrypted String   @map("bot_token_encrypted")
+  /// Username do bot (ex.: "@projetoio_bot"), só para exibição na tela de admin — não é usado nas
+  /// chamadas à Bot API (que só precisam do token).
+  botUsername       String?  @map("bot_username")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("telegram_settings")
+}
+
 /// Dados do controlador/encarregado (LGPD) usados para montar a página pública de Política de
 /// Privacidade. Deliberadamente não hardcoda nenhuma empresa específica: este software é
 /// reutilizável por qualquer organização que suba os próprios containers, então essa
@@ -377,4 +409,53 @@ model Note {
   createdBy User @relation(fields: [createdById], references: [id])
 
   @@map("notes")
+}
+
+/// Notificação individual exibida no sino do topo (histórico + não lidas). Sempre criada
+/// independente de quais canais externos o usuário tem habilitados — `NotificationsService`
+/// dispara e-mail/Telegram/webhook em paralelo, respeitando `NotificationPreference`, mas o
+/// registro aqui não depende de nenhum canal ter tido sucesso.
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String           @map("user_id")
+  type      NotificationType
+  title     String
+  body      String?
+  /// Caminho relativo (ex.: "/projects/<id>/board?item=<id>") para navegação ao clicar — nunca
+  /// URL absoluta, resolvida pelo frontend com a própria origem.
+  link      String?
+  /// Dados adicionais estruturados (ex.: { workItemId, projectId }), mesmo padrão de
+  /// `ItemActivity.metadata`.
+  metadata  Json?
+  readAt    DateTime?        @map("read_at")
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
+  @@map("notifications")
+}
+
+/// Preferências de canal de notificação, 1:1 com `User` — controla quais canais externos recebem
+/// os disparos (a notificação em si, no sino, é sempre criada independente disto). Webhook é por
+/// usuário: cada um cadastra sua própria URL (ex. automação pessoal em n8n/Zapier).
+model NotificationPreference {
+  userId          String   @id @map("user_id")
+  emailEnabled    Boolean  @default(true) @map("email_enabled")
+  telegramEnabled Boolean  @default(false) @map("telegram_enabled")
+  webhookEnabled  Boolean  @default(false) @map("webhook_enabled")
+  /// Chat id numérico do Telegram, obtido pelo próprio usuário conversando com o bot configurado
+  /// em `/settings/telegram` e confirmado via botão "Testar" na tela de preferências.
+  telegramChatId  String?  @map("telegram_chat_id")
+  webhookUrl      String?  @map("webhook_url")
+  /// Segredo usado para assinar o payload do webhook (HMAC-SHA256, header `X-Signature`) — gerado
+  /// automaticamente na primeira vez que `webhookUrl` é definido, nunca escolhido pelo usuário nem
+  /// devolvido em claro depois de gerado.
+  webhookSecret   String?  @map("webhook_secret")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification_preferences")
 }

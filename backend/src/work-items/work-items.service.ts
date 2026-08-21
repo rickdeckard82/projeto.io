@@ -1,11 +1,12 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { ActivityType, GlobalRole, Prisma, RecurrenceUnit, StatusCategory } from '../generated/prisma/client.js';
+import { ActivityType, GlobalRole, NotificationType, Prisma, RecurrenceUnit, StatusCategory } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateItemDto } from './dto/create-item.dto.js';
 import { UpdateItemDto } from './dto/update-item.dto.js';
 import { QueryItemsDto } from './dto/query-items.dto.js';
 import { AuthenticatedUser } from '../common/decorators/current-user.decorator.js';
 import { RealtimeGateway } from '../realtime/realtime.gateway.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
 
 /**
  * Include padrão usado ao carregar um work item: traz os responsáveis (com dados básicos do
@@ -78,6 +79,7 @@ export class WorkItemsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly realtimeGateway: RealtimeGateway,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   /**
@@ -251,6 +253,11 @@ export class WorkItemsService {
         )
       : undefined;
 
+    // Prazo mudou de fato (não só foi reenviado com o mesmo valor): zera os timestamps de disparo
+    // do alerta de vencimento, senão um item cujo prazo foi adiado depois de já notificado nunca
+    // dispararia de novo — ver `DueDateCheckService`.
+    const dueDateChanged = !!dto.dueDate && new Date(dto.dueDate).getTime() !== item.dueDate?.getTime();
+
     const updated = await this.prisma.workItem.update({
       where: { id },
       data: {
@@ -263,6 +270,8 @@ export class WorkItemsService {
         dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
         recurrenceUnit: recurrenceGiven ? recurrence!.unit : undefined,
         recurrenceInterval: recurrenceGiven ? recurrence!.interval : undefined,
+        dueSoonNotifiedAt: dueDateChanged ? null : undefined,
+        overdueNotifiedAt: dueDateChanged ? null : undefined,
       },
       include: ITEM_INCLUDE,
     });
@@ -485,6 +494,16 @@ export class WorkItemsService {
       const nameOf = (uid: string) => users.find((u) => u.id === uid)?.fullName;
       for (const uid of added) {
         await this.logActivity(id, actor.id, ActivityType.ASSIGNEE_ADDED, { userName: nameOf(uid) });
+        // Não notifica quem se auto-atribuiu — a própria ação já é a confirmação.
+        if (uid !== actor.id) {
+          await this.notificationsService.create({
+            userId: uid,
+            type: NotificationType.TASK_ASSIGNED,
+            title: `Você foi atribuído a "${item.title}"`,
+            link: `/projects/${item.projectId}/board?item=${id}`,
+            metadata: { workItemId: id, projectId: item.projectId },
+          });
+        }
       }
       for (const uid of removed) {
         await this.logActivity(id, actor.id, ActivityType.ASSIGNEE_REMOVED, { userName: nameOf(uid) });

@@ -74,6 +74,9 @@ export class RealtimeGateway implements OnGatewayConnection {
         secret: process.env.JWT_ACCESS_SECRET || 'dev-access-secret',
       });
       client.data.userId = payload.sub;
+      // Sala pessoal automática (não depende de nenhum "join-*" do frontend), usada para entregar
+      // notificações do sino em tempo real — ver `emitNotificationCreated`/`emitUnreadCountChanged`.
+      client.join(`user:${payload.sub}`);
     } catch {
       this.logger.warn(`Conexão recusada (token inválido/expirado): ${client.id}`);
       client.disconnect();
@@ -128,6 +131,16 @@ export class RealtimeGateway implements OnGatewayConnection {
    */
   emitProjectChanged(projectId: string) {
     this.server?.to(`project:${projectId}`).emit('project:changed', { projectId });
+  }
+
+  /** Notifica o usuário (sala pessoal `user:<id>`) de uma nova notificação, para o sino atualizar sem F5. */
+  emitNotificationCreated(userId: string, notification: unknown) {
+    this.server?.to(`user:${userId}`).emit('notification:created', notification);
+  }
+
+  /** Notifica o usuário de que a contagem de notificações não lidas mudou. */
+  emitUnreadCountChanged(userId: string, count: number) {
+    this.server?.to(`user:${userId}`).emit('notification:unread-count', { count });
   }
 
   /**

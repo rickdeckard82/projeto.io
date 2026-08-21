@@ -1,5 +1,5 @@
 import { Link, NavLink } from 'react-router-dom';
-import { Globe, Home, Lock, Mail, Shield, User as UserIcon, Users } from 'lucide-react';
+import { Bell, Globe, Home, Lock, Mail, Send, Shield, User as UserIcon, Users } from 'lucide-react';
 import { RoleGate } from '../../auth/RoleGate';
 import { APP_VERSION } from '../../lib/appInfo';
 
@@ -30,6 +30,10 @@ export function SettingsSidebar() {
           <Lock size={16} />
           Segurança
         </NavLink>
+        <NavLink to="/settings/notifications" className={navLinkClass}>
+          <Bell size={16} />
+          Notificações
+        </NavLink>
 
         <RoleGate allow={['ADMIN']}>
           <SectionLabel>Administração</SectionLabel>
@@ -44,6 +48,10 @@ export function SettingsSidebar() {
           <NavLink to="/settings/smtp" className={navLinkClass}>
             <Mail size={16} />
             E-mail (SMTP)
+          </NavLink>
+          <NavLink to="/settings/telegram" className={navLinkClass}>
+            <Send size={16} />
+            Telegram
           </NavLink>
           <NavLink to="/settings/privacy" className={navLinkClass}>
             <Shield size={16} />

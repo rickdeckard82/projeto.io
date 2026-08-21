@@ -17,6 +17,15 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.0',
+    date: '2026-08-21',
+    changes: [
+      'Adicionado sistema de notificações: alerta de vencimento de tarefa (24h antes do prazo e ao atrasar, sem repetir) e de nova atribuição, com sino em tempo real no topo da página.',
+      'Cada usuário pode habilitar e desabilitar, em Configurações > Notificações, o reforço por e-mail, Telegram e webhook (com URL e assinatura próprias) além do sino.',
+      'Administradores podem configurar o bot do Telegram usado para enviar notificações em Configurações > Telegram.',
+    ],
+  },
+  {
     version: '1.2.0',
     date: '2026-07-26',
     changes: [

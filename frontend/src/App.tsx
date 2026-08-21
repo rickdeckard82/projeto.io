@@ -23,6 +23,8 @@ import { SecuritySettingsPage } from './pages/SecuritySettingsPage';
 import { UsersAdminPage } from './pages/UsersAdminPage';
 import { AllowedDomainsSettingsPage } from './pages/AllowedDomainsSettingsPage';
 import { SmtpSettingsPage } from './pages/SmtpSettingsPage';
+import { TelegramSettingsPage } from './pages/TelegramSettingsPage';
+import { NotificationSettingsPage } from './pages/NotificationSettingsPage';
 import { PrivacySettingsPage } from './pages/PrivacySettingsPage';
 import { ChangelogPage } from './pages/ChangelogPage';
 import { NotFoundPage } from './pages/NotFoundPage';
@@ -42,9 +44,11 @@ export default function App() {
             <Route index element={<Navigate to="profile" replace />} />
             <Route path="profile" element={<ProfileSettingsPage />} />
             <Route path="security" element={<SecuritySettingsPage />} />
+            <Route path="notifications" element={<NotificationSettingsPage />} />
             <Route path="users" element={<UsersAdminPage />} />
             <Route path="allowed-domains" element={<AllowedDomainsSettingsPage />} />
             <Route path="smtp" element={<SmtpSettingsPage />} />
+            <Route path="telegram" element={<TelegramSettingsPage />} />
             <Route path="privacy" element={<PrivacySettingsPage />} />
           </Route>
           <Route path="/notes" element={<NotesPage />} />

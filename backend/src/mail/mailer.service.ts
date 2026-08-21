@@ -49,4 +49,36 @@ export class MailerService {
       html: `<p>Olá, ${fullName}!</p><p>Confirme seu cadastro no Projeto.io clicando no link abaixo:</p><p><a href="${link}">${link}</a></p><p>Se você não solicitou este cadastro, ignore este e-mail.</p>`,
     });
   }
+
+  /**
+   * Envia uma notificação do sistema (vencimento de tarefa, atribuição) por e-mail, respeitando
+   * as preferências de canal do usuário (ver `NotificationsService.dispatchChannels`).
+   */
+  async sendNotificationEmail(
+    toEmail: string,
+    fullName: string,
+    subject: string,
+    body?: string | null,
+    link?: string | null,
+  ): Promise<void> {
+    const { transport, from } = await this.getTransportAndFrom();
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const absoluteLink = link ? `${frontendUrl}${link}` : undefined;
+
+    const textParts = [`Olá, ${fullName}!`, subject, body, absoluteLink].filter(Boolean);
+    const htmlParts = [
+      `<p>Olá, ${fullName}!</p>`,
+      `<p>${subject}</p>`,
+      body ? `<p>${body}</p>` : '',
+      absoluteLink ? `<p><a href="${absoluteLink}">${absoluteLink}</a></p>` : '',
+    ].filter(Boolean);
+
+    await transport.sendMail({
+      from,
+      to: toEmail,
+      subject: `${subject} — Projeto.io`,
+      text: textParts.join('\n\n'),
+      html: htmlParts.join(''),
+    });
+  }
 }

@@ -225,6 +225,38 @@ export interface ProjectMetrics {
   };
 }
 
+export type NotificationType = 'TASK_DUE_SOON' | 'TASK_OVERDUE' | 'TASK_ASSIGNED';
+
+/** Renomeado de "Notification" para não colidir com o tipo global `Notification` do DOM. */
+export interface AppNotification {
+  id: string;
+  userId: string;
+  type: NotificationType;
+  title: string;
+  body: string | null;
+  link: string | null;
+  metadata: Record<string, unknown> | null;
+  readAt: string | null;
+  createdAt: string;
+}
+
+export interface NotificationPreferences {
+  userId: string;
+  emailEnabled: boolean;
+  telegramEnabled: boolean;
+  webhookEnabled: boolean;
+  telegramChatId: string | null;
+  webhookUrl: string | null;
+  hasWebhookSecret: boolean;
+  updatedAt: string;
+}
+
+export interface TelegramSettings {
+  botUsername: string | null;
+  hasToken: boolean;
+  updatedAt: string;
+}
+
 export interface ProjectDocument {
   id: string;
   projectId: string;

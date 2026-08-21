@@ -8,7 +8,7 @@ import { EmptyState } from '../common/EmptyState';
 import { Avatar } from '../common/Avatar';
 import { Badge } from '../common/Badge';
 import { relativeTime } from '../../lib/relativeTime';
-import { formatDate } from '../../lib/dateFormat';
+import { formatDate, isOverdue } from '../../lib/dateFormat';
 import { priorityColor, priorityLabel } from '../items/PrioritySelect';
 
 type SortBy = 'dueDate' | 'priority';
@@ -64,17 +64,23 @@ export function RecentItemsList() {
                         {priorityLabel(item.priority)}
                       </span>
                     )}
-                    {item.dueDate && <Badge>Vence {formatDate(item.dueDate)}</Badge>}
                     <span>{relativeTime(item.updatedAt)}</span>
                   </p>
                 </div>
-                {item.assignees.length > 0 && (
-                  <div className="flex shrink-0 -space-x-1">
-                    {item.assignees.map((a) => (
-                      <Avatar key={a.user.id} name={a.user.fullName} src={a.user.avatarUrl} />
-                    ))}
-                  </div>
-                )}
+                <div className="flex shrink-0 flex-col items-end gap-1">
+                  {item.dueDate && (
+                    <Badge color={isOverdue(item.dueDate) ? '#ef4444' : '#22c55e'}>
+                      Vence {formatDate(item.dueDate)}
+                    </Badge>
+                  )}
+                  {item.assignees.length > 0 && (
+                    <div className="flex -space-x-1">
+                      {item.assignees.map((a) => (
+                        <Avatar key={a.user.id} name={a.user.fullName} src={a.user.avatarUrl} />
+                      ))}
+                    </div>
+                  )}
+                </div>
               </Link>
             </li>
           ))}

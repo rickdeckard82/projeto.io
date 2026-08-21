@@ -17,6 +17,13 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.2',
+    date: '2026-08-21',
+    changes: [
+      'Lista de tarefas recentes: a data de vencimento foi movida para o lado direito, perto do avatar, e ganhou um indicador colorido (verde quando no prazo, vermelho quando vencida).',
+    ],
+  },
+  {
     version: '1.3.1',
     date: '2026-08-21',
     changes: [

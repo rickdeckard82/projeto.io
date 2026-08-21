@@ -14,6 +14,19 @@ export function formatDate(iso: string): string {
 }
 
 /**
+ * Verifica se uma data (`dueDate`, formato dia-do-calendário) já venceu, comparando a parte
+ * `aaaa-mm-dd` da string ISO com a data local de hoje — mesma lógica de {@link formatDate},
+ * sem passar por `Date`/`toLocaleDateString` para evitar o mesmo bug de fuso horário.
+ * @param iso - data no formato ISO 8601 (usa só os 10 primeiros caracteres, `aaaa-mm-dd`)
+ * @returns `true` se a data já passou (antes de hoje)
+ */
+export function isOverdue(iso: string): boolean {
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  return iso.slice(0, 10) < todayStr;
+}
+
+/**
  * Formata um timestamp real (com hora — `createdAt`/`updatedAt` e afins, ao contrário de
  * `dueDate`/`startDate`) no fuso horário do usuário (`User.timezone`, editável em
  * `/settings/profile`). Diferente de {@link formatDate}, aqui a conversão de fuso é o

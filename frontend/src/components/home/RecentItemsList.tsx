@@ -67,7 +67,7 @@ export function RecentItemsList() {
                     <span>{relativeTime(item.updatedAt)}</span>
                   </p>
                 </div>
-                <div className="flex shrink-0 flex-col items-end gap-1">
+                <div className="flex shrink-0 items-center gap-2">
                   {item.dueDate && (
                     <Badge color={isOverdue(item.dueDate) ? '#ef4444' : '#22c55e'}>
                       Vence {formatDate(item.dueDate)}

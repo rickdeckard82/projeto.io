@@ -5,14 +5,16 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { NotificationsService } from './notifications.service.js';
 
 const DUE_SOON_WINDOW_MS = 24 * 60 * 60 * 1000;
+const OVERDUE_REMINDER_INTERVAL_MS = 24 * 60 * 60 * 1000;
 const OPEN_CATEGORIES: StatusCategory[] = [StatusCategory.COMPLETED, StatusCategory.CANCELLED];
 
 /**
  * Varre `WorkItem`s com prazo definido, de hora em hora, e notifica os responsáveis quando faltam
- * ~24h para o vencimento (`TASK_DUE_SOON`) e quando o prazo já passou sem o item estar concluído
- * (`TASK_OVERDUE`). Cada disparo acontece no máximo uma vez por item, controlado por
- * `dueSoonNotifiedAt`/`overdueNotifiedAt` — zerados em `WorkItemsService.update` sempre que o
- * prazo muda, para o alerta poder disparar de novo num prazo futuro.
+ * ~24h para o vencimento (`TASK_DUE_SOON`, uma vez só) e quando o prazo já passou sem o item estar
+ * concluído (`TASK_OVERDUE`, repetido a cada ~24h enquanto continuar atrasada — um lembrete por
+ * dia, não a cada hora que o cron roda). Ambos controlados por `dueSoonNotifiedAt`/
+ * `overdueNotifiedAt` — zerados em `WorkItemsService.update` sempre que o prazo muda, para os
+ * alertas poderem disparar de novo num prazo futuro.
  */
 @Injectable()
 export class DueDateCheckService {
@@ -62,7 +64,8 @@ export class DueDateCheckService {
     const items = await this.prisma.workItem.findMany({
       where: {
         dueDate: { lt: now },
-        overdueNotifiedAt: null,
+        // Nunca notificada, ou notificada há mais de ~24h — lembrete diário, não a cada hora.
+        OR: [{ overdueNotifiedAt: null }, { overdueNotifiedAt: { lte: new Date(now.getTime() - OVERDUE_REMINDER_INTERVAL_MS) } }],
         status: { category: { notIn: OPEN_CATEGORIES } },
       },
       include: { assignees: true },

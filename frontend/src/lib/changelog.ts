@@ -17,6 +17,14 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.1',
+    date: '2026-08-21',
+    changes: [
+      'Notificação de atribuição de tarefa passa a disparar também quando a pessoa se atribui a si mesma, não só quando é atribuída por outra pessoa.',
+      'Alerta de tarefa atrasada passa a se repetir a cada 24h enquanto ela continuar vencida e não concluída, em vez de avisar só uma vez.',
+    ],
+  },
+  {
     version: '1.3.0',
     date: '2026-08-21',
     changes: [

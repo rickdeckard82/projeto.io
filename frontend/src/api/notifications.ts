@@ -25,6 +25,11 @@ export async function markAllNotificationsRead(): Promise<{ count: number }> {
   return res.data;
 }
 
+export async function clearAllNotifications(): Promise<{ count: number }> {
+  const res = await apiClient.delete('/notifications');
+  return res.data;
+}
+
 export async function getNotificationPreferences(): Promise<NotificationPreferences> {
   const res = await apiClient.get('/notifications/preferences');
   return res.data;

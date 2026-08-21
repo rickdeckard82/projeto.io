@@ -17,6 +17,13 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.3',
+    date: '2026-08-21',
+    changes: [
+      'Adicionado botão "Limpar" no painel de notificações do sino, para apagar de uma vez todo o histórico.',
+    ],
+  },
+  {
     version: '1.3.2',
     date: '2026-08-21',
     changes: [

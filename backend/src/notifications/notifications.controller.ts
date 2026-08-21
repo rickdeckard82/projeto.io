@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import { Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { NotificationsService } from './notifications.service.js';
 import { CurrentUser, AuthenticatedUser } from '../common/decorators/current-user.decorator.js';
 
@@ -38,5 +38,10 @@ export class NotificationsController {
   @Post('read-all')
   markAllRead(@CurrentUser() user: AuthenticatedUser) {
     return this.notificationsService.markAllRead(user);
+  }
+
+  @Delete()
+  deleteAll(@CurrentUser() user: AuthenticatedUser) {
+    return this.notificationsService.deleteAll(user);
   }
 }

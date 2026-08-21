@@ -98,6 +98,12 @@ export class NotificationsService {
     return { count: result.count };
   }
 
+  async deleteAll(actor: AuthenticatedUser) {
+    const result = await this.prisma.notification.deleteMany({ where: { userId: actor.id } });
+    this.realtimeGateway.emitUnreadCountChanged(actor.id, 0);
+    return { count: result.count };
+  }
+
   /**
    * Despacha a notificação para os canais externos habilitados nas preferências do usuário.
    * "Fire and forget" com try/catch por canal — a falha de um (ex. webhook do usuário fora do ar)

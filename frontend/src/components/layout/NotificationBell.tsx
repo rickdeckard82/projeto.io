@@ -16,7 +16,7 @@ const TYPE_LABEL: Record<AppNotification['type'], string> = {
 export function NotificationBell() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { notifications, unreadCount, markRead, markAllRead } = useNotifications();
+  const { notifications, unreadCount, markRead, markAllRead, clearAll } = useNotifications();
 
   const onSelectNotification = (notification: AppNotification) => {
     if (!notification.readAt) {
@@ -51,15 +51,26 @@ export function NotificationBell() {
         >
           <div className="flex items-center justify-between px-3 py-2">
             <span className="text-xs font-semibold text-slate-300">Notificações</span>
-            {unreadCount > 0 && (
-              <button
-                type="button"
-                onClick={() => markAllRead()}
-                className="text-xs text-blue-400 hover:text-blue-300"
-              >
-                Marcar todas como lidas
-              </button>
-            )}
+            <div className="flex items-center gap-2">
+              {unreadCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => markAllRead()}
+                  className="text-xs text-blue-400 hover:text-blue-300"
+                >
+                  Marcar todas como lidas
+                </button>
+              )}
+              {notifications.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => clearAll()}
+                  className="text-xs text-slate-500 hover:text-slate-300"
+                >
+                  Limpar
+                </button>
+              )}
+            </div>
           </div>
           <DropdownMenu.Separator className="my-1 h-px bg-slate-800" />
 

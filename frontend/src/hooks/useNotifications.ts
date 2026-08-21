@@ -2,7 +2,13 @@ import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../api/queryKeys';
 import { socket } from '../lib/socket';
-import { getUnreadCount, listNotifications, markAllNotificationsRead, markNotificationRead } from '../api/notifications';
+import {
+  clearAllNotifications,
+  getUnreadCount,
+  listNotifications,
+  markAllNotificationsRead,
+  markNotificationRead,
+} from '../api/notifications';
 
 /**
  * Hook TanStack Query do sino de notificações: lista + contagem de não lidas, atualizadas em
@@ -39,6 +45,7 @@ export function useNotifications() {
 
   const markReadMutation = useMutation({ mutationFn: markNotificationRead, onSuccess: invalidateAll });
   const markAllReadMutation = useMutation({ mutationFn: markAllNotificationsRead, onSuccess: invalidateAll });
+  const clearAllMutation = useMutation({ mutationFn: clearAllNotifications, onSuccess: invalidateAll });
 
   return {
     notifications: listQuery.data?.items || [],
@@ -46,5 +53,6 @@ export function useNotifications() {
     isLoading: listQuery.isLoading,
     markRead: markReadMutation.mutateAsync,
     markAllRead: markAllReadMutation.mutateAsync,
+    clearAll: clearAllMutation.mutateAsync,
   };
 }

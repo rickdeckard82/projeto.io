@@ -146,47 +146,67 @@ export function ItemDetailModal({
                 <span className="text-slate-300">{item.createdBy.fullName}</span>
               </div>
 
-              <div className="flex flex-wrap gap-4 text-xs text-slate-400">
-                <div>
-                  <label className="mb-1 flex items-center gap-1">
-                    Status
-                    {item.statusLockedBy && (
-                      <span
-                        className="flex items-center gap-1 text-amber-500"
-                        title={`Travado por ${item.statusLockedBy.fullName} enquanto "Em andamento"`}
-                      >
-                        <Lock size={10} />
-                        {item.statusLockedBy.fullName}
-                      </span>
-                    )}
-                    {isClosedForNonAdmin && (
-                      <span className="flex items-center gap-1 text-amber-500" title="Concluído/cancelado — só um Admin pode reabrir">
-                        <Lock size={10} />
-                        Encerrado
-                      </span>
-                    )}
-                  </label>
-                  <select
-                    value={item.statusId}
-                    disabled={!editable || isLockedByOther || isClosedForNonAdmin}
-                    onChange={(e) => statusMutation.mutate(e.target.value)}
-                    className="rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-100 disabled:opacity-50"
-                  >
-                    {statuses?.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name}
-                      </option>
-                    ))}
-                  </select>
+              <div className="flex flex-col gap-3 text-xs text-slate-400">
+                <div className="flex flex-wrap gap-4">
+                  <div>
+                    <label className="mb-1 flex items-center gap-1">
+                      Status
+                      {item.statusLockedBy && (
+                        <span
+                          className="flex items-center gap-1 text-amber-500"
+                          title={`Travado por ${item.statusLockedBy.fullName} enquanto "Em andamento"`}
+                        >
+                          <Lock size={10} />
+                          {item.statusLockedBy.fullName}
+                        </span>
+                      )}
+                      {isClosedForNonAdmin && (
+                        <span className="flex items-center gap-1 text-amber-500" title="Concluído/cancelado — só um Admin pode reabrir">
+                          <Lock size={10} />
+                          Encerrado
+                        </span>
+                      )}
+                    </label>
+                    <select
+                      value={item.statusId}
+                      disabled={!editable || isLockedByOther || isClosedForNonAdmin}
+                      onChange={(e) => statusMutation.mutate(e.target.value)}
+                      className="rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-100 disabled:opacity-50"
+                    >
+                      {statuses?.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="mb-1 block">Prioridade</label>
+                    <PrioritySelect
+                      value={item.priority}
+                      disabled={!editable}
+                      onChange={(priority) => updateItem({ id: itemId, data: { priority } }).then(invalidateItem)}
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block">Recorrência</label>
+                    <RecurrenceSelect
+                      unit={item.recurrenceUnit}
+                      interval={item.recurrenceInterval}
+                      disabled={!editable}
+                      onChange={(recurrenceUnit, recurrenceInterval) =>
+                        updateItem({ id: itemId, data: { recurrenceUnit, recurrenceInterval } }).then(invalidateItem)
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block">Tempo em andamento</label>
+                    <span className="inline-block py-1 text-slate-300">
+                      {formatInProgressDuration(effectiveInProgressSeconds(item))}
+                    </span>
+                  </div>
                 </div>
-                <div>
-                  <label className="mb-1 block">Prioridade</label>
-                  <PrioritySelect
-                    value={item.priority}
-                    disabled={!editable}
-                    onChange={(priority) => updateItem({ id: itemId, data: { priority } }).then(invalidateItem)}
-                  />
-                </div>
+
                 <div>
                   <label className="mb-1 block">Início</label>
                   <div className="flex gap-1">
@@ -208,55 +228,41 @@ export function ItemDetailModal({
                     />
                   </div>
                 </div>
-                <div>
-                  <label className="mb-1 block">Vencimento</label>
-                  <div className="flex gap-1">
-                    <input
-                      type="date"
+
+                <div className="flex flex-wrap gap-4">
+                  <div>
+                    <label className="mb-1 block">Vencimento</label>
+                    <div className="flex gap-1">
+                      <input
+                        type="date"
+                        disabled={!editable}
+                        value={dueDate}
+                        onChange={(e) => setDueDate(e.target.value)}
+                        onBlur={() => saveDueDate(dueDate, dueTime)}
+                        className="rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-100 disabled:opacity-50"
+                      />
+                      <input
+                        type="time"
+                        disabled={!editable}
+                        value={dueTime}
+                        onChange={(e) => setDueTime(e.target.value)}
+                        onBlur={() => saveDueDate(dueDate, dueTime)}
+                        className="w-20 rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-100 disabled:opacity-50"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="mb-1 block">Lembrete</label>
+                    <ReminderSelect
+                      reminderAt={item.reminderAt}
+                      reminderOffsetMinutes={item.reminderOffsetMinutes}
+                      dueDate={item.dueDate}
                       disabled={!editable}
-                      value={dueDate}
-                      onChange={(e) => setDueDate(e.target.value)}
-                      onBlur={() => saveDueDate(dueDate, dueTime)}
-                      className="rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-100 disabled:opacity-50"
-                    />
-                    <input
-                      type="time"
-                      disabled={!editable}
-                      value={dueTime}
-                      onChange={(e) => setDueTime(e.target.value)}
-                      onBlur={() => saveDueDate(dueDate, dueTime)}
-                      className="w-20 rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-100 disabled:opacity-50"
+                      onChange={(reminderAt, reminderOffsetMinutes) =>
+                        updateItem({ id: itemId, data: { reminderAt, reminderOffsetMinutes } }).then(invalidateItem)
+                      }
                     />
                   </div>
-                </div>
-                <div>
-                  <label className="mb-1 block">Lembrete</label>
-                  <ReminderSelect
-                    reminderAt={item.reminderAt}
-                    reminderOffsetMinutes={item.reminderOffsetMinutes}
-                    dueDate={item.dueDate}
-                    disabled={!editable}
-                    onChange={(reminderAt, reminderOffsetMinutes) =>
-                      updateItem({ id: itemId, data: { reminderAt, reminderOffsetMinutes } }).then(invalidateItem)
-                    }
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block">Tempo em andamento</label>
-                  <span className="inline-block py-1 text-slate-300">
-                    {formatInProgressDuration(effectiveInProgressSeconds(item))}
-                  </span>
-                </div>
-                <div>
-                  <label className="mb-1 block">Recorrência</label>
-                  <RecurrenceSelect
-                    unit={item.recurrenceUnit}
-                    interval={item.recurrenceInterval}
-                    disabled={!editable}
-                    onChange={(recurrenceUnit, recurrenceInterval) =>
-                      updateItem({ id: itemId, data: { recurrenceUnit, recurrenceInterval } }).then(invalidateItem)
-                    }
-                  />
                 </div>
               </div>
 

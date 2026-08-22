@@ -17,6 +17,14 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.5.1',
+    date: '2026-08-22',
+    changes: [
+      'Notificações por e-mail, Telegram e Pushover agora informam o nome do projeto no título.',
+      'Notificações de lembrete customizado passam a detalhar o motivo do lembrete, o vencimento, a prioridade e a descrição da tarefa.',
+    ],
+  },
+  {
     version: '1.5.0',
     date: '2026-08-22',
     changes: [

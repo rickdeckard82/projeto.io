@@ -517,6 +517,7 @@ export class WorkItemsService {
     const item = await this.findOne(id);
     await this.assertProjectNotArchived(item.projectId);
     const previousIds = item.assignees.map((a) => a.userId);
+    const project = await this.prisma.project.findUniqueOrThrow({ where: { id: item.projectId }, select: { name: true } });
 
     await this.prisma.$transaction([
       this.prisma.itemAssignee.deleteMany({ where: { workItemId: id } }),
@@ -539,7 +540,7 @@ export class WorkItemsService {
         await this.notificationsService.create({
           userId: uid,
           type: NotificationType.TASK_ASSIGNED,
-          title: `Você foi atribuído a "${item.title}"`,
+          title: `Você foi atribuído a "${item.title}" — ${project.name}`,
           link: `/projects/${item.projectId}/board?item=${id}`,
           metadata: { workItemId: id, projectId: item.projectId },
         });

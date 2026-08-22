@@ -3,6 +3,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { NotificationType, StatusCategory } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { NotificationsService } from './notifications.service.js';
+import { formatDateTimeLiteral, formatOffsetMinutes, priorityLabel } from './notification-message.util.js';
 
 const DUE_SOON_WINDOW_MS = 24 * 60 * 60 * 1000;
 const OVERDUE_REMINDER_INTERVAL_MS = 24 * 60 * 60 * 1000;
@@ -48,15 +49,17 @@ export class DueDateCheckService {
         dueSoonNotifiedAt: null,
         status: { category: { notIn: OPEN_CATEGORIES } },
       },
-      include: { assignees: true },
+      include: { assignees: true, project: { select: { name: true } } },
     });
 
     for (const item of items) {
+      const body = item.dueDate ? `Vencimento: ${formatDateTimeLiteral(item.dueDate)}` : undefined;
       for (const assignee of item.assignees) {
         await this.notificationsService.create({
           userId: assignee.userId,
           type: NotificationType.TASK_DUE_SOON,
-          title: `"${item.title}" vence em breve`,
+          title: `"${item.title}" vence em breve — ${item.project.name}`,
+          body,
           link: `/projects/${item.projectId}/board?item=${item.id}`,
           metadata: { workItemId: item.id, projectId: item.projectId },
         });
@@ -77,15 +80,17 @@ export class DueDateCheckService {
         OR: [{ overdueNotifiedAt: null }, { overdueNotifiedAt: { lte: new Date(now.getTime() - OVERDUE_REMINDER_INTERVAL_MS) } }],
         status: { category: { notIn: OPEN_CATEGORIES } },
       },
-      include: { assignees: true },
+      include: { assignees: true, project: { select: { name: true } } },
     });
 
     for (const item of items) {
+      const body = item.dueDate ? `Vencimento: ${formatDateTimeLiteral(item.dueDate)}` : undefined;
       for (const assignee of item.assignees) {
         await this.notificationsService.create({
           userId: assignee.userId,
           type: NotificationType.TASK_OVERDUE,
-          title: `"${item.title}" está atrasada`,
+          title: `"${item.title}" está atrasada — ${item.project.name}`,
+          body,
           link: `/projects/${item.projectId}/board?item=${item.id}`,
           metadata: { workItemId: item.id, projectId: item.projectId },
         });
@@ -107,16 +112,30 @@ export class DueDateCheckService {
     const now = new Date();
     const items = await this.prisma.workItem.findMany({
       where: { reminderAt: { lte: now }, reminderNotifiedAt: null },
-      include: { assignees: true },
+      include: { assignees: true, project: { select: { name: true } } },
     });
 
     for (const item of items) {
+      const reason =
+        item.reminderOffsetMinutes != null
+          ? `Lembrete configurado para ${formatOffsetMinutes(item.reminderOffsetMinutes)} do vencimento.`
+          : 'Lembrete agendado para esta data e hora.';
+      const body = [
+        reason,
+        item.dueDate && `Vencimento: ${formatDateTimeLiteral(item.dueDate)}`,
+        item.priority !== 'NONE' && `Prioridade: ${priorityLabel(item.priority)}`,
+        item.description,
+      ]
+        .filter(Boolean)
+        .join('\n');
+
       const recipientIds = item.assignees.length > 0 ? item.assignees.map((a) => a.userId) : [item.createdById];
       for (const userId of recipientIds) {
         await this.notificationsService.create({
           userId,
           type: NotificationType.TASK_REMINDER,
-          title: `Lembrete: "${item.title}"`,
+          title: `Lembrete: "${item.title}" — ${item.project.name}`,
+          body,
           link: `/projects/${item.projectId}/board?item=${item.id}`,
           metadata: { workItemId: item.id, projectId: item.projectId },
         });

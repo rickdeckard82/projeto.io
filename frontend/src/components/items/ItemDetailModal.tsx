@@ -280,6 +280,7 @@ export function ItemDetailModal({
               <div>
                 <label className="mb-1 block text-xs text-slate-400">Responsáveis</label>
                 <AssigneePicker
+                  projectId={projectId}
                   selectedUserIds={item.assignees.map((a) => a.user.id)}
                   disabled={!editable}
                   onChange={(userIds) => updateItemAssignees({ id: itemId, userIds }).then(invalidateItem)}

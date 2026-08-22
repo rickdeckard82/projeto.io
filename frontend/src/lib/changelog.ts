@@ -17,6 +17,13 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.8.2',
+    date: '2026-08-22',
+    changes: [
+      'Corrigido: a atribuição de responsáveis num item agora lista apenas os membros do projeto, em vez de todos os usuários do sistema.',
+    ],
+  },
+  {
     version: '1.8.1',
     date: '2026-08-22',
     changes: [

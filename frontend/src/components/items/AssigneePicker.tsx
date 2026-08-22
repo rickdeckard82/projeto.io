@@ -1,17 +1,23 @@
 import { useQuery } from '@tanstack/react-query';
-import { listUserDirectory } from '../../api/users';
+import { listProjectMembers } from '../../api/projects';
 import { queryKeys } from '../../api/queryKeys';
 
+/** Lista apenas membros do projeto — quem não é membro não pode ser responsável por um item dele. */
 export function AssigneePicker({
+  projectId,
   selectedUserIds,
   onChange,
   disabled,
 }: {
+  projectId: string;
   selectedUserIds: string[];
   onChange: (userIds: string[]) => void;
   disabled?: boolean;
 }) {
-  const { data: users } = useQuery({ queryKey: queryKeys.userDirectory, queryFn: listUserDirectory });
+  const { data: members } = useQuery({
+    queryKey: queryKeys.projectMembers(projectId),
+    queryFn: () => listProjectMembers(projectId),
+  });
 
   const toggle = (userId: string) => {
     if (selectedUserIds.includes(userId)) {
@@ -23,7 +29,7 @@ export function AssigneePicker({
 
   return (
     <div className="flex flex-wrap gap-2">
-      {users?.map((u) => (
+      {members?.map(({ user: u }) => (
         <label
           key={u.id}
           className={`flex cursor-pointer items-center gap-1 rounded-full border px-2 py-1 text-xs ${

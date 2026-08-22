@@ -473,6 +473,7 @@ model NotificationPreference {
   telegramEnabled Boolean  @default(false) @map("telegram_enabled")
   webhookEnabled  Boolean  @default(false) @map("webhook_enabled")
   pushoverEnabled Boolean  @default(false) @map("pushover_enabled")
+  googleChatEnabled Boolean @default(false) @map("google_chat_enabled")
   /// Chat id numérico do Telegram, obtido pelo próprio usuário conversando com o bot configurado
   /// em `/settings/telegram` e confirmado via botão "Testar" na tela de preferências.
   telegramChatId  String?  @map("telegram_chat_id")
@@ -480,6 +481,10 @@ model NotificationPreference {
   /// User Key do Pushover, obtida pelo próprio usuário em sua conta Pushover e confirmada via
   /// botão "Testar" na tela de preferências.
   pushoverUserKey String?  @map("pushover_user_key")
+  /// URL do webhook de entrada (incoming webhook) de um Space do Google Chat, criada pelo próprio
+  /// usuário em "Apps e integrações > Webhooks" do Space — a URL já contém a chave/token de
+  /// autenticação, então não há segredo adicional para gerar (diferente do webhook genérico).
+  googleChatWebhookUrl String? @map("google_chat_webhook_url")
   /// Segredo usado para assinar o payload do webhook (HMAC-SHA256, header `X-Signature`) — gerado
   /// automaticamente na primeira vez que `webhookUrl` é definido, nunca escolhido pelo usuário nem
   /// devolvido em claro depois de gerado.

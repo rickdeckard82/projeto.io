@@ -7,6 +7,7 @@ import { EmailChannelService } from './channels/email-channel.service.js';
 import { TelegramChannelService } from './channels/telegram-channel.service.js';
 import { WebhookChannelService } from './channels/webhook-channel.service.js';
 import { PushoverChannelService } from './channels/pushover-channel.service.js';
+import { GoogleChatChannelService } from './channels/google-chat-channel.service.js';
 
 const DEFAULT_LIST_LIMIT = 20;
 
@@ -37,6 +38,7 @@ export class NotificationsService {
     private readonly telegramChannel: TelegramChannelService,
     private readonly webhookChannel: WebhookChannelService,
     private readonly pushoverChannel: PushoverChannelService,
+    private readonly googleChatChannel: GoogleChatChannelService,
   ) {}
 
   async create(input: CreateNotificationInput) {
@@ -140,6 +142,11 @@ export class NotificationsService {
       this.pushoverChannel
         .send(prefs.pushoverUserKey, notification)
         .catch((e) => this.logger.warn(`Falha ao enviar notificação por Pushover para ${userId}: ${e.message}`));
+    }
+    if (prefs?.googleChatEnabled && prefs.googleChatWebhookUrl) {
+      this.googleChatChannel
+        .send(prefs.googleChatWebhookUrl, notification)
+        .catch((e) => this.logger.warn(`Falha ao enviar notificação por Google Chat para ${userId}: ${e.message}`));
     }
   }
 }

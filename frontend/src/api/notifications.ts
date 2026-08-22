@@ -40,9 +40,11 @@ export interface UpdateNotificationPreferencesInput {
   telegramEnabled?: boolean;
   webhookEnabled?: boolean;
   pushoverEnabled?: boolean;
+  googleChatEnabled?: boolean;
   telegramChatId?: string;
   webhookUrl?: string;
   pushoverUserKey?: string;
+  googleChatWebhookUrl?: string;
 }
 
 export async function updateNotificationPreferences(
@@ -64,5 +66,10 @@ export async function testWebhookNotification(): Promise<{ message: string }> {
 
 export async function testPushoverNotification(): Promise<{ message: string }> {
   const res = await apiClient.post('/notifications/preferences/test-pushover');
+  return res.data;
+}
+
+export async function testGoogleChatNotification(): Promise<{ message: string }> {
+  const res = await apiClient.post('/notifications/preferences/test-google-chat');
   return res.data;
 }

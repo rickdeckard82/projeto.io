@@ -17,6 +17,13 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.7.0',
+    date: '2026-08-22',
+    changes: [
+      'Adicionado Google Chat como novo canal de notificação: cole a URL do webhook de entrada de um Space em Configurações > Notificações para habilitar o reforço.',
+    ],
+  },
+  {
     version: '1.6.0',
     date: '2026-08-22',
     changes: [

@@ -32,4 +32,9 @@ export class NotificationPreferencesController {
   testPushover(@CurrentUser() user: AuthenticatedUser) {
     return this.preferencesService.testPushover(user.id);
   }
+
+  @Post('test-google-chat')
+  testGoogleChat(@CurrentUser() user: AuthenticatedUser) {
+    return this.preferencesService.testGoogleChat(user.id);
+  }
 }

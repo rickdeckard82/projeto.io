@@ -257,10 +257,12 @@ export interface NotificationPreferences {
   telegramEnabled: boolean;
   webhookEnabled: boolean;
   pushoverEnabled: boolean;
+  googleChatEnabled: boolean;
   telegramChatId: string | null;
   webhookUrl: string | null;
   hasWebhookSecret: boolean;
   pushoverUserKey: string | null;
+  googleChatWebhookUrl: string | null;
   updatedAt: string;
 }
 

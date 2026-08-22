@@ -32,4 +32,14 @@ export class UpdatePreferencesDto {
   @IsOptional()
   @IsString()
   pushoverUserKey?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  googleChatEnabled?: boolean;
+
+  /** Vazio/ausente limpa a URL salva. */
+  @IsOptional()
+  @ValidateIf((o) => !!o.googleChatWebhookUrl)
+  @IsUrl({ require_tld: false })
+  googleChatWebhookUrl?: string;
 }

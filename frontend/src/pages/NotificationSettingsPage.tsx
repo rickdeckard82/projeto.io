@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   getNotificationPreferences,
+  testGoogleChatNotification,
   testPushoverNotification,
   testTelegramNotification,
   testWebhookNotification,
@@ -22,9 +23,11 @@ export function NotificationSettingsPage() {
   const [telegramEnabled, setTelegramEnabled] = useState(false);
   const [webhookEnabled, setWebhookEnabled] = useState(false);
   const [pushoverEnabled, setPushoverEnabled] = useState(false);
+  const [googleChatEnabled, setGoogleChatEnabled] = useState(false);
   const [telegramChatId, setTelegramChatId] = useState('');
   const [webhookUrl, setWebhookUrl] = useState('');
   const [pushoverUserKey, setPushoverUserKey] = useState('');
+  const [googleChatWebhookUrl, setGoogleChatWebhookUrl] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [testMessage, setTestMessage] = useState<string | null>(null);
@@ -35,9 +38,11 @@ export function NotificationSettingsPage() {
       setTelegramEnabled(prefs.telegramEnabled);
       setWebhookEnabled(prefs.webhookEnabled);
       setPushoverEnabled(prefs.pushoverEnabled);
+      setGoogleChatEnabled(prefs.googleChatEnabled);
       setTelegramChatId(prefs.telegramChatId || '');
       setWebhookUrl(prefs.webhookUrl || '');
       setPushoverUserKey(prefs.pushoverUserKey || '');
+      setGoogleChatWebhookUrl(prefs.googleChatWebhookUrl || '');
     }
   }, [prefs]);
 
@@ -48,9 +53,11 @@ export function NotificationSettingsPage() {
         telegramEnabled,
         webhookEnabled,
         pushoverEnabled,
+        googleChatEnabled,
         telegramChatId,
         webhookUrl,
         pushoverUserKey,
+        googleChatWebhookUrl,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.notificationPreferences });
@@ -80,6 +87,12 @@ export function NotificationSettingsPage() {
     mutationFn: testPushoverNotification,
     onSuccess: (data) => setTestMessage(data.message),
     onError: (err: any) => setTestMessage(err?.response?.data?.message || 'Falha ao enviar teste do Pushover'),
+  });
+
+  const testGoogleChatMutation = useMutation({
+    mutationFn: testGoogleChatNotification,
+    onSuccess: (data) => setTestMessage(data.message),
+    onError: (err: any) => setTestMessage(err?.response?.data?.message || 'Falha ao enviar teste do Google Chat'),
   });
 
   if (isLoading) return <Spinner />;
@@ -183,6 +196,32 @@ export function NotificationSettingsPage() {
             onClick={() => testPushoverMutation.mutate()}
           >
             {testPushoverMutation.isPending ? 'Enviando...' : 'Testar'}
+          </Button>
+        </div>
+
+        <label className="mb-1 flex items-center gap-2 text-sm text-slate-300">
+          <input type="checkbox" checked={googleChatEnabled} onChange={(e) => setGoogleChatEnabled(e.target.checked)} />
+          Receber por Google Chat
+        </label>
+        <p className="mb-2 ml-6 text-xs text-slate-500">
+          Crie um webhook de entrada num Space do Google Chat ("Apps e integrações" &gt; "Webhooks") e cole a URL
+          abaixo. Salve antes de testar — o teste usa a URL já salva, não a que está no campo.
+        </p>
+        <div className="mb-4 ml-6 flex gap-2">
+          <input
+            type="url"
+            placeholder="https://chat.googleapis.com/v1/spaces/..."
+            value={googleChatWebhookUrl}
+            onChange={(e) => setGoogleChatWebhookUrl(e.target.value)}
+            className="flex-1 rounded-md border border-slate-700 bg-slate-950 px-3 py-1.5 text-xs text-slate-100"
+          />
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={!googleChatWebhookUrl || testGoogleChatMutation.isPending}
+            onClick={() => testGoogleChatMutation.mutate()}
+          >
+            {testGoogleChatMutation.isPending ? 'Enviando...' : 'Testar'}
           </Button>
         </div>
 

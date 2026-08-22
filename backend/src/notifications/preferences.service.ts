@@ -5,8 +5,15 @@ import { UpdatePreferencesDto } from './dto/update-preferences.dto.js';
 import { TelegramChannelService } from './channels/telegram-channel.service.js';
 import { WebhookChannelService } from './channels/webhook-channel.service.js';
 import { PushoverChannelService } from './channels/pushover-channel.service.js';
+import { GoogleChatChannelService } from './channels/google-chat-channel.service.js';
 
-const DEFAULTS = { emailEnabled: true, telegramEnabled: false, webhookEnabled: false, pushoverEnabled: false };
+const DEFAULTS = {
+  emailEnabled: true,
+  telegramEnabled: false,
+  webhookEnabled: false,
+  pushoverEnabled: false,
+  googleChatEnabled: false,
+};
 
 function omitSecret<T extends { webhookSecret: string | null }>(prefs: T) {
   const { webhookSecret, ...rest } = prefs;
@@ -25,6 +32,7 @@ export class NotificationPreferencesService {
     private readonly telegramChannel: TelegramChannelService,
     private readonly webhookChannel: WebhookChannelService,
     private readonly pushoverChannel: PushoverChannelService,
+    private readonly googleChatChannel: GoogleChatChannelService,
   ) {}
 
   async get(userId: string) {
@@ -39,6 +47,7 @@ export class NotificationPreferencesService {
       webhookUrl: null,
       webhookSecret: null,
       pushoverUserKey: null,
+      googleChatWebhookUrl: null,
       updatedAt: new Date(),
     });
   }
@@ -62,10 +71,13 @@ export class NotificationPreferencesService {
       telegramEnabled: dto.telegramEnabled ?? existing?.telegramEnabled ?? DEFAULTS.telegramEnabled,
       webhookEnabled: dto.webhookEnabled ?? existing?.webhookEnabled ?? DEFAULTS.webhookEnabled,
       pushoverEnabled: dto.pushoverEnabled ?? existing?.pushoverEnabled ?? DEFAULTS.pushoverEnabled,
+      googleChatEnabled: dto.googleChatEnabled ?? existing?.googleChatEnabled ?? DEFAULTS.googleChatEnabled,
       telegramChatId: dto.telegramChatId !== undefined ? dto.telegramChatId || null : existing?.telegramChatId,
       webhookUrl,
       webhookSecret,
       pushoverUserKey: dto.pushoverUserKey !== undefined ? dto.pushoverUserKey || null : existing?.pushoverUserKey,
+      googleChatWebhookUrl:
+        dto.googleChatWebhookUrl !== undefined ? dto.googleChatWebhookUrl || null : existing?.googleChatWebhookUrl,
     };
 
     const saved = await this.prisma.notificationPreference.upsert({
@@ -117,5 +129,19 @@ export class NotificationPreferencesService {
       link: null,
     });
     return { message: 'Notificação de teste enviada' };
+  }
+
+  /** Envia uma notificação de teste para o Google Chat usando a `googleChatWebhookUrl` já salva pelo usuário. */
+  async testGoogleChat(userId: string) {
+    const prefs = await this.prisma.notificationPreference.findUnique({ where: { userId } });
+    if (!prefs?.googleChatWebhookUrl) {
+      throw new BadRequestException('Cadastre sua URL de webhook do Google Chat antes de testar');
+    }
+    await this.googleChatChannel.send(prefs.googleChatWebhookUrl, {
+      title: 'Notificação de teste — Projeto.io',
+      body: 'Se você recebeu esta mensagem, suas notificações do Google Chat estão configuradas corretamente.',
+      link: null,
+    });
+    return { message: 'Mensagem de teste enviada' };
   }
 }

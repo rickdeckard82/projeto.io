@@ -10,6 +10,7 @@ import { EmailChannelService } from './channels/email-channel.service.js';
 import { TelegramChannelService } from './channels/telegram-channel.service.js';
 import { WebhookChannelService } from './channels/webhook-channel.service.js';
 import { PushoverChannelService } from './channels/pushover-channel.service.js';
+import { GoogleChatChannelService } from './channels/google-chat-channel.service.js';
 
 @Module({
   imports: [RealtimeModule, MailModule],
@@ -22,6 +23,7 @@ import { PushoverChannelService } from './channels/pushover-channel.service.js';
     TelegramChannelService,
     WebhookChannelService,
     PushoverChannelService,
+    GoogleChatChannelService,
   ],
   exports: [NotificationsService],
 })

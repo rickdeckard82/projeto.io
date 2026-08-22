@@ -31,7 +31,7 @@ export function ProjectCard({ project }: { project: Project }) {
         </div>
       </Link>
 
-      <RoleGate allow={['ADMIN']}>
+      <RoleGate allow={['ADMIN', 'SENIOR']}>
         <button
           type="button"
           onClick={() => setEditOpen(true)}

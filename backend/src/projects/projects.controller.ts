@@ -12,8 +12,8 @@ import { CurrentUser, AuthenticatedUser } from '../common/decorators/current-use
  * Controller REST para gestão de projetos (`/projects`). A leitura individual e as mutações
  * usam `@UseGuards(ProjectMemberGuard)` + `@ProjectResource('project', 'id')` para exigir que
  * o usuário seja membro do projeto (ou que o projeto seja público, no caso de GET) — admins
- * sempre passam. Criar/arquivar/desarquivar aceitam Admin e Senior (`@Roles(ADMIN, SENIOR)`);
- * atualizar/remover o projeto continuam restritos a Admin.
+ * sempre passam. Criar/atualizar/arquivar/desarquivar aceitam Admin e Senior
+ * (`@Roles(ADMIN, SENIOR)`); remover o projeto continua restrito a Admin.
  */
 @Controller('projects')
 export class ProjectsController {
@@ -40,8 +40,8 @@ export class ProjectsController {
     return this.projectsService.findOne(id);
   }
 
-  /** Atualiza um projeto. Restrito a administradores e exige membership via `ProjectMemberGuard`. */
-  @Roles(GlobalRole.ADMIN)
+  /** Atualiza um projeto. Aceita Admin e Senior (`@Roles(ADMIN, SENIOR)`) e exige membership via `ProjectMemberGuard`. */
+  @Roles(GlobalRole.ADMIN, GlobalRole.SENIOR)
   @UseGuards(ProjectMemberGuard)
   @ProjectResource('project', 'id')
   @Patch(':id')

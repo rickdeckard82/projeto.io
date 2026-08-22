@@ -1,6 +1,6 @@
 {
   "name": "pm-app-backend",
-  "version": "1.8.3",
+  "version": "1.9.0",
   "private": true,
   "license": "UNLICENSED",
   "type": "module",

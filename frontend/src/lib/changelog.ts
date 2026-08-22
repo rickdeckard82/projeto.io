@@ -17,6 +17,13 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.9.0',
+    date: '2026-08-22',
+    changes: [
+      'Usuários com papel Senior agora também podem editar um projeto (ícone, capa, descrição, visibilidade e líder) — antes era restrito a administradores.',
+    ],
+  },
+  {
     version: '1.8.3',
     date: '2026-08-22',
     changes: [

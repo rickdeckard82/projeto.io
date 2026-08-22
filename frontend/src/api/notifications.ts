@@ -39,8 +39,10 @@ export interface UpdateNotificationPreferencesInput {
   emailEnabled?: boolean;
   telegramEnabled?: boolean;
   webhookEnabled?: boolean;
+  pushoverEnabled?: boolean;
   telegramChatId?: string;
   webhookUrl?: string;
+  pushoverUserKey?: string;
 }
 
 export async function updateNotificationPreferences(
@@ -57,5 +59,10 @@ export async function testTelegramNotification(): Promise<{ message: string }> {
 
 export async function testWebhookNotification(): Promise<{ message: string }> {
   const res = await apiClient.post('/notifications/preferences/test-webhook');
+  return res.data;
+}
+
+export async function testPushoverNotification(): Promise<{ message: string }> {
+  const res = await apiClient.post('/notifications/preferences/test-pushover');
   return res.data;
 }

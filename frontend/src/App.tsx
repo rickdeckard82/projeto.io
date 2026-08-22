@@ -24,6 +24,7 @@ import { UsersAdminPage } from './pages/UsersAdminPage';
 import { AllowedDomainsSettingsPage } from './pages/AllowedDomainsSettingsPage';
 import { SmtpSettingsPage } from './pages/SmtpSettingsPage';
 import { TelegramSettingsPage } from './pages/TelegramSettingsPage';
+import { PushoverSettingsPage } from './pages/PushoverSettingsPage';
 import { NotificationSettingsPage } from './pages/NotificationSettingsPage';
 import { PrivacySettingsPage } from './pages/PrivacySettingsPage';
 import { ChangelogPage } from './pages/ChangelogPage';
@@ -49,6 +50,7 @@ export default function App() {
             <Route path="allowed-domains" element={<AllowedDomainsSettingsPage />} />
             <Route path="smtp" element={<SmtpSettingsPage />} />
             <Route path="telegram" element={<TelegramSettingsPage />} />
+            <Route path="pushover" element={<PushoverSettingsPage />} />
             <Route path="privacy" element={<PrivacySettingsPage />} />
           </Route>
           <Route path="/notes" element={<NotesPage />} />

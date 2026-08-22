@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   getNotificationPreferences,
+  testPushoverNotification,
   testTelegramNotification,
   testWebhookNotification,
   updateNotificationPreferences,
@@ -20,8 +21,10 @@ export function NotificationSettingsPage() {
   const [emailEnabled, setEmailEnabled] = useState(true);
   const [telegramEnabled, setTelegramEnabled] = useState(false);
   const [webhookEnabled, setWebhookEnabled] = useState(false);
+  const [pushoverEnabled, setPushoverEnabled] = useState(false);
   const [telegramChatId, setTelegramChatId] = useState('');
   const [webhookUrl, setWebhookUrl] = useState('');
+  const [pushoverUserKey, setPushoverUserKey] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [testMessage, setTestMessage] = useState<string | null>(null);
@@ -31,14 +34,24 @@ export function NotificationSettingsPage() {
       setEmailEnabled(prefs.emailEnabled);
       setTelegramEnabled(prefs.telegramEnabled);
       setWebhookEnabled(prefs.webhookEnabled);
+      setPushoverEnabled(prefs.pushoverEnabled);
       setTelegramChatId(prefs.telegramChatId || '');
       setWebhookUrl(prefs.webhookUrl || '');
+      setPushoverUserKey(prefs.pushoverUserKey || '');
     }
   }, [prefs]);
 
   const mutation = useMutation({
     mutationFn: () =>
-      updateNotificationPreferences({ emailEnabled, telegramEnabled, webhookEnabled, telegramChatId, webhookUrl }),
+      updateNotificationPreferences({
+        emailEnabled,
+        telegramEnabled,
+        webhookEnabled,
+        pushoverEnabled,
+        telegramChatId,
+        webhookUrl,
+        pushoverUserKey,
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.notificationPreferences });
       setError(null);
@@ -61,6 +74,12 @@ export function NotificationSettingsPage() {
     mutationFn: testWebhookNotification,
     onSuccess: (data) => setTestMessage(data.message),
     onError: (err: any) => setTestMessage(err?.response?.data?.message || 'Falha ao enviar teste do webhook'),
+  });
+
+  const testPushoverMutation = useMutation({
+    mutationFn: testPushoverNotification,
+    onSuccess: (data) => setTestMessage(data.message),
+    onError: (err: any) => setTestMessage(err?.response?.data?.message || 'Falha ao enviar teste do Pushover'),
   });
 
   if (isLoading) return <Spinner />;
@@ -138,6 +157,32 @@ export function NotificationSettingsPage() {
             onClick={() => testWebhookMutation.mutate()}
           >
             {testWebhookMutation.isPending ? 'Enviando...' : 'Testar'}
+          </Button>
+        </div>
+
+        <label className="mb-1 flex items-center gap-2 text-sm text-slate-300">
+          <input type="checkbox" checked={pushoverEnabled} onChange={(e) => setPushoverEnabled(e.target.checked)} />
+          Receber por Pushover
+        </label>
+        <p className="mb-2 ml-6 text-xs text-slate-500">
+          Informe sua User Key do Pushover (visível na sua conta em pushover.net) abaixo. Salve antes de testar — o
+          teste usa o valor já salvo, não o que está no campo.
+        </p>
+        <div className="mb-4 ml-6 flex gap-2">
+          <input
+            type="text"
+            placeholder="User Key do Pushover"
+            value={pushoverUserKey}
+            onChange={(e) => setPushoverUserKey(e.target.value)}
+            className="flex-1 rounded-md border border-slate-700 bg-slate-950 px-3 py-1.5 text-xs text-slate-100"
+          />
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={!pushoverUserKey || testPushoverMutation.isPending}
+            onClick={() => testPushoverMutation.mutate()}
+          >
+            {testPushoverMutation.isPending ? 'Enviando...' : 'Testar'}
           </Button>
         </div>
 

@@ -27,4 +27,9 @@ export class NotificationPreferencesController {
   testWebhook(@CurrentUser() user: AuthenticatedUser) {
     return this.preferencesService.testWebhook(user.id);
   }
+
+  @Post('test-pushover')
+  testPushover(@CurrentUser() user: AuthenticatedUser) {
+    return this.preferencesService.testPushover(user.id);
+  }
 }

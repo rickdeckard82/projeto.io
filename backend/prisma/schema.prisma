@@ -373,6 +373,17 @@ model TelegramSettings {
   @@map("telegram_settings")
 }
 
+/// Configuração única (singleton) da aplicação Pushover usada para enviar notificações — mesmo
+/// padrão de `TelegramSettings`: API token configurado em tempo de execução via tela de admin
+/// (`/settings/pushover`), não variável de ambiente, para poder ser trocado sem redeploy.
+model PushoverSettings {
+  id               String   @id @default("singleton")
+  apiTokenEncrypted String  @map("api_token_encrypted")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("pushover_settings")
+}
+
 /// Dados do controlador/encarregado (LGPD) usados para montar a página pública de Política de
 /// Privacidade. Deliberadamente não hardcoda nenhuma empresa específica: este software é
 /// reutilizável por qualquer organização que suba os próprios containers, então essa
@@ -458,10 +469,14 @@ model NotificationPreference {
   emailEnabled    Boolean  @default(true) @map("email_enabled")
   telegramEnabled Boolean  @default(false) @map("telegram_enabled")
   webhookEnabled  Boolean  @default(false) @map("webhook_enabled")
+  pushoverEnabled Boolean  @default(false) @map("pushover_enabled")
   /// Chat id numérico do Telegram, obtido pelo próprio usuário conversando com o bot configurado
   /// em `/settings/telegram` e confirmado via botão "Testar" na tela de preferências.
   telegramChatId  String?  @map("telegram_chat_id")
   webhookUrl      String?  @map("webhook_url")
+  /// User Key do Pushover, obtida pelo próprio usuário em sua conta Pushover e confirmada via
+  /// botão "Testar" na tela de preferências.
+  pushoverUserKey String?  @map("pushover_user_key")
   /// Segredo usado para assinar o payload do webhook (HMAC-SHA256, header `X-Signature`) — gerado
   /// automaticamente na primeira vez que `webhookUrl` é definido, nunca escolhido pelo usuário nem
   /// devolvido em claro depois de gerado.

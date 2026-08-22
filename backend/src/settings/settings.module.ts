@@ -7,10 +7,24 @@ import { PrivacySettingsController } from './privacy-settings.controller.js';
 import { PrivacySettingsService } from './privacy-settings.service.js';
 import { TelegramSettingsController } from './telegram-settings.controller.js';
 import { TelegramSettingsService } from './telegram-settings.service.js';
+import { PushoverSettingsController } from './pushover-settings.controller.js';
+import { PushoverSettingsService } from './pushover-settings.service.js';
 
 @Module({
-  controllers: [AllowedDomainsController, SmtpSettingsController, PrivacySettingsController, TelegramSettingsController],
-  providers: [AllowedDomainsService, SmtpSettingsService, PrivacySettingsService, TelegramSettingsService],
-  exports: [AllowedDomainsService, SmtpSettingsService, PrivacySettingsService, TelegramSettingsService],
+  controllers: [
+    AllowedDomainsController,
+    SmtpSettingsController,
+    PrivacySettingsController,
+    TelegramSettingsController,
+    PushoverSettingsController,
+  ],
+  providers: [
+    AllowedDomainsService,
+    SmtpSettingsService,
+    PrivacySettingsService,
+    TelegramSettingsService,
+    PushoverSettingsService,
+  ],
+  exports: [AllowedDomainsService, SmtpSettingsService, PrivacySettingsService, TelegramSettingsService, PushoverSettingsService],
 })
 export class SettingsModule {}

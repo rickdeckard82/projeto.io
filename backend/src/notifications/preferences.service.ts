@@ -4,8 +4,9 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { UpdatePreferencesDto } from './dto/update-preferences.dto.js';
 import { TelegramChannelService } from './channels/telegram-channel.service.js';
 import { WebhookChannelService } from './channels/webhook-channel.service.js';
+import { PushoverChannelService } from './channels/pushover-channel.service.js';
 
-const DEFAULTS = { emailEnabled: true, telegramEnabled: false, webhookEnabled: false };
+const DEFAULTS = { emailEnabled: true, telegramEnabled: false, webhookEnabled: false, pushoverEnabled: false };
 
 function omitSecret<T extends { webhookSecret: string | null }>(prefs: T) {
   const { webhookSecret, ...rest } = prefs;
@@ -23,6 +24,7 @@ export class NotificationPreferencesService {
     private readonly prisma: PrismaService,
     private readonly telegramChannel: TelegramChannelService,
     private readonly webhookChannel: WebhookChannelService,
+    private readonly pushoverChannel: PushoverChannelService,
   ) {}
 
   async get(userId: string) {
@@ -30,7 +32,15 @@ export class NotificationPreferencesService {
     if (existing) {
       return omitSecret(existing);
     }
-    return omitSecret({ userId, ...DEFAULTS, telegramChatId: null, webhookUrl: null, webhookSecret: null, updatedAt: new Date() });
+    return omitSecret({
+      userId,
+      ...DEFAULTS,
+      telegramChatId: null,
+      webhookUrl: null,
+      webhookSecret: null,
+      pushoverUserKey: null,
+      updatedAt: new Date(),
+    });
   }
 
   async update(userId: string, dto: UpdatePreferencesDto) {
@@ -51,9 +61,11 @@ export class NotificationPreferencesService {
       emailEnabled: dto.emailEnabled ?? existing?.emailEnabled ?? DEFAULTS.emailEnabled,
       telegramEnabled: dto.telegramEnabled ?? existing?.telegramEnabled ?? DEFAULTS.telegramEnabled,
       webhookEnabled: dto.webhookEnabled ?? existing?.webhookEnabled ?? DEFAULTS.webhookEnabled,
+      pushoverEnabled: dto.pushoverEnabled ?? existing?.pushoverEnabled ?? DEFAULTS.pushoverEnabled,
       telegramChatId: dto.telegramChatId !== undefined ? dto.telegramChatId || null : existing?.telegramChatId,
       webhookUrl,
       webhookSecret,
+      pushoverUserKey: dto.pushoverUserKey !== undefined ? dto.pushoverUserKey || null : existing?.pushoverUserKey,
     };
 
     const saved = await this.prisma.notificationPreference.upsert({
@@ -91,5 +103,19 @@ export class NotificationPreferencesService {
       link: null,
     });
     return { message: 'Payload de teste enviado' };
+  }
+
+  /** Envia uma notificação de teste para o Pushover usando a `pushoverUserKey` já salva pelo usuário. */
+  async testPushover(userId: string) {
+    const prefs = await this.prisma.notificationPreference.findUnique({ where: { userId } });
+    if (!prefs?.pushoverUserKey) {
+      throw new BadRequestException('Cadastre sua User Key do Pushover antes de testar');
+    }
+    await this.pushoverChannel.send(prefs.pushoverUserKey, {
+      title: 'Notificação de teste — Projeto.io',
+      body: 'Se você recebeu esta mensagem, suas notificações do Pushover estão configuradas corretamente.',
+      link: null,
+    });
+    return { message: 'Notificação de teste enviada' };
   }
 }

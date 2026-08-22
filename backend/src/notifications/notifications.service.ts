@@ -6,6 +6,7 @@ import { AuthenticatedUser } from '../common/decorators/current-user.decorator.j
 import { EmailChannelService } from './channels/email-channel.service.js';
 import { TelegramChannelService } from './channels/telegram-channel.service.js';
 import { WebhookChannelService } from './channels/webhook-channel.service.js';
+import { PushoverChannelService } from './channels/pushover-channel.service.js';
 
 const DEFAULT_LIST_LIMIT = 20;
 
@@ -35,6 +36,7 @@ export class NotificationsService {
     private readonly emailChannel: EmailChannelService,
     private readonly telegramChannel: TelegramChannelService,
     private readonly webhookChannel: WebhookChannelService,
+    private readonly pushoverChannel: PushoverChannelService,
   ) {}
 
   async create(input: CreateNotificationInput) {
@@ -133,6 +135,11 @@ export class NotificationsService {
       this.webhookChannel
         .send(prefs.webhookUrl, prefs.webhookSecret, notification)
         .catch((e) => this.logger.warn(`Falha ao enviar notificação por webhook para ${userId}: ${e.message}`));
+    }
+    if (prefs?.pushoverEnabled && prefs.pushoverUserKey) {
+      this.pushoverChannel
+        .send(prefs.pushoverUserKey, notification)
+        .catch((e) => this.logger.warn(`Falha ao enviar notificação por Pushover para ${userId}: ${e.message}`));
     }
   }
 }

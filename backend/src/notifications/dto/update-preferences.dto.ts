@@ -1,4 +1,4 @@
-import { IsBoolean, IsOptional, IsString, IsUrl } from 'class-validator';
+import { IsBoolean, IsOptional, IsString, IsUrl, ValidateIf } from 'class-validator';
 
 export class UpdatePreferencesDto {
   @IsOptional()
@@ -20,6 +20,16 @@ export class UpdatePreferencesDto {
 
   /** Vazio/ausente limpa a URL (e o segredo) salvos. */
   @IsOptional()
+  @ValidateIf((o) => !!o.webhookUrl)
   @IsUrl({ require_tld: false })
   webhookUrl?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  pushoverEnabled?: boolean;
+
+  /** Vazio/ausente limpa a User Key salva. */
+  @IsOptional()
+  @IsString()
+  pushoverUserKey?: string;
 }

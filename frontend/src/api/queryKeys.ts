@@ -6,6 +6,7 @@ export const queryKeys = {
   allowedDomains: ['allowed-domains'] as const,
   smtpSettings: ['smtp-settings'] as const,
   telegramSettings: ['telegram-settings'] as const,
+  pushoverSettings: ['pushover-settings'] as const,
   privacySettings: ['privacy-settings'] as const,
   notifications: (onlyUnread = false) => ['notifications', { onlyUnread }] as const,
   notificationsUnreadCount: ['notifications', 'unread-count'] as const,

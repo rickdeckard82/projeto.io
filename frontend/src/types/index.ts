@@ -249,14 +249,21 @@ export interface NotificationPreferences {
   emailEnabled: boolean;
   telegramEnabled: boolean;
   webhookEnabled: boolean;
+  pushoverEnabled: boolean;
   telegramChatId: string | null;
   webhookUrl: string | null;
   hasWebhookSecret: boolean;
+  pushoverUserKey: string | null;
   updatedAt: string;
 }
 
 export interface TelegramSettings {
   botUsername: string | null;
+  hasToken: boolean;
+  updatedAt: string;
+}
+
+export interface PushoverSettings {
   hasToken: boolean;
   updatedAt: string;
 }

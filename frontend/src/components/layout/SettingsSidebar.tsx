@@ -1,5 +1,5 @@
 import { Link, NavLink } from 'react-router-dom';
-import { Bell, Globe, Home, Lock, Mail, Send, Shield, User as UserIcon, Users } from 'lucide-react';
+import { Bell, Globe, Home, Lock, Mail, Send, Shield, Smartphone, User as UserIcon, Users } from 'lucide-react';
 import { RoleGate } from '../../auth/RoleGate';
 import { APP_VERSION } from '../../lib/appInfo';
 
@@ -52,6 +52,10 @@ export function SettingsSidebar() {
           <NavLink to="/settings/telegram" className={navLinkClass}>
             <Send size={16} />
             Telegram
+          </NavLink>
+          <NavLink to="/settings/pushover" className={navLinkClass}>
+            <Smartphone size={16} />
+            Pushover
           </NavLink>
           <NavLink to="/settings/privacy" className={navLinkClass}>
             <Shield size={16} />

@@ -9,6 +9,7 @@ import { DueDateCheckService } from './due-date-check.service.js';
 import { EmailChannelService } from './channels/email-channel.service.js';
 import { TelegramChannelService } from './channels/telegram-channel.service.js';
 import { WebhookChannelService } from './channels/webhook-channel.service.js';
+import { PushoverChannelService } from './channels/pushover-channel.service.js';
 
 @Module({
   imports: [RealtimeModule, MailModule],
@@ -20,6 +21,7 @@ import { WebhookChannelService } from './channels/webhook-channel.service.js';
     EmailChannelService,
     TelegramChannelService,
     WebhookChannelService,
+    PushoverChannelService,
   ],
   exports: [NotificationsService],
 })

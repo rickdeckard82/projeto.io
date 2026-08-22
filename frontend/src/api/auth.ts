@@ -27,6 +27,24 @@ export async function forgetTrustedDevices() {
   return res.data;
 }
 
+export interface TrustedDevice {
+  id: string;
+  userAgent: string | null;
+  createdAt: string;
+  expiresAt: string;
+  isCurrent: boolean;
+}
+
+export async function listTrustedDevices(): Promise<TrustedDevice[]> {
+  const res = await apiClient.get('/auth/2fa/trusted-devices');
+  return res.data;
+}
+
+export async function revokeTrustedDevice(id: string) {
+  const res = await apiClient.delete(`/auth/2fa/trusted-devices/${id}`);
+  return res.data;
+}
+
 export async function setupTwoFactor(): Promise<{ qrCodeDataUrl: string; secret: string }> {
   const res = await apiClient.post('/auth/2fa/setup');
   return res.data;

@@ -1,13 +1,44 @@
 import { FormEvent, useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../auth/AuthContext';
 import { updateUser } from '../api/users';
-import { disableTwoFactor, forgetTrustedDevices } from '../api/auth';
+import { disableTwoFactor, forgetTrustedDevices, listTrustedDevices, revokeTrustedDevice } from '../api/auth';
+import { queryKeys } from '../api/queryKeys';
+import { formatDateTime } from '../lib/dateFormat';
 import { Button } from '../components/common/Button';
 import { TwoFactorSetupDialog } from '../components/security/TwoFactorSetupDialog';
 
+/** Deriva um rótulo curto tipo "Chrome · Windows" a partir do `User-Agent` salvo no `TrustedDevice` — heurística simples, só para exibição, nunca usada para validar a confiança em si. */
+function describeDevice(userAgent: string | null): string {
+  if (!userAgent) return 'Dispositivo desconhecido';
+  const browser = /Edg\//.test(userAgent)
+    ? 'Edge'
+    : /OPR\//.test(userAgent)
+      ? 'Opera'
+      : /Chrome\//.test(userAgent)
+        ? 'Chrome'
+        : /Firefox\//.test(userAgent)
+          ? 'Firefox'
+          : /Safari\//.test(userAgent)
+            ? 'Safari'
+            : 'Navegador';
+  const os = /Windows/.test(userAgent)
+    ? 'Windows'
+    : /Mac OS X/.test(userAgent)
+      ? 'macOS'
+      : /Android/.test(userAgent)
+        ? 'Android'
+        : /iPhone|iPad/.test(userAgent)
+          ? 'iOS'
+          : /Linux/.test(userAgent)
+            ? 'Linux'
+            : '';
+  return os ? `${browser} · ${os}` : browser;
+}
+
 export function SecuritySettingsPage() {
   const { user, refreshUser } = useAuth();
+  const queryClient = useQueryClient();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +74,16 @@ export function SecuritySettingsPage() {
   const [disableError, setDisableError] = useState<string | null>(null);
   const [disabling, setDisabling] = useState(false);
 
-  const forgetDevicesMutation = useMutation({ mutationFn: forgetTrustedDevices });
+  const { data: trustedDevices } = useQuery({
+    queryKey: queryKeys.trustedDevices,
+    queryFn: listTrustedDevices,
+    enabled: !!user?.twoFactorEnabled,
+  });
+
+  const invalidateDevices = () => queryClient.invalidateQueries({ queryKey: queryKeys.trustedDevices });
+
+  const forgetDevicesMutation = useMutation({ mutationFn: forgetTrustedDevices, onSuccess: invalidateDevices });
+  const revokeDeviceMutation = useMutation({ mutationFn: revokeTrustedDevice, onSuccess: invalidateDevices });
 
   const cancelDisable = () => {
     setDisableOpen(false);
@@ -130,6 +170,40 @@ export function SecuritySettingsPage() {
                 <p className="mt-1 text-xs text-emerald-400">Dispositivos confiáveis esquecidos.</p>
               )}
             </div>
+
+            {trustedDevices && trustedDevices.length > 0 && (
+              <div className="mb-4 rounded-md border border-slate-800">
+                {trustedDevices.map((device) => (
+                  <div
+                    key={device.id}
+                    className="flex items-center justify-between gap-3 border-b border-slate-800 px-3 py-2 text-xs last:border-b-0"
+                  >
+                    <div className="min-w-0">
+                      <p className="flex items-center gap-1.5 text-slate-200">
+                        {describeDevice(device.userAgent)}
+                        {device.isCurrent && (
+                          <span className="rounded-full bg-indigo-500/20 px-1.5 py-0.5 text-[10px] font-medium text-indigo-300">
+                            Este dispositivo
+                          </span>
+                        )}
+                      </p>
+                      <p className="text-slate-500">
+                        Lembrado em {formatDateTime(device.createdAt, user.timezone)} · expira em{' '}
+                        {formatDateTime(device.expiresAt, user.timezone)}
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      disabled={revokeDeviceMutation.isPending}
+                      onClick={() => revokeDeviceMutation.mutate(device.id)}
+                    >
+                      Esquecer
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
             {disableOpen ? (
               <form onSubmit={onDisable}>
                 <label className="mb-1 block text-xs text-slate-400">Confirme sua senha para desativar</label>

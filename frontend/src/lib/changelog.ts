@@ -17,6 +17,13 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.8.1',
+    date: '2026-08-22',
+    changes: [
+      'Configurações > Segurança agora lista os dispositivos confiáveis do 2FA (navegador, quando foram lembrados e quando expiram), com opção de esquecer um por vez.',
+    ],
+  },
+  {
     version: '1.8.0',
     date: '2026-08-22',
     changes: [

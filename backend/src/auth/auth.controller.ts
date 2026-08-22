@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query, Req, Res } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Query, Req, Res } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { AuthService, AuthTokens } from './auth.service.js';
 import { TwoFactorService } from './two-factor.service.js';
@@ -198,6 +198,43 @@ export class AuthController {
     const result = await this.twoFactorService.forgetDevices(user.id);
     res.clearCookie(DEVICE_COOKIE);
     return result;
+  }
+
+  /**
+   * Lista os dispositivos marcados como confiáveis na conta (ver `TwoFactorService.verifyChallenge`),
+   * mais recentes primeiro, sinalizando qual deles é o navegador que está fazendo esta própria
+   * requisição (`isCurrent`).
+   * @param user - usuário autenticado
+   * @param req - usado apenas para ler o cookie `device_token` deste navegador, e saber qual dispositivo da lista é "este"
+   * @returns lista de dispositivos confiáveis (sem o hash do token, nunca exposto)
+   */
+  @Get('2fa/trusted-devices')
+  async listTrustedDevices(@CurrentUser() user: AuthenticatedUser, @Req() req: Request) {
+    return this.twoFactorService.listDevices(user.id, req.cookies?.[DEVICE_COOKIE]);
+  }
+
+  /**
+   * Esquece um único dispositivo confiável pelo id. Se for o próprio dispositivo desta
+   * requisição, limpa também o cookie `device_token` deste navegador.
+   * @param id - id do `TrustedDevice` a remover
+   * @param user - usuário autenticado
+   * @param req - usado apenas para ler o cookie `device_token` deste navegador, e saber se é o dispositivo removido
+   * @param res - usado apenas para limpar o cookie `device_token`, quando aplicável (passthrough)
+   * @returns mensagem de confirmação
+   * @throws NotFoundException - dispositivo inexistente, ou pertencente a outro usuário
+   */
+  @Delete('2fa/trusted-devices/:id')
+  async revokeTrustedDevice(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.twoFactorService.revokeDevice(user.id, id, req.cookies?.[DEVICE_COOKIE]);
+    if (result.wasCurrentDevice) {
+      res.clearCookie(DEVICE_COOKIE);
+    }
+    return { message: result.message };
   }
 
   /**

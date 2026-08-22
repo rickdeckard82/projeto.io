@@ -8,6 +8,7 @@ export const queryKeys = {
   telegramSettings: ['telegram-settings'] as const,
   pushoverSettings: ['pushover-settings'] as const,
   privacySettings: ['privacy-settings'] as const,
+  trustedDevices: ['auth', 'trusted-devices'] as const,
   notifications: (onlyUnread = false) => ['notifications', { onlyUnread }] as const,
   notificationsUnreadCount: ['notifications', 'unread-count'] as const,
   notificationPreferences: ['notifications', 'preferences'] as const,

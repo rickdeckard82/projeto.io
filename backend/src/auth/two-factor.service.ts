@@ -153,6 +153,50 @@ export class TwoFactorService {
   }
 
   /**
+   * Lista os dispositivos confiáveis da conta, mais recentes primeiro, sem nunca expor
+   * `tokenHash`. Sinaliza `isCurrent` comparando o hash do `device_token` desta própria
+   * requisição (se houver) com o de cada registro — útil pro frontend destacar "este dispositivo"
+   * e evitar que a pessoa remova sem querer o próprio dispositivo em uso.
+   * @param userId - usuário autenticado
+   * @param currentDeviceToken - token bruto do cookie `device_token` desta requisição, se presente
+   * @returns lista de dispositivos confiáveis
+   */
+  async listDevices(userId: string, currentDeviceToken?: string) {
+    const currentHash = currentDeviceToken ? hashToken(currentDeviceToken) : null;
+    const devices = await this.prisma.trustedDevice.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+    });
+    return devices.map((d) => ({
+      id: d.id,
+      userAgent: d.userAgent,
+      createdAt: d.createdAt,
+      expiresAt: d.expiresAt,
+      isCurrent: d.tokenHash === currentHash,
+    }));
+  }
+
+  /**
+   * Esquece um único dispositivo confiável pelo id.
+   * @param userId - usuário autenticado (o dispositivo só pode ser removido pelo próprio dono)
+   * @param deviceId - id do `TrustedDevice` a remover
+   * @param currentDeviceToken - token bruto do cookie `device_token` desta requisição, se presente — usado só para informar ao controller se o dispositivo removido é este mesmo navegador
+   * @returns mensagem de confirmação e se o dispositivo removido era o desta própria requisição
+   * @throws NotFoundException - dispositivo inexistente, ou pertencente a outro usuário
+   */
+  async revokeDevice(userId: string, deviceId: string, currentDeviceToken?: string) {
+    const device = await this.prisma.trustedDevice.findUnique({ where: { id: deviceId } });
+    if (!device || device.userId !== userId) {
+      throw new NotFoundException('Dispositivo não encontrado');
+    }
+
+    await this.prisma.trustedDevice.delete({ where: { id: deviceId } });
+
+    const wasCurrentDevice = !!currentDeviceToken && hashToken(currentDeviceToken) === device.tokenHash;
+    return { message: 'Dispositivo esquecido.', wasCurrentDevice };
+  }
+
+  /**
    * Completa o login de uma conta com 2FA: valida o token de desafio (assinado dentro de
    * `AuthService.login` com a marca {@link TWO_FACTOR_CHALLENGE_PURPOSE}), depois o código informado —
    * primeiro como TOTP, e se não bater, como código de recuperação (consumido/invalidado no uso).

@@ -229,7 +229,14 @@ export interface ProjectMetrics {
   };
 }
 
-export type NotificationType = 'TASK_DUE_SOON' | 'TASK_OVERDUE' | 'TASK_ASSIGNED' | 'TASK_REMINDER';
+export type NotificationType =
+  | 'TASK_DUE_SOON'
+  | 'TASK_OVERDUE'
+  | 'TASK_ASSIGNED'
+  | 'TASK_REMINDER'
+  | 'TASK_COMPLETED'
+  | 'TASK_CANCELLED'
+  | 'PROJECT_MEMBER_ADDED';
 
 /** Renomeado de "Notification" para não colidir com o tipo global `Notification` do DOM. */
 export interface AppNotification {

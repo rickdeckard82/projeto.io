@@ -11,6 +11,9 @@ const TYPE_LABEL: Record<AppNotification['type'], string> = {
   TASK_OVERDUE: 'Tarefa atrasada',
   TASK_ASSIGNED: 'Nova atribuição',
   TASK_REMINDER: 'Lembrete',
+  TASK_COMPLETED: 'Tarefa concluída',
+  TASK_CANCELLED: 'Tarefa cancelada',
+  PROJECT_MEMBER_ADDED: 'Novo projeto',
 };
 
 /** Sino de notificações no topo, perto do nome do usuário — badge com não lidas, lista das últimas notificações, atualizado em tempo real (ver `useNotifications`). */

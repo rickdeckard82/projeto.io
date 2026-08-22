@@ -356,6 +356,10 @@ export class WorkItemsService {
    * `inProgressSince` — cobre também o caso de o item sair e voltar pra `STARTED` mais de uma vez.
    * Quando o item chega em `COMPLETED`, `inProgressSeconds` é o tempo real "em andamento" da
    * tarefa, usado por `MetricsService` para as métricas por item e o tempo de execução do projeto.
+   *
+   * Notifica os responsáveis (`TASK_COMPLETED`/`TASK_CANCELLED`) numa transição de fato para uma
+   * categoria fechada — não dispara de novo se o item já estava em `COMPLETED`/`CANCELLED` e um
+   * Admin só trocou entre dois status da mesma categoria fechada.
    * @param id - id do item
    * @param statusId - id do novo status
    * @param actor - usuário autenticado que está movendo o item (autor da entrada de atividade gerada)
@@ -436,6 +440,26 @@ export class WorkItemsService {
         from: item.status.name,
         to: status.name,
       });
+    }
+
+    // Notifica os responsáveis só numa transição de fato para concluído/cancelado — evita
+    // renotificar quando um Admin move o item entre dois status da mesma categoria fechada.
+    const enteringClosed =
+      item.status.category !== status.category &&
+      (status.category === StatusCategory.COMPLETED || status.category === StatusCategory.CANCELLED);
+    if (enteringClosed && item.assignees.length > 0) {
+      const project = await this.prisma.project.findUniqueOrThrow({ where: { id: item.projectId }, select: { name: true } });
+      const type = status.category === StatusCategory.COMPLETED ? NotificationType.TASK_COMPLETED : NotificationType.TASK_CANCELLED;
+      const verb = status.category === StatusCategory.COMPLETED ? 'foi concluída' : 'foi cancelada';
+      for (const assignee of item.assignees) {
+        await this.notificationsService.create({
+          userId: assignee.userId,
+          type,
+          title: `"${item.title}" ${verb} — ${project.name}`,
+          link: `/projects/${item.projectId}/board?item=${id}`,
+          metadata: { workItemId: id, projectId: item.projectId },
+        });
+      }
     }
 
     if (status.category === StatusCategory.COMPLETED && item.recurrenceUnit) {

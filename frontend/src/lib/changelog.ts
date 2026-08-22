@@ -17,6 +17,13 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.6.0',
+    date: '2026-08-22',
+    changes: [
+      'Novas notificações: ao ser adicionado como membro de um projeto, e quando uma tarefa sob sua responsabilidade é concluída ou cancelada.',
+    ],
+  },
+  {
     version: '1.5.1',
     date: '2026-08-22',
     changes: [

@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { GlobalRole } from '../generated/prisma/client.js';
+import { GlobalRole, NotificationType } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateProjectDto } from './dto/create-project.dto.js';
 import { UpdateProjectDto } from './dto/update-project.dto.js';
@@ -8,6 +8,7 @@ import { DEFAULT_STATUSES } from './default-statuses.js';
 import { pickCoverColor, suggestProjectKey } from './project-key.util.js';
 import { AuthenticatedUser } from '../common/decorators/current-user.decorator.js';
 import { RealtimeGateway } from '../realtime/realtime.gateway.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
 
 /**
  * Serviço de domínio para gestão de projetos: CRUD, arquivamento, membros e colunas do kanban (statuses).
@@ -19,6 +20,7 @@ export class ProjectsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly realtimeGateway: RealtimeGateway,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   /**
@@ -202,7 +204,8 @@ export class ProjectsService {
 
   /**
    * Adiciona um usuário como membro do projeto. Idempotente: se o usuário já for membro,
-   * a operação não falha nem duplica a linha (via `upsert`).
+   * a operação não falha nem duplica a linha (via `upsert`) — e, nesse caso, não reenvia a
+   * notificação de boas-vindas (só dispara quando o membro é de fato novo).
    * @param id - Id do projeto.
    * @param userId - Id do usuário a adicionar como membro.
    * @returns Membership criada ou existente.
@@ -213,11 +216,28 @@ export class ProjectsService {
     if (!userExists) {
       throw new NotFoundException('Usuário não encontrado');
     }
-    return this.prisma.projectMember.upsert({
+    const alreadyMember = await this.prisma.projectMember.findUnique({
+      where: { projectId_userId: { projectId: id, userId } },
+    });
+
+    const membership = await this.prisma.projectMember.upsert({
       where: { projectId_userId: { projectId: id, userId } },
       create: { projectId: id, userId },
       update: {},
     });
+
+    if (!alreadyMember) {
+      const project = await this.prisma.project.findUniqueOrThrow({ where: { id }, select: { name: true } });
+      await this.notificationsService.create({
+        userId,
+        type: NotificationType.PROJECT_MEMBER_ADDED,
+        title: `Você foi adicionado ao projeto "${project.name}"`,
+        link: `/projects/${id}/board`,
+        metadata: { projectId: id },
+      });
+    }
+
+    return membership;
   }
 
   /**

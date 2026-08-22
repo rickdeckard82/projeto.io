@@ -17,6 +17,13 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.8.3',
+    date: '2026-08-22',
+    changes: [
+      'Corrigido: o menu de atribuição rápida direto no card do quadro também passou a listar apenas os membros do projeto (a correção anterior só cobria o modal de detalhe do item).',
+    ],
+  },
+  {
     version: '1.8.2',
     date: '2026-08-22',
     changes: [

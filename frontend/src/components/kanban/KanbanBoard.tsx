@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { listProjectStatuses } from '../../api/projects';
+import { listProjectMembers, listProjectStatuses } from '../../api/projects';
 import { createLabel, listLabels } from '../../api/labels';
-import { listUserDirectory } from '../../api/users';
 import { queryKeys } from '../../api/queryKeys';
 import { useAuth } from '../../auth/AuthContext';
 import { canEditItem } from '../../lib/permissions';
@@ -43,7 +42,12 @@ export function KanbanBoard({ projectId, moduleId }: { projectId: string; module
     onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.projectLabels(projectId) }),
   });
 
-  const { data: users } = useQuery({ queryKey: queryKeys.userDirectory, queryFn: listUserDirectory });
+  // Só membros do projeto podem ser responsáveis por um item dele — mesmo escopo de `AssigneePicker`.
+  const { data: members } = useQuery({
+    queryKey: queryKeys.projectMembers(projectId),
+    queryFn: () => listProjectMembers(projectId),
+  });
+  const users = members?.map((m) => ({ id: m.user.id, fullName: m.user.fullName, avatarUrl: m.user.avatarUrl ?? null }));
 
   const {
     items,

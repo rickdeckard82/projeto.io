@@ -17,6 +17,14 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.4.0',
+    date: '2026-08-21',
+    changes: [
+      'Início e Vencimento de uma tarefa agora aceitam também um horário, além da data.',
+      'Adicionado lembrete customizado por tarefa: escolha um horário exato ou "avisar X antes do vencimento" (10 min a 1 semana) — dispara uma notificação (sino/e-mail/Telegram/webhook) no momento configurado.',
+    ],
+  },
+  {
     version: '1.3.3',
     date: '2026-08-21',
     changes: [

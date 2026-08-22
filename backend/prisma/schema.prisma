@@ -57,6 +57,7 @@ enum NotificationType {
   TASK_DUE_SOON
   TASK_OVERDUE
   TASK_ASSIGNED
+  TASK_REMINDER
 }
 
 model User {
@@ -251,6 +252,18 @@ model WorkItem {
   /// Mesma lógica de `dueSoonNotifiedAt`, para o alerta TASK_OVERDUE (prazo já vencido, item ainda
   /// não concluído/cancelado).
   overdueNotifiedAt DateTime? @map("overdue_notified_at")
+
+  /// Lembrete customizado (independente dos alertas automáticos acima), em instante absoluto —
+  /// quando `reminderOffsetMinutes` está preenchido, este valor é recalculado a partir de `dueDate`
+  /// sempre que o prazo muda (ver `WorkItemsService.resolveReminder`); quando `null`, não é um
+  /// lembrete relativo e o valor foi digitado diretamente. `null` em ambos = sem lembrete.
+  reminderAt DateTime? @map("reminder_at")
+  /// Presença = lembrete relativo ("avisar N minutos antes do vencimento"); ausência com
+  /// `reminderAt` preenchido = lembrete em data/hora absoluta.
+  reminderOffsetMinutes Int? @map("reminder_offset_minutes")
+  /// Preenchido pelo `DueDateCheckService` ao disparar o lembrete (TASK_REMINDER) — garante disparo
+  /// único; zerado sempre que `reminderAt` muda via `WorkItemsService.update`.
+  reminderNotifiedAt DateTime? @map("reminder_notified_at")
 
   project       Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
   status        Status         @relation(fields: [statusId], references: [id], onDelete: Restrict)

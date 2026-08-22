@@ -1,16 +1,36 @@
 /**
- * Formata uma data ISO (`startDate`/`dueDate`, sempre gravada como meia-noite UTC do dia
- * escolhido — vem de `<input type="date">`, sem hora) como dd/mm/aaaa. Rearranja os dígitos
- * direto da string ISO em vez de passar por `Date`/`toLocaleDateString`: construir um `Date` e
- * formatar via locale converte para o fuso do navegador, o que pode voltar a data em um dia
- * (ex.: meia-noite UTC de 26/07 vira 25/07 às 21h em UTC-3) — não há hora de fato para preservar
- * aqui, então a conversão de fuso só introduz erro.
+ * Formata uma data ISO (`startDate`/`dueDate`/`reminderAt` — dia do calendário, com hora opcional
+ * escolhida pelo usuário, meia-noite quando omitida) como dd/mm/aaaa. Rearranja os dígitos direto
+ * da string ISO em vez de passar por `Date`/`toLocaleDateString`: o valor é gravado tal como
+ * digitado (sem conversão de fuso — ver {@link combineDateTime}), então formatar via locale só
+ * introduziria erro ao reinterpretar esse literal como fuso do navegador.
  * @param iso - data/hora no formato ISO 8601 (usa só os 10 primeiros caracteres, `aaaa-mm-dd`)
  * @returns data no formato `dd/mm/aaaa`
  */
 export function formatDate(iso: string): string {
   const [year, month, day] = iso.slice(0, 10).split('-');
   return `${day}/${month}/${year}`;
+}
+
+/**
+ * Extrai a hora (`HH:mm`) de uma data ISO gravada por {@link combineDateTime}, para preencher um
+ * `<input type="time">`. Meia-noite (`00:00`) quando o usuário nunca escolheu hora.
+ * @param iso - data/hora no formato ISO 8601
+ */
+export function timeInputValue(iso: string): string {
+  return iso.slice(11, 16);
+}
+
+/**
+ * Combina uma data (`aaaa-mm-dd`, de um `<input type="date">`) e uma hora opcional (`HH:mm`, de um
+ * `<input type="time">`) num ISO literal em UTC, sem nenhuma conversão de fuso: o valor digitado é
+ * gravado exatamente como está, igual à convenção já usada para `startDate`/`dueDate` sem hora —
+ * ver comentário de `WorkItem.startDate` em `schema.prisma`. Hora vazia vira meia-noite.
+ * @param date - `aaaa-mm-dd`
+ * @param time - `HH:mm`, opcional
+ */
+export function combineDateTime(date: string, time: string): string {
+  return `${date}T${time || '00:00'}:00.000Z`;
 }
 
 /**

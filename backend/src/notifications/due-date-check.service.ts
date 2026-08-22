@@ -15,6 +15,10 @@ const OPEN_CATEGORIES: StatusCategory[] = [StatusCategory.COMPLETED, StatusCateg
  * dia, não a cada hora que o cron roda). Ambos controlados por `dueSoonNotifiedAt`/
  * `overdueNotifiedAt` — zerados em `WorkItemsService.update` sempre que o prazo muda, para os
  * alertas poderem disparar de novo num prazo futuro.
+ *
+ * Também dispara o lembrete customizado (`TASK_REMINDER`, `WorkItem.reminderAt`) numa checagem à
+ * parte, a cada 5 minutos — janela mais apertada que a de vencimento porque aqui o usuário escolheu
+ * um horário exato, então uma folga de até 1h (como no cron acima) seria perceptível demais.
  */
 @Injectable()
 export class DueDateCheckService {
@@ -29,6 +33,11 @@ export class DueDateCheckService {
   async check(): Promise<void> {
     await this.notifyDueSoon();
     await this.notifyOverdue();
+  }
+
+  @Cron(CronExpression.EVERY_5_MINUTES)
+  async checkReminders(): Promise<void> {
+    await this.notifyReminders();
   }
 
   private async notifyDueSoon(): Promise<void> {
@@ -85,6 +94,37 @@ export class DueDateCheckService {
     }
     if (items.length > 0) {
       this.logger.log(`Alerta de tarefa atrasada enviado para ${items.length} item(ns)`);
+    }
+  }
+
+  /**
+   * Dispara o lembrete customizado (`WorkItem.reminderAt`) quando o instante configurado chega,
+   * uma vez só (`reminderNotifiedAt`). Notifica todos os responsáveis do item ou, se não houver
+   * nenhum, quem criou o item — quem configurou o lembrete deve recebê-lo mesmo que o item ainda
+   * não tenha dono.
+   */
+  private async notifyReminders(): Promise<void> {
+    const now = new Date();
+    const items = await this.prisma.workItem.findMany({
+      where: { reminderAt: { lte: now }, reminderNotifiedAt: null },
+      include: { assignees: true },
+    });
+
+    for (const item of items) {
+      const recipientIds = item.assignees.length > 0 ? item.assignees.map((a) => a.userId) : [item.createdById];
+      for (const userId of recipientIds) {
+        await this.notificationsService.create({
+          userId,
+          type: NotificationType.TASK_REMINDER,
+          title: `Lembrete: "${item.title}"`,
+          link: `/projects/${item.projectId}/board?item=${item.id}`,
+          metadata: { workItemId: item.id, projectId: item.projectId },
+        });
+      }
+      await this.prisma.workItem.update({ where: { id: item.id }, data: { reminderNotifiedAt: now } });
+    }
+    if (items.length > 0) {
+      this.logger.log(`Lembrete customizado enviado para ${items.length} item(ns)`);
     }
   }
 }

@@ -14,6 +14,8 @@ import { Toast } from '../common/Toast';
 import { Avatar } from '../common/Avatar';
 import { PrioritySelect } from './PrioritySelect';
 import { RecurrenceSelect } from './RecurrenceSelect';
+import { ReminderSelect } from './ReminderSelect';
+import { combineDateTime, timeInputValue } from '../../lib/dateFormat';
 import { AssigneePicker } from './AssigneePicker';
 import { LabelPicker } from './LabelPicker';
 import { SubItemList } from './SubItemList';
@@ -64,12 +66,20 @@ export function ItemDetailModal({
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [startTime, setStartTime] = useState('');
+  const [dueDate, setDueDate] = useState('');
+  const [dueTime, setDueTime] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (item) {
       setTitle(item.title);
       setDescription(item.description || '');
+      setStartDate(item.startDate?.slice(0, 10) || '');
+      setStartTime(item.startDate ? timeInputValue(item.startDate) : '');
+      setDueDate(item.dueDate?.slice(0, 10) || '');
+      setDueTime(item.dueDate ? timeInputValue(item.dueDate) : '');
     }
   }, [item?.id]);
 
@@ -97,6 +107,14 @@ export function ItemDetailModal({
     if (!item) return;
     await updateItem({ id: itemId, data: { title, description } });
     invalidateItem();
+  };
+
+  const saveStartDate = (date: string, time: string) => {
+    updateItem({ id: itemId, data: { startDate: date ? combineDateTime(date, time) : undefined } }).then(invalidateItem);
+  };
+
+  const saveDueDate = (date: string, time: string) => {
+    updateItem({ id: itemId, data: { dueDate: date ? combineDateTime(date, time) : undefined } }).then(invalidateItem);
   };
 
   return (
@@ -171,22 +189,56 @@ export function ItemDetailModal({
                 </div>
                 <div>
                   <label className="mb-1 block">Início</label>
-                  <input
-                    type="date"
-                    disabled={!editable}
-                    defaultValue={item.startDate?.slice(0, 10) || ''}
-                    onBlur={(e) => updateItem({ id: itemId, data: { startDate: e.target.value || undefined } }).then(invalidateItem)}
-                    className="rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-100 disabled:opacity-50"
-                  />
+                  <div className="flex gap-1">
+                    <input
+                      type="date"
+                      disabled={!editable}
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      onBlur={() => saveStartDate(startDate, startTime)}
+                      className="rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-100 disabled:opacity-50"
+                    />
+                    <input
+                      type="time"
+                      disabled={!editable}
+                      value={startTime}
+                      onChange={(e) => setStartTime(e.target.value)}
+                      onBlur={() => saveStartDate(startDate, startTime)}
+                      className="w-20 rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-100 disabled:opacity-50"
+                    />
+                  </div>
                 </div>
                 <div>
                   <label className="mb-1 block">Vencimento</label>
-                  <input
-                    type="date"
+                  <div className="flex gap-1">
+                    <input
+                      type="date"
+                      disabled={!editable}
+                      value={dueDate}
+                      onChange={(e) => setDueDate(e.target.value)}
+                      onBlur={() => saveDueDate(dueDate, dueTime)}
+                      className="rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-100 disabled:opacity-50"
+                    />
+                    <input
+                      type="time"
+                      disabled={!editable}
+                      value={dueTime}
+                      onChange={(e) => setDueTime(e.target.value)}
+                      onBlur={() => saveDueDate(dueDate, dueTime)}
+                      className="w-20 rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-100 disabled:opacity-50"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="mb-1 block">Lembrete</label>
+                  <ReminderSelect
+                    reminderAt={item.reminderAt}
+                    reminderOffsetMinutes={item.reminderOffsetMinutes}
+                    dueDate={item.dueDate}
                     disabled={!editable}
-                    defaultValue={item.dueDate?.slice(0, 10) || ''}
-                    onBlur={(e) => updateItem({ id: itemId, data: { dueDate: e.target.value || undefined } }).then(invalidateItem)}
-                    className="rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-100 disabled:opacity-50"
+                    onChange={(reminderAt, reminderOffsetMinutes) =>
+                      updateItem({ id: itemId, data: { reminderAt, reminderOffsetMinutes } }).then(invalidateItem)
+                    }
                   />
                 </div>
                 <div>

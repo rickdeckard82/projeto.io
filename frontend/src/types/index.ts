@@ -118,6 +118,10 @@ export interface WorkItem {
   /** Presença = item recorrente; ao ser concluído, o backend gera automaticamente a próxima ocorrência. */
   recurrenceUnit: RecurrenceUnit | null;
   recurrenceInterval: number | null;
+  /** Lembrete customizado, sempre resolvido para um instante absoluto pelo backend. */
+  reminderAt: string | null;
+  /** Presença = lembrete relativo ("N minutos antes do vencimento"), recalculado quando `dueDate` muda; `null` com `reminderAt` preenchido = data/hora absoluta digitada. */
+  reminderOffsetMinutes: number | null;
   createdAt: string;
   updatedAt: string;
   assignees: { user: User }[];
@@ -225,7 +229,7 @@ export interface ProjectMetrics {
   };
 }
 
-export type NotificationType = 'TASK_DUE_SOON' | 'TASK_OVERDUE' | 'TASK_ASSIGNED';
+export type NotificationType = 'TASK_DUE_SOON' | 'TASK_OVERDUE' | 'TASK_ASSIGNED' | 'TASK_REMINDER';
 
 /** Renomeado de "Notification" para não colidir com o tipo global `Notification` do DOM. */
 export interface AppNotification {

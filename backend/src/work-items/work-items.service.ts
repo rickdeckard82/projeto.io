@@ -59,6 +59,30 @@ function addRecurrenceInterval(date: Date, unit: RecurrenceUnit, interval: numbe
 }
 
 /**
+ * Resolve o lembrete customizado a partir do que foi informado: `offsetMinutes` define um lembrete
+ * relativo ("N minutos antes do vencimento", recalculado sempre que `dueDate` muda) e exige que o
+ * item tenha vencimento; `at` sozinho define um lembrete em data/hora absoluta; nenhum dos dois
+ * limpa o lembrete (usado tanto quando o usuário limpa explicitamente quanto quando o item nunca
+ * teve um lembrete).
+ */
+function resolveReminder(
+  at: string | null | undefined,
+  offsetMinutes: number | null | undefined,
+  dueDate: Date | null,
+): { reminderAt: Date | null; reminderOffsetMinutes: number | null } {
+  if (offsetMinutes) {
+    if (!dueDate) {
+      throw new BadRequestException('Defina o vencimento antes de configurar um lembrete relativo a ele.');
+    }
+    return { reminderAt: new Date(dueDate.getTime() - offsetMinutes * 60_000), reminderOffsetMinutes: offsetMinutes };
+  }
+  if (at) {
+    return { reminderAt: new Date(at), reminderOffsetMinutes: null };
+  }
+  return { reminderAt: null, reminderOffsetMinutes: null };
+}
+
+/**
  * Igual a {@link ITEM_INCLUDE}, mas também traz `id`/`name` do projeto do item — necessário na
  * listagem de "itens recentes" porque ela agrega itens de vários projetos e a UI precisa exibir
  * a qual projeto cada item pertence.
@@ -147,6 +171,8 @@ export class WorkItemsService {
 
     const initialStatus = await this.prisma.status.findUniqueOrThrow({ where: { id: statusId } });
     const recurrence = normalizeRecurrence(dto.recurrenceUnit, dto.recurrenceInterval);
+    const dueDate = dto.dueDate ? new Date(dto.dueDate) : null;
+    const reminder = resolveReminder(dto.reminderAt, dto.reminderOffsetMinutes, dueDate);
 
     const created = await this.prisma.workItem.create({
       data: {
@@ -158,7 +184,9 @@ export class WorkItemsService {
         parentId: dto.parentId,
         moduleId: dto.moduleId,
         startDate: dto.startDate ? new Date(dto.startDate) : undefined,
-        dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
+        dueDate: dueDate ?? undefined,
+        reminderAt: reminder.reminderAt,
+        reminderOffsetMinutes: reminder.reminderOffsetMinutes,
         createdById: creator.id,
         inProgressSince: initialStatus.category === StatusCategory.STARTED ? new Date() : undefined,
         recurrenceUnit: recurrence.unit,
@@ -257,6 +285,17 @@ export class WorkItemsService {
     // do alerta de vencimento, senão um item cujo prazo foi adiado depois de já notificado nunca
     // dispararia de novo — ver `DueDateCheckService`.
     const dueDateChanged = !!dto.dueDate && new Date(dto.dueDate).getTime() !== item.dueDate?.getTime();
+    const dueDate = dto.dueDate ? new Date(dto.dueDate) : item.dueDate;
+
+    // Lembrete: recalcula se o usuário mexeu nele diretamente, ou se ele é relativo e o vencimento
+    // mudou (senão um lembrete "30min antes" ficaria preso ao prazo antigo).
+    const reminderGiven = dto.reminderAt !== undefined || dto.reminderOffsetMinutes !== undefined;
+    const reminder = reminderGiven
+      ? resolveReminder(dto.reminderAt, dto.reminderOffsetMinutes, dueDate)
+      : dueDateChanged && item.reminderOffsetMinutes != null
+        ? resolveReminder(undefined, item.reminderOffsetMinutes, dueDate)
+        : undefined;
+    const reminderChanged = reminder && reminder.reminderAt?.getTime() !== item.reminderAt?.getTime();
 
     const updated = await this.prisma.workItem.update({
       where: { id },
@@ -268,6 +307,9 @@ export class WorkItemsService {
         moduleId: dto.moduleId === undefined ? undefined : dto.moduleId,
         startDate: dto.startDate ? new Date(dto.startDate) : undefined,
         dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
+        reminderAt: reminder ? reminder.reminderAt : undefined,
+        reminderOffsetMinutes: reminder ? reminder.reminderOffsetMinutes : undefined,
+        reminderNotifiedAt: reminderChanged ? null : undefined,
         recurrenceUnit: recurrenceGiven ? recurrence!.unit : undefined,
         recurrenceInterval: recurrenceGiven ? recurrence!.interval : undefined,
         dueSoonNotifiedAt: dueDateChanged ? null : undefined,

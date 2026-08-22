@@ -34,6 +34,17 @@ export class CreateItemDto {
   @IsDateString()
   dueDate?: string;
 
+  /** Lembrete em data/hora absoluta. Ignorado se `reminderOffsetMinutes` também for informado. */
+  @IsOptional()
+  @IsDateString()
+  reminderAt?: string;
+
+  /** Lembrete relativo: "avisar N minutos antes do vencimento" — exige `dueDate`. */
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  reminderOffsetMinutes?: number;
+
   @IsOptional()
   @IsEnum(RecurrenceUnit)
   recurrenceUnit?: RecurrenceUnit;

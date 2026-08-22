@@ -23,6 +23,8 @@ export interface CreateItemInput {
   moduleId?: string;
   startDate?: string;
   dueDate?: string;
+  reminderAt?: string;
+  reminderOffsetMinutes?: number;
   recurrenceUnit?: RecurrenceUnit;
   recurrenceInterval?: number;
 }
@@ -37,10 +39,14 @@ export async function getItem(id: string): Promise<WorkItem> {
   return res.data;
 }
 
-/** Igual a `CreateItemInput`, mas com a recorrência aceitando `null` explícito para desligá-la. */
-export type UpdateItemInput = Partial<Omit<CreateItemInput, 'recurrenceUnit' | 'recurrenceInterval'>> & {
+/** Igual a `CreateItemInput`, mas com recorrência e lembrete aceitando `null` explícito para limpá-los. */
+export type UpdateItemInput = Partial<
+  Omit<CreateItemInput, 'recurrenceUnit' | 'recurrenceInterval' | 'reminderAt' | 'reminderOffsetMinutes'>
+> & {
   recurrenceUnit?: RecurrenceUnit | null;
   recurrenceInterval?: number | null;
+  reminderAt?: string | null;
+  reminderOffsetMinutes?: number | null;
 };
 
 export async function updateItem(id: string, data: UpdateItemInput): Promise<WorkItem> {

@@ -199,34 +199,33 @@ export function ItemDetailModal({
                       }
                     />
                   </div>
-                  <div>
-                    <label className="mb-1 block">Tempo em andamento</label>
-                    <span className="inline-block py-1 text-slate-300">
-                      {formatInProgressDuration(effectiveInProgressSeconds(item))}
-                    </span>
-                  </div>
                 </div>
 
-                <div>
-                  <label className="mb-1 block">Início</label>
-                  <div className="flex gap-1">
-                    <input
-                      type="date"
-                      disabled={!editable}
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      onBlur={() => saveStartDate(startDate, startTime)}
-                      className="rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-100 disabled:opacity-50"
-                    />
-                    <input
-                      type="time"
-                      disabled={!editable}
-                      value={startTime}
-                      onChange={(e) => setStartTime(e.target.value)}
-                      onBlur={() => saveStartDate(startDate, startTime)}
-                      className="w-20 rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-100 disabled:opacity-50"
-                    />
+                <div className="flex flex-wrap items-end gap-4">
+                  <div>
+                    <label className="mb-1 block">Início</label>
+                    <div className="flex gap-1">
+                      <input
+                        type="date"
+                        disabled={!editable}
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        onBlur={() => saveStartDate(startDate, startTime)}
+                        className="rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-100 disabled:opacity-50"
+                      />
+                      <input
+                        type="time"
+                        disabled={!editable}
+                        value={startTime}
+                        onChange={(e) => setStartTime(e.target.value)}
+                        onBlur={() => saveStartDate(startDate, startTime)}
+                        className="w-20 rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-100 disabled:opacity-50"
+                      />
+                    </div>
                   </div>
+                  <span className="py-1 text-slate-300">
+                    Tempo em andamento {formatInProgressDuration(effectiveInProgressSeconds(item))}
+                  </span>
                 </div>
 
                 <div className="flex flex-wrap gap-4">

@@ -2,7 +2,7 @@ import { FormEvent, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useAuth } from '../auth/AuthContext';
 import { updateUser } from '../api/users';
-import { disableTwoFactor } from '../api/auth';
+import { disableTwoFactor, forgetTrustedDevices } from '../api/auth';
 import { Button } from '../components/common/Button';
 import { TwoFactorSetupDialog } from '../components/security/TwoFactorSetupDialog';
 
@@ -42,6 +42,8 @@ export function SecuritySettingsPage() {
   const [disablePassword, setDisablePassword] = useState('');
   const [disableError, setDisableError] = useState<string | null>(null);
   const [disabling, setDisabling] = useState(false);
+
+  const forgetDevicesMutation = useMutation({ mutationFn: forgetTrustedDevices });
 
   const cancelDisable = () => {
     setDisableOpen(false);
@@ -111,6 +113,23 @@ export function SecuritySettingsPage() {
         {user.twoFactorEnabled ? (
           <>
             <p className="mb-3 text-sm text-emerald-400">Ativada</p>
+            <div className="mb-4">
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={forgetDevicesMutation.isPending}
+                onClick={() => forgetDevicesMutation.mutate()}
+              >
+                {forgetDevicesMutation.isPending ? 'Esquecendo...' : 'Esquecer dispositivos confiáveis'}
+              </Button>
+              <p className="mt-1 text-xs text-slate-500">
+                Volta a pedir o código de verificação em todos os dispositivos que marcaram "lembrar este dispositivo"
+                ao entrar.
+              </p>
+              {forgetDevicesMutation.isSuccess && (
+                <p className="mt-1 text-xs text-emerald-400">Dispositivos confiáveis esquecidos.</p>
+              )}
+            </div>
             {disableOpen ? (
               <form onSubmit={onDisable}>
                 <label className="mb-1 block text-xs text-slate-400">Confirme sua senha para desativar</label>

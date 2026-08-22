@@ -18,6 +18,7 @@ export function LoginPage() {
 
   const [challengeToken, setChallengeToken] = useState<string | null>(null);
   const [code, setCode] = useState('');
+  const [rememberDevice, setRememberDevice] = useState(false);
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -46,7 +47,7 @@ export function LoginPage() {
     setError(null);
     setLoading(true);
     try {
-      await verifyTwoFactor(challengeToken, code);
+      await verifyTwoFactor(challengeToken, code, rememberDevice);
       navigate('/');
     } catch (err: any) {
       setError(err?.response?.data?.message || 'Código inválido');
@@ -85,8 +86,16 @@ export function LoginPage() {
               value={code}
               onChange={(e) => setCode(e.target.value)}
               placeholder="000000"
-              className="mb-4 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+              className="mb-3 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
             />
+            <label className="mb-4 flex items-center gap-2 text-xs text-slate-400">
+              <input
+                type="checkbox"
+                checked={rememberDevice}
+                onChange={(e) => setRememberDevice(e.target.checked)}
+              />
+              Lembrar este dispositivo por 30 dias
+            </label>
             <Button type="submit" disabled={loading || !code.trim()} className="w-full">
               {loading ? 'Verificando...' : 'Verificar'}
             </Button>

@@ -93,6 +93,7 @@ model User {
   twoFactorRecoveryCodes String[] @default([]) @map("two_factor_recovery_codes")
 
   refreshTokens   RefreshToken[]
+  trustedDevices  TrustedDevice[]
   ownedProjects   Project[]        @relation("ProjectOwner")
   projectMembers  ProjectMember[]
   createdItems    WorkItem[]       @relation("WorkItemCreatedBy")
@@ -121,6 +122,29 @@ model RefreshToken {
   @@index([userId])
   @@index([tokenHash])
   @@map("refresh_tokens")
+}
+
+/// Dispositivo em que o usuário marcou "lembrar este dispositivo" ao completar o desafio de 2FA
+/// (`TwoFactorService.verifyChallenge`) — enquanto o cookie `device_token` do navegador continuar
+/// batendo com um registro aqui (não expirado), `AuthService.login` pula o desafio de 2FA nesse
+/// dispositivo. Apagado por inteiro (todos os dispositivos do usuário) ao desativar o 2FA
+/// (`TwoFactorService.disable`) ou explicitamente via "Esquecer dispositivos confiáveis" nas
+/// configurações de segurança.
+model TrustedDevice {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  tokenHash String   @map("token_hash")
+  /// User-Agent no momento em que o dispositivo foi lembrado, só para exibição futura (ex.: numa
+  /// lista de dispositivos confiáveis) — nunca usado para validar a confiança em si.
+  userAgent String?  @map("user_agent")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@map("trusted_devices")
 }
 
 model Project {

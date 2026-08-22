@@ -13,6 +13,9 @@ import { CurrentUser, AuthenticatedUser } from '../common/decorators/current-use
 
 const ACCESS_COOKIE = 'access_token';
 const REFRESH_COOKIE = 'refresh_token';
+const DEVICE_COOKIE = 'device_token';
+/** Deve bater com `DEVICE_TRUST_TTL_MS` em `TwoFactorService`. */
+const DEVICE_TOKEN_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000; // 30 dias
 
 /**
  * Grava o par de tokens de sessão como cookies httpOnly na resposta.
@@ -90,15 +93,18 @@ export class AuthController {
    * Autentica um usuário existente. Se a conta não tiver 2FA ativado, já inicia a sessão
    * (cookies de access/refresh token). Se tiver, **não** seta cookie nenhum ainda — devolve
    * `requiresTwoFactor: true` + um token de desafio de uso único, que o frontend envia para
-   * `POST /auth/2fa/verify` junto com o código do app autenticador para completar o login.
+   * `POST /auth/2fa/verify` junto com o código do app autenticador para completar o login — a
+   * menos que o cookie `device_token` já identifique este dispositivo como confiável (ver
+   * `AuthService.login`), caso em que o desafio é pulado e a sessão já começa aqui.
    * @param dto - credenciais de login (e-mail e senha)
+   * @param req - usado apenas para ler o cookie `device_token`, se presente
    * @param res - usado apenas para setar os cookies httpOnly quando o login completa nesta etapa (passthrough)
    * @returns mensagem de confirmação, ou `{ requiresTwoFactor: true, challengeToken }`
    */
   @Public()
   @Post('login')
-  async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
-    const result = await this.authService.login(dto);
+  async login(@Body() dto: LoginDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const result = await this.authService.login(dto, req.cookies?.[DEVICE_COOKIE]);
     if ('requiresTwoFactor' in result) {
       return result;
     }
@@ -108,16 +114,33 @@ export class AuthController {
 
   /**
    * Completa o login de uma conta com 2FA ativado: troca o token de desafio + código (do app
-   * autenticador ou um código de recuperação) pelos cookies de sessão de verdade.
-   * @param dto - token de desafio recebido no `POST /auth/login`, e o código informado pelo usuário
-   * @param res - usado apenas para setar os cookies httpOnly (passthrough)
+   * autenticador ou um código de recuperação) pelos cookies de sessão de verdade. Se
+   * `dto.rememberDevice` vier marcado, também grava um cookie `device_token` (30 dias) que faz
+   * `POST /auth/login` pular o desafio de 2FA neste mesmo navegador enquanto ele durar.
+   * @param dto - token de desafio recebido no `POST /auth/login`, o código informado pelo usuário, e se deve lembrar este dispositivo
+   * @param req - usado apenas para ler o `User-Agent` (guardado no `TrustedDevice`, só para exibição futura)
+   * @param res - usado para setar os cookies httpOnly (passthrough)
    * @returns mensagem de confirmação
    */
   @Public()
   @Post('2fa/verify')
-  async verifyTwoFactor(@Body() dto: TwoFactorVerifyDto, @Res({ passthrough: true }) res: Response) {
-    const tokens = await this.twoFactorService.verifyChallenge(dto.challengeToken, dto.code);
+  async verifyTwoFactor(@Body() dto: TwoFactorVerifyDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const { deviceToken, ...tokens } = await this.twoFactorService.verifyChallenge(
+      dto.challengeToken,
+      dto.code,
+      dto.rememberDevice,
+      req.get('user-agent'),
+    );
     setAuthCookies(res, tokens);
+    if (deviceToken) {
+      const secure = process.env.NODE_ENV === 'production';
+      res.cookie(DEVICE_COOKIE, deviceToken, {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure,
+        maxAge: DEVICE_TOKEN_MAX_AGE_MS,
+      });
+    }
     return { message: 'Login realizado com sucesso' };
   }
 
@@ -144,14 +167,37 @@ export class AuthController {
   }
 
   /**
-   * Desativa o 2FA da própria conta, mediante confirmação da senha atual.
+   * Desativa o 2FA da própria conta, mediante confirmação da senha atual. Também limpa o cookie
+   * `device_token` deste navegador — os registros `TrustedDevice` já foram apagados no service,
+   * então o cookie ficaria só como lixo inútil se não fosse limpo aqui.
    * @param dto - senha atual, para confirmar a ação
    * @param user - usuário autenticado
+   * @param res - usado apenas para limpar o cookie `device_token` (passthrough)
    * @returns mensagem de confirmação
    */
   @Post('2fa/disable')
-  async disableTwoFactor(@Body() dto: TwoFactorDisableDto, @CurrentUser() user: AuthenticatedUser) {
-    return this.twoFactorService.disable(user.id, dto.password);
+  async disableTwoFactor(
+    @Body() dto: TwoFactorDisableDto,
+    @CurrentUser() user: AuthenticatedUser,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.twoFactorService.disable(user.id, dto.password);
+    res.clearCookie(DEVICE_COOKIE);
+    return result;
+  }
+
+  /**
+   * Esquece todos os dispositivos marcados como confiáveis na conta (ver
+   * `TwoFactorService.verifyChallenge`), sem desativar o 2FA em si.
+   * @param user - usuário autenticado
+   * @param res - usado apenas para limpar o cookie `device_token` deste navegador (passthrough)
+   * @returns mensagem de confirmação
+   */
+  @Post('2fa/trusted-devices/forget')
+  async forgetTrustedDevices(@CurrentUser() user: AuthenticatedUser, @Res({ passthrough: true }) res: Response) {
+    const result = await this.twoFactorService.forgetDevices(user.id);
+    res.clearCookie(DEVICE_COOKIE);
+    return result;
   }
 
   /**

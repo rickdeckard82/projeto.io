@@ -17,6 +17,8 @@ import { hashToken } from '../common/utils/token-hash.util.js';
 import { TWO_FACTOR_CHALLENGE_PURPOSE } from './two-factor-challenge.constants.js';
 
 const RECOVERY_CODE_COUNT = 8;
+/** Deve bater com o `maxAge` do cookie `device_token` setado em `AuthController.verifyTwoFactor`. */
+const DEVICE_TRUST_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 dias
 
 /** Gera um código de recuperação legível (ex.: `A1B2C-D3E4F`); 10 caracteres hexadecimais em maiúsculas, exibido em dois blocos. */
 function generateRecoveryCode(): string {
@@ -107,6 +109,9 @@ export class TwoFactorService {
   /**
    * Desativa o 2FA da própria conta. Exige a senha atual (não basta estar logado) para que
    * alguém com uma sessão já aberta não consiga desligar essa proteção sem confirmar quem é.
+   * Também apaga todos os dispositivos confiáveis da conta — a confiança foi concedida por causa
+   * do 2FA, então não deveria sobreviver a ele nem ser herdada silenciosamente se o 2FA for
+   * reativado depois.
    * @param userId - usuário autenticado
    * @param password - senha atual em texto plano, para confirmar a ação
    * @returns mensagem de confirmação
@@ -124,12 +129,27 @@ export class TwoFactorService {
       throw new UnauthorizedException('Senha incorreta');
     }
 
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { twoFactorEnabled: false, twoFactorSecret: null, twoFactorRecoveryCodes: [] },
-    });
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: userId },
+        data: { twoFactorEnabled: false, twoFactorSecret: null, twoFactorRecoveryCodes: [] },
+      }),
+      this.prisma.trustedDevice.deleteMany({ where: { userId } }),
+    ]);
 
     return { message: 'Autenticação de dois fatores desativada.' };
+  }
+
+  /**
+   * Esquece todos os dispositivos marcados como confiáveis na conta (ver {@link verifyChallenge}),
+   * sem mexer no 2FA em si — todo login futuro volta a pedir o código, em qualquer dispositivo,
+   * até a pessoa marcar "lembrar" de novo.
+   * @param userId - usuário autenticado
+   * @returns mensagem de confirmação
+   */
+  async forgetDevices(userId: string) {
+    await this.prisma.trustedDevice.deleteMany({ where: { userId } });
+    return { message: 'Dispositivos confiáveis esquecidos.' };
   }
 
   /**
@@ -139,10 +159,17 @@ export class TwoFactorService {
    * Só então emite os tokens de sessão de verdade.
    * @param challengeToken - token de desafio recebido na primeira etapa do login
    * @param code - código de 6 dígitos do app autenticador, ou um código de recuperação
-   * @returns par `{ accessToken, refreshToken }` da nova sessão
+   * @param rememberDevice - quando `true`, grava um `TrustedDevice` (30 dias) e devolve `deviceToken` para o controller setar como cookie — próximos logins nesse dispositivo pulam o desafio (ver `AuthService.login`)
+   * @param userAgent - `User-Agent` da requisição, só para exibição futura no `TrustedDevice` gravado
+   * @returns par `{ accessToken, refreshToken }` da nova sessão, com `deviceToken` quando `rememberDevice` for `true`
    * @throws UnauthorizedException - token de desafio ausente/expirado/inválido, conta sem 2FA ativo, ou código incorreto
    */
-  async verifyChallenge(challengeToken: string, code: string): Promise<AuthTokens> {
+  async verifyChallenge(
+    challengeToken: string,
+    code: string,
+    rememberDevice?: boolean,
+    userAgent?: string,
+  ): Promise<AuthTokens & { deviceToken?: string }> {
     let payload: { sub: string; purpose?: string };
     try {
       payload = this.jwtService.verify(challengeToken, {
@@ -161,7 +188,7 @@ export class TwoFactorService {
     }
 
     if (authenticator.verify({ token: code, secret: decrypt(user.twoFactorSecret) })) {
-      return this.authService.issueTokens(user.id, user.email);
+      return this.completeLogin(user.id, user.email, rememberDevice, userAgent);
     }
 
     const normalized = hashToken(normalizeRecoveryCode(code));
@@ -170,9 +197,37 @@ export class TwoFactorService {
         where: { id: user.id },
         data: { twoFactorRecoveryCodes: user.twoFactorRecoveryCodes.filter((c) => c !== normalized) },
       });
-      return this.authService.issueTokens(user.id, user.email);
+      return this.completeLogin(user.id, user.email, rememberDevice, userAgent);
     }
 
     throw new UnauthorizedException('Código inválido');
+  }
+
+  /**
+   * Emite a sessão de verdade após o 2FA validar, e opcionalmente grava um `TrustedDevice` para
+   * pular o desafio nos próximos logins desse mesmo dispositivo (ver {@link verifyChallenge}).
+   */
+  private async completeLogin(
+    userId: string,
+    email: string,
+    rememberDevice: boolean | undefined,
+    userAgent: string | undefined,
+  ): Promise<AuthTokens & { deviceToken?: string }> {
+    const tokens = await this.authService.issueTokens(userId, email);
+    if (!rememberDevice) {
+      return tokens;
+    }
+
+    const deviceToken = crypto.randomBytes(32).toString('hex');
+    await this.prisma.trustedDevice.create({
+      data: {
+        userId,
+        tokenHash: hashToken(deviceToken),
+        userAgent,
+        expiresAt: new Date(Date.now() + DEVICE_TRUST_TTL_MS),
+      },
+    });
+
+    return { ...tokens, deviceToken };
   }
 }

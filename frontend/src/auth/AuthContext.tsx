@@ -14,7 +14,7 @@ interface AuthContextValue {
   user: User | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<LoginResult>;
-  verifyTwoFactor: (challengeToken: string, code: string) => Promise<void>;
+  verifyTwoFactor: (challengeToken: string, code: string, rememberDevice?: boolean) => Promise<void>;
   register: (email: string, password: string, fullName: string) => Promise<{ message: string }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -59,8 +59,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return result;
   };
 
-  const verifyTwoFactor = async (challengeToken: string, code: string) => {
-    await verifyTwoFactorApi({ challengeToken, code });
+  const verifyTwoFactor = async (challengeToken: string, code: string, rememberDevice?: boolean) => {
+    await verifyTwoFactorApi({ challengeToken, code, rememberDevice });
     await refreshUser();
   };
 

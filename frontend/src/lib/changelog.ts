@@ -17,6 +17,14 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.8.0',
+    date: '2026-08-22',
+    changes: [
+      'Autenticação de dois fatores ganhou a opção "Lembrar este dispositivo por 30 dias" — marcando-a, o código não é mais pedido nesse navegador até o prazo expirar ou os dispositivos serem esquecidos.',
+      'Adicionado botão "Esquecer dispositivos confiáveis" em Configurações > Segurança, para voltar a exigir o código de verificação em todo lugar.',
+    ],
+  },
+  {
     version: '1.7.0',
     date: '2026-08-22',
     changes: [

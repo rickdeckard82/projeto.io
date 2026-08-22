@@ -111,12 +111,17 @@ export class AuthService {
    * validar, para não revelar o estado de contas de terceiros. Se a conta tiver 2FA ativado, não
    * emite os tokens de sessão ainda: devolve um token de desafio de uso único (verificado depois
    * por `TwoFactorService.verifyChallenge`) para completar o login na segunda etapa (código do
-   * app autenticador).
+   * app autenticador) — a menos que `deviceToken` bata com um `TrustedDevice` ainda válido daquele
+   * usuário, caso em que o desafio é pulado e a sessão já é emitida aqui mesmo.
    * @param dto - e-mail e senha em texto plano informados no login
-   * @returns par `{ accessToken, refreshToken }` da nova sessão, ou `{ requiresTwoFactor: true, challengeToken }` se a conta tiver 2FA ativado
+   * @param deviceToken - token bruto do cookie `device_token`, se presente (dispositivo pode já ter sido lembrado num 2FA anterior — ver `TwoFactorService.verifyChallenge`)
+   * @returns par `{ accessToken, refreshToken }` da nova sessão, ou `{ requiresTwoFactor: true, challengeToken }` se a conta tiver 2FA ativado e o dispositivo não for um já lembrado
    * @throws UnauthorizedException - credenciais inválidas, usuário inexistente/inativo, ou e-mail não confirmado
    */
-  async login(dto: LoginDto): Promise<AuthTokens | { requiresTwoFactor: true; challengeToken: string }> {
+  async login(
+    dto: LoginDto,
+    deviceToken?: string,
+  ): Promise<AuthTokens | { requiresTwoFactor: true; challengeToken: string }> {
     const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
     if (!user || !user.isActive) {
       throw new UnauthorizedException('Credenciais inválidas');
@@ -132,6 +137,15 @@ export class AuthService {
     }
 
     if (user.twoFactorEnabled) {
+      const trustedDevice =
+        deviceToken &&
+        (await this.prisma.trustedDevice.findFirst({
+          where: { userId: user.id, tokenHash: hashToken(deviceToken), expiresAt: { gt: new Date() } },
+        }));
+      if (trustedDevice) {
+        return this.issueTokens(user.id, user.email);
+      }
+
       const challengeToken = this.jwtService.sign(
         { sub: user.id, purpose: TWO_FACTOR_CHALLENGE_PURPOSE },
         { secret: process.env.JWT_ACCESS_SECRET || 'dev-access-secret', expiresIn: TWO_FACTOR_CHALLENGE_TTL },

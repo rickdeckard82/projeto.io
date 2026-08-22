@@ -17,8 +17,13 @@ export async function login(data: { email: string; password: string }): Promise<
   return res.data;
 }
 
-export async function verifyTwoFactor(data: { challengeToken: string; code: string }) {
+export async function verifyTwoFactor(data: { challengeToken: string; code: string; rememberDevice?: boolean }) {
   const res = await apiClient.post('/auth/2fa/verify', data);
+  return res.data;
+}
+
+export async function forgetTrustedDevices() {
+  const res = await apiClient.post('/auth/2fa/trusted-devices/forget');
   return res.data;
 }
 

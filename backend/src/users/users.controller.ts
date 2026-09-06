@@ -6,6 +6,9 @@ import { UpdateUserDto } from './dto/update-user.dto.js';
 import { UpdateRoleDto } from './dto/update-role.dto.js';
 import { Roles } from '../common/decorators/roles.decorator.js';
 import { CurrentUser, AuthenticatedUser } from '../common/decorators/current-user.decorator.js';
+import { ClientInfo } from '../common/decorators/client-info.decorator.js';
+import { AuditService, AuditClientInfo } from '../audit/audit.service.js';
+import { AUDIT_ACTIONS } from '../audit/audit-actions.js';
 
 /**
  * Controller REST para gestão de usuários (`/users`). Rotas de leitura e edição do próprio
@@ -14,7 +17,10 @@ import { CurrentUser, AuthenticatedUser } from '../common/decorators/current-use
  */
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly auditService: AuditService,
+  ) {}
 
   /** Lista todos os usuários cadastrados (dados completos, incluindo e-mail). Restrito a administradores — para os seletores de responsável/membro usados por qualquer usuário, ver `GET /users/directory`. */
   @Roles(GlobalRole.ADMIN)
@@ -37,8 +43,23 @@ export class UsersController {
   /** Cria um novo usuário. Restrito a administradores. */
   @Roles(GlobalRole.ADMIN)
   @Post()
-  create(@Body() dto: CreateUserDto) {
-    return this.usersService.create(dto);
+  async create(
+    @Body() dto: CreateUserDto,
+    @CurrentUser() actor: AuthenticatedUser,
+    @ClientInfo() client: AuditClientInfo,
+  ) {
+    const created = await this.usersService.create(dto);
+    await this.auditService.record({
+      action: AUDIT_ACTIONS.USER_CREATED,
+      actorId: actor.id,
+      actorLabel: actor.email,
+      targetType: 'user',
+      targetId: created.id,
+      ip: client.ip,
+      userAgent: client.userAgent,
+      metadata: { email: dto.email, globalRole: dto.globalRole ?? GlobalRole.MEMBER },
+    });
+    return created;
   }
 
   /**
@@ -60,26 +81,71 @@ export class UsersController {
 
   /** Atualiza o perfil de um usuário; a checagem de que só o próprio usuário (ou um admin) pode editar é feita no service. */
   @Patch(':id')
-  update(
+  async update(
     @Param('id') id: string,
     @Body() dto: UpdateUserDto,
     @CurrentUser() user: AuthenticatedUser,
+    @ClientInfo() client: AuditClientInfo,
   ) {
-    return this.usersService.update(id, dto, user);
+    const result = await this.usersService.update(id, dto, user);
+    if (dto.password) {
+      await this.auditService.record({
+        action: AUDIT_ACTIONS.PASSWORD_CHANGED,
+        actorId: user.id,
+        actorLabel: user.email,
+        targetType: 'user',
+        targetId: id,
+        ip: client.ip,
+        userAgent: client.userAgent,
+        metadata: { self: user.id === id },
+      });
+    }
+    return result;
   }
 
   /** Altera o papel global de um usuário. Restrito a administradores. */
   @Roles(GlobalRole.ADMIN)
   @Patch(':id/role')
-  updateRole(@Param('id') id: string, @Body() dto: UpdateRoleDto) {
-    return this.usersService.updateRole(id, dto.globalRole);
+  async updateRole(
+    @Param('id') id: string,
+    @Body() dto: UpdateRoleDto,
+    @CurrentUser() actor: AuthenticatedUser,
+    @ClientInfo() client: AuditClientInfo,
+  ) {
+    const before = await this.usersService.findOne(id);
+    const result = await this.usersService.updateRole(id, dto.globalRole);
+    await this.auditService.record({
+      action: AUDIT_ACTIONS.USER_ROLE_CHANGED,
+      actorId: actor.id,
+      actorLabel: actor.email,
+      targetType: 'user',
+      targetId: id,
+      ip: client.ip,
+      userAgent: client.userAgent,
+      metadata: { from: before?.globalRole ?? null, to: dto.globalRole },
+    });
+    return result;
   }
 
   /** Desativa um usuário (soft-disable). Restrito a administradores. */
   @Roles(GlobalRole.ADMIN)
   @Patch(':id/deactivate')
-  deactivate(@Param('id') id: string) {
-    return this.usersService.deactivate(id);
+  async deactivate(
+    @Param('id') id: string,
+    @CurrentUser() actor: AuthenticatedUser,
+    @ClientInfo() client: AuditClientInfo,
+  ) {
+    const result = await this.usersService.deactivate(id);
+    await this.auditService.record({
+      action: AUDIT_ACTIONS.USER_DEACTIVATED,
+      actorId: actor.id,
+      actorLabel: actor.email,
+      targetType: 'user',
+      targetId: id,
+      ip: client.ip,
+      userAgent: client.userAgent,
+    });
+    return result;
   }
 
   /**
@@ -89,7 +155,21 @@ export class UsersController {
    */
   @Roles(GlobalRole.ADMIN)
   @Patch(':id/anonymize')
-  anonymize(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
-    return this.usersService.anonymize(id, user);
+  async anonymize(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @ClientInfo() client: AuditClientInfo,
+  ) {
+    const result = await this.usersService.anonymize(id, user);
+    await this.auditService.record({
+      action: AUDIT_ACTIONS.USER_ANONYMIZED,
+      actorId: user.id,
+      actorLabel: user.email,
+      targetType: 'user',
+      targetId: id,
+      ip: client.ip,
+      userAgent: client.userAgent,
+    });
+    return result;
   }
 }

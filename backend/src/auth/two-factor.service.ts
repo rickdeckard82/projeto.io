@@ -12,6 +12,7 @@ import bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { AuthService, AuthTokens } from './auth.service.js';
+import { AuditClientInfo } from '../audit/audit.service.js';
 import { encrypt, decrypt } from '../common/utils/crypto.util.js';
 import { hashToken } from '../common/utils/token-hash.util.js';
 import { TWO_FACTOR_CHALLENGE_PURPOSE } from './two-factor-challenge.constants.js';
@@ -213,6 +214,7 @@ export class TwoFactorService {
     code: string,
     rememberDevice?: boolean,
     userAgent?: string,
+    client?: AuditClientInfo,
   ): Promise<AuthTokens & { deviceToken?: string }> {
     let payload: { sub: string; purpose?: string };
     try {
@@ -232,7 +234,7 @@ export class TwoFactorService {
     }
 
     if (authenticator.verify({ token: code, secret: decrypt(user.twoFactorSecret) })) {
-      return this.completeLogin(user.id, user.email, rememberDevice, userAgent);
+      return this.completeLogin(user.id, user.email, rememberDevice, userAgent, '2fa_totp', client);
     }
 
     const normalized = hashToken(normalizeRecoveryCode(code));
@@ -241,7 +243,7 @@ export class TwoFactorService {
         where: { id: user.id },
         data: { twoFactorRecoveryCodes: user.twoFactorRecoveryCodes.filter((c) => c !== normalized) },
       });
-      return this.completeLogin(user.id, user.email, rememberDevice, userAgent);
+      return this.completeLogin(user.id, user.email, rememberDevice, userAgent, '2fa_recovery_code', client);
     }
 
     throw new UnauthorizedException('Código inválido');
@@ -256,8 +258,11 @@ export class TwoFactorService {
     email: string,
     rememberDevice: boolean | undefined,
     userAgent: string | undefined,
+    via: string,
+    client: AuditClientInfo | undefined,
   ): Promise<AuthTokens & { deviceToken?: string }> {
     const tokens = await this.authService.issueTokens(userId, email);
+    await this.authService.recordLoginSuccess(userId, email, via, client);
     if (!rememberDevice) {
       return tokens;
     }

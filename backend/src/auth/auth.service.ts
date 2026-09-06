@@ -17,6 +17,8 @@ import { LoginDto } from './dto/login.dto.js';
 import { MailerService } from '../mail/mailer.service.js';
 import { hashToken } from '../common/utils/token-hash.util.js';
 import { TWO_FACTOR_CHALLENGE_PURPOSE } from './two-factor-challenge.constants.js';
+import { AuditService, AuditClientInfo } from '../audit/audit.service.js';
+import { AUDIT_ACTIONS } from '../audit/audit-actions.js';
 
 const TWO_FACTOR_CHALLENGE_TTL = '5m';
 
@@ -45,6 +47,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly mailerService: MailerService,
+    private readonly auditService: AuditService,
   ) {}
 
   /**
@@ -121,18 +124,32 @@ export class AuthService {
   async login(
     dto: LoginDto,
     deviceToken?: string,
+    client?: AuditClientInfo,
   ): Promise<AuthTokens | { requiresTwoFactor: true; challengeToken: string }> {
+    const auditFailure = (reason: string, actorId?: string) =>
+      this.auditService.record({
+        action: AUDIT_ACTIONS.LOGIN_FAILED,
+        actorId: actorId ?? null,
+        actorLabel: dto.email,
+        ip: client?.ip,
+        userAgent: client?.userAgent,
+        metadata: { reason },
+      });
+
     const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
     if (!user || !user.isActive) {
+      await auditFailure(user ? 'inactive' : 'unknown_user', user?.id);
       throw new UnauthorizedException('Credenciais inválidas');
     }
 
     const valid = await bcrypt.compare(dto.password, user.passwordHash);
     if (!valid) {
+      await auditFailure('bad_password', user.id);
       throw new UnauthorizedException('Credenciais inválidas');
     }
 
     if (!user.emailVerifiedAt) {
+      await auditFailure('email_unverified', user.id);
       throw new UnauthorizedException('Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada.');
     }
 
@@ -143,6 +160,7 @@ export class AuthService {
           where: { userId: user.id, tokenHash: hashToken(deviceToken), expiresAt: { gt: new Date() } },
         }));
       if (trustedDevice) {
+        await this.recordLoginSuccess(user.id, user.email, 'trusted_device', client);
         return this.issueTokens(user.id, user.email);
       }
 
@@ -153,7 +171,20 @@ export class AuthService {
       return { requiresTwoFactor: true, challengeToken };
     }
 
+    await this.recordLoginSuccess(user.id, user.email, 'password', client);
     return this.issueTokens(user.id, user.email);
+  }
+
+  /** Registra um login bem-sucedido na trilha de auditoria. `via` distingue password / 2FA / dispositivo confiável. */
+  recordLoginSuccess(userId: string, email: string, via: string, client?: AuditClientInfo) {
+    return this.auditService.record({
+      action: AUDIT_ACTIONS.LOGIN_SUCCEEDED,
+      actorId: userId,
+      actorLabel: email,
+      ip: client?.ip,
+      userAgent: client?.userAgent,
+      metadata: { via },
+    });
   }
 
   /**

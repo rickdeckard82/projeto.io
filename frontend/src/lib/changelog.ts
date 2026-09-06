@@ -17,6 +17,13 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.12.0',
+    date: '2026-09-06',
+    changes: [
+      'Nova tela Configurações → Auditoria (administradores): registra login e logout, ativação/desativação de 2FA, mudança de senha, criação de usuário, troca de papel, desativação e anonimização de contas, e alterações de configuração — com data, autor e IP.',
+    ],
+  },
+  {
     version: '1.11.0',
     date: '2026-09-06',
     changes: [

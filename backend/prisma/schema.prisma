@@ -373,6 +373,35 @@ model AllowedDomain {
   @@map("allowed_domains")
 }
 
+/// Trilha de auditoria de eventos de segurança e administrativos: quem fez, quando, de onde e o
+/// quê. Escrita só pelo `AuditService` (`audit/`), nunca editada nem apagada pela aplicação — a
+/// remoção fica a cargo de uma política de retenção externa. `actorId` é intencionalmente solto
+/// (sem FK): o registro precisa sobreviver à remoção/anonimização da conta que praticou a ação,
+/// e um login falho pode nem ter um usuário associado.
+model AuditLog {
+  id         String   @id @default(uuid())
+  /// Ação, em formato `dominio.evento` (ex.: `auth.login.failed`, `user.role_changed`) — as
+  /// constantes ficam em `audit/audit-actions.ts`.
+  action     String
+  actorId    String?  @map("actor_id")
+  /// Identificador textual do ator no momento da ação (ex.: e-mail) — em login falho, o e-mail tentado.
+  actorLabel String?  @map("actor_label")
+  /// Tipo do alvo da ação (ex.: `user`, `smtp_settings`) e seu id, quando houver.
+  targetType String?  @map("target_type")
+  targetId   String?  @map("target_id")
+  ip         String?
+  userAgent  String?  @map("user_agent")
+  /// Contexto adicional estruturado (ex.: `{ "from": "MEMBER", "to": "ADMIN" }`). Nunca segredos
+  /// nem dados pessoais em claro.
+  metadata   Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@index([actorId, createdAt])
+  @@index([action, createdAt])
+  @@map("audit_logs")
+}
+
 model SmtpSettings {
   id                String   @id @default("singleton")
   host              String

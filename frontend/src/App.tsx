@@ -23,6 +23,7 @@ import { AccountSettingsLayout } from './pages/AccountSettingsLayout';
 import { ProfileSettingsPage } from './pages/ProfileSettingsPage';
 import { SecuritySettingsPage } from './pages/SecuritySettingsPage';
 import { UsersAdminPage } from './pages/UsersAdminPage';
+import { AuditLogPage } from './pages/AuditLogPage';
 import { AllowedDomainsSettingsPage } from './pages/AllowedDomainsSettingsPage';
 import { SmtpSettingsPage } from './pages/SmtpSettingsPage';
 import { TelegramSettingsPage } from './pages/TelegramSettingsPage';
@@ -51,6 +52,7 @@ export default function App() {
               <Route path="security" element={<SecuritySettingsPage />} />
               <Route path="notifications" element={<NotificationSettingsPage />} />
               <Route path="users" element={<UsersAdminPage />} />
+              <Route path="audit" element={<AuditLogPage />} />
               <Route path="allowed-domains" element={<AllowedDomainsSettingsPage />} />
               <Route path="smtp" element={<SmtpSettingsPage />} />
               <Route path="telegram" element={<TelegramSettingsPage />} />

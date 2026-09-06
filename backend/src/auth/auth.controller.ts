@@ -12,6 +12,9 @@ import { TwoFactorVerifyDto } from './dto/two-factor-verify.dto.js';
 import { Public } from '../common/decorators/public.decorator.js';
 import { Allow2faSetup } from '../common/decorators/allow-2fa-setup.decorator.js';
 import { CurrentUser, AuthenticatedUser } from '../common/decorators/current-user.decorator.js';
+import { ClientInfo } from '../common/decorators/client-info.decorator.js';
+import { AuditService, AuditClientInfo } from '../audit/audit.service.js';
+import { AUDIT_ACTIONS } from '../audit/audit-actions.js';
 
 const ACCESS_COOKIE = 'access_token';
 const REFRESH_COOKIE = 'refresh_token';
@@ -54,6 +57,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly twoFactorService: TwoFactorService,
+    private readonly auditService: AuditService,
   ) {}
 
   /**
@@ -109,8 +113,13 @@ export class AuthController {
   @Public()
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @Post('login')
-  async login(@Body() dto: LoginDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    const result = await this.authService.login(dto, req.cookies?.[DEVICE_COOKIE]);
+  async login(
+    @Body() dto: LoginDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+    @ClientInfo() client: AuditClientInfo,
+  ) {
+    const result = await this.authService.login(dto, req.cookies?.[DEVICE_COOKIE], client);
     if ('requiresTwoFactor' in result) {
       return result;
     }
@@ -131,12 +140,18 @@ export class AuthController {
   @Public()
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @Post('2fa/verify')
-  async verifyTwoFactor(@Body() dto: TwoFactorVerifyDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+  async verifyTwoFactor(
+    @Body() dto: TwoFactorVerifyDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+    @ClientInfo() client: AuditClientInfo,
+  ) {
     const { deviceToken, ...tokens } = await this.twoFactorService.verifyChallenge(
       dto.challengeToken,
       dto.code,
       dto.rememberDevice,
       req.get('user-agent'),
+      client,
     );
     setAuthCookies(res, tokens);
     if (deviceToken) {
@@ -171,8 +186,22 @@ export class AuthController {
    */
   @Allow2faSetup()
   @Post('2fa/enable')
-  async enableTwoFactor(@Body() dto: TwoFactorEnableDto, @CurrentUser() user: AuthenticatedUser) {
-    return this.twoFactorService.enable(user.id, dto.code);
+  async enableTwoFactor(
+    @Body() dto: TwoFactorEnableDto,
+    @CurrentUser() user: AuthenticatedUser,
+    @ClientInfo() client: AuditClientInfo,
+  ) {
+    const result = await this.twoFactorService.enable(user.id, dto.code);
+    await this.auditService.record({
+      action: AUDIT_ACTIONS.TWO_FACTOR_ENABLED,
+      actorId: user.id,
+      actorLabel: user.email,
+      targetType: 'user',
+      targetId: user.id,
+      ip: client.ip,
+      userAgent: client.userAgent,
+    });
+    return result;
   }
 
   /**
@@ -189,9 +218,19 @@ export class AuthController {
     @Body() dto: TwoFactorDisableDto,
     @CurrentUser() user: AuthenticatedUser,
     @Res({ passthrough: true }) res: Response,
+    @ClientInfo() client: AuditClientInfo,
   ) {
     const result = await this.twoFactorService.disable(user.id, dto.password);
     res.clearCookie(DEVICE_COOKIE);
+    await this.auditService.record({
+      action: AUDIT_ACTIONS.TWO_FACTOR_DISABLED,
+      actorId: user.id,
+      actorLabel: user.email,
+      targetType: 'user',
+      targetId: user.id,
+      ip: client.ip,
+      userAgent: client.userAgent,
+    });
     return result;
   }
 
@@ -273,10 +312,22 @@ export class AuthController {
    */
   @Allow2faSetup()
   @Post('logout')
-  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+  async logout(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+    @CurrentUser() user: AuthenticatedUser,
+    @ClientInfo() client: AuditClientInfo,
+  ) {
     await this.authService.logout(req.cookies?.[REFRESH_COOKIE]);
     res.clearCookie(ACCESS_COOKIE);
     res.clearCookie(REFRESH_COOKIE);
+    await this.auditService.record({
+      action: AUDIT_ACTIONS.LOGOUT,
+      actorId: user.id,
+      actorLabel: user.email,
+      ip: client.ip,
+      userAgent: client.userAgent,
+    });
     return { message: 'Sessão encerrada' };
   }
 

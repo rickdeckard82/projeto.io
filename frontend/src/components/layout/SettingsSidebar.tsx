@@ -1,5 +1,5 @@
 import { Link, NavLink } from 'react-router-dom';
-import { Bell, Globe, Home, Lock, Mail, Send, Shield, Smartphone, User as UserIcon, Users } from 'lucide-react';
+import { Bell, Globe, Home, Lock, Mail, ScrollText, Send, Shield, Smartphone, User as UserIcon, Users } from 'lucide-react';
 import { RoleGate } from '../../auth/RoleGate';
 import { APP_VERSION } from '../../lib/appInfo';
 
@@ -40,6 +40,10 @@ export function SettingsSidebar() {
           <NavLink to="/settings/users" className={navLinkClass}>
             <Users size={16} />
             Usuários
+          </NavLink>
+          <NavLink to="/settings/audit" className={navLinkClass}>
+            <ScrollText size={16} />
+            Auditoria
           </NavLink>
           <NavLink to="/settings/allowed-domains" className={navLinkClass}>
             <Globe size={16} />

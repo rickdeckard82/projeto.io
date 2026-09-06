@@ -1,4 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Post, Query, Req, Res } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { Request, Response } from 'express';
 import { AuthService, AuthTokens } from './auth.service.js';
 import { TwoFactorService } from './two-factor.service.js';
@@ -62,6 +63,7 @@ export class AuthController {
    * @returns mensagem pedindo confirmação por e-mail
    */
   @Public()
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @Post('register')
   async register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
@@ -73,6 +75,7 @@ export class AuthController {
    * @returns mensagem de confirmação
    */
   @Public()
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Get('verify-email')
   async verifyEmail(@Query('token') token?: string) {
     return this.authService.verifyEmail(token);
@@ -84,6 +87,7 @@ export class AuthController {
    * @returns mensagem genérica (não revela se o e-mail existe/já está confirmado)
    */
   @Public()
+  @Throttle({ default: { limit: 3, ttl: 300_000 } })
   @Post('resend-verification')
   async resendVerification(@Body() dto: ResendVerificationDto) {
     return this.authService.resendVerification(dto.email);
@@ -102,6 +106,7 @@ export class AuthController {
    * @returns mensagem de confirmação, ou `{ requiresTwoFactor: true, challengeToken }`
    */
   @Public()
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @Post('login')
   async login(@Body() dto: LoginDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.login(dto, req.cookies?.[DEVICE_COOKIE]);
@@ -123,6 +128,7 @@ export class AuthController {
    * @returns mensagem de confirmação
    */
   @Public()
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @Post('2fa/verify')
   async verifyTwoFactor(@Body() dto: TwoFactorVerifyDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const { deviceToken, ...tokens } = await this.twoFactorService.verifyChallenge(
@@ -247,6 +253,7 @@ export class AuthController {
    * @returns mensagem de confirmação
    */
   @Public()
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
   @Post('refresh')
   async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const tokens = await this.authService.refresh(req.cookies?.[REFRESH_COOKIE]);

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { UsersModule } from './users/users.module.js';
@@ -22,6 +23,11 @@ import { RolesGuard } from './common/guards/roles.guard.js';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    // Teto global de requisições por IP para toda a API (120/min). As rotas de autenticação
+    // aplicam limites próprios, bem menores, via `@Throttle(...)` no `AuthController`.
+    // Armazenamento em memória — se um dia o backend rodar em mais de uma réplica, trocar por
+    // um storage compartilhado (ex.: `@nest-lab/throttler-storage-redis`).
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]),
     ScheduleModule.forRoot(),
     PrismaModule,
     AuthModule,
@@ -39,6 +45,9 @@ import { RolesGuard } from './common/guards/roles.guard.js';
   ],
   controllers: [HealthController],
   providers: [
+    // Ordem importa: o rate limit roda antes da autenticação, para também proteger as rotas
+    // públicas (login, cadastro, verificação de e-mail).
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
   ],

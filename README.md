@@ -81,11 +81,13 @@ NODE_ENV=production
 CORS_ORIGIN=https://seuapp.com.br
 FRONTEND_URL=https://seuapp.com.br
 VITE_API_BASE_URL=https://seuapp.com.br/api/v1
-JWT_ACCESS_SECRET=<valor aleatório forte>
-JWT_REFRESH_SECRET=<valor aleatório forte>
+JWT_ACCESS_SECRET=<valor aleatório forte, mín. 32 caracteres — ex.: openssl rand -base64 48>
+JWT_REFRESH_SECRET=<outro valor aleatório forte, diferente do de acesso>
 ENCRYPTION_KEY=<openssl rand -base64 32>
 SEED_ADMIN_PASSWORD=<troque o padrão antes do primeiro deploy>
 ```
+
+Com `NODE_ENV=production`, o backend **não sobe** se `JWT_ACCESS_SECRET`/`JWT_REFRESH_SECRET`/`ENCRYPTION_KEY` estiverem ausentes, com valor de exemplo, iguais entre si ou curtos demais; e o seed **não cria** o admin se `SEED_ADMIN_PASSWORD` ainda for o padrão (`ChangeMe123!`). Confira o log do container `projetoio-backend` no primeiro deploy.
 
 `VITE_API_BASE_URL` é usada em **build time** do frontend (fica embutida no bundle estático) — depois de definir/alterar essa variável é preciso `docker compose build frontend` de novo; só reiniciar o container não atualiza nada.
 
@@ -95,7 +97,7 @@ SEED_ADMIN_PASSWORD=<troque o padrão antes do primeiro deploy>
 docker compose --env-file .env up --build -d
 ```
 
-Por padrão o `docker-compose.yml` já publica as portas 3000 (backend), 5173→80 (frontend) e 5432 (Postgres) no host — se o firewall do servidor não bloquear a 5432, o Postgres fica acessível pela internet. Recomendado restringir/remover essa publicação de porta em produção (o NPM acessa os containers pela rede interna do Docker, não precisa da porta do host).
+O `docker-compose.yml` publica as portas 3000 (backend), 5173→80 (frontend) e 5432 (Postgres) **apenas no loopback do host** (`127.0.0.1`), controlado por `HOST_BIND_IP` no `.env` — nenhuma delas fica acessível pela internet mesmo sem firewall. O NPM alcança os containers pela rede interna do Docker (rede `proxy`), não pelas portas publicadas. Só mude `HOST_BIND_IP=0.0.0.0` se precisar acessar os serviços de fora do host, e nesse caso ponha um firewall na frente (deixe só 80/443 abertos, e 22 restrito).
 
 ### 3. Rede compartilhada com o Nginx Proxy Manager
 

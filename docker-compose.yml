@@ -12,7 +12,12 @@ services:
     volumes:
       - db_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      # Publicada só no loopback do host por padrão (${HOST_BIND_IP:-127.0.0.1}): ferramentas
+      # locais (psql, DBeaver) continuam alcançando via 127.0.0.1, mas a porta nunca fica
+      # exposta à internet mesmo que o firewall do host esteja mal configurado. Em produção o
+      # backend fala com o Postgres pela rede interna do Compose (projetoio_default) — não
+      # depende desta publicação, que pode até ser removida por completo no servidor.
+      - "${HOST_BIND_IP:-127.0.0.1}:5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-app_user} -d ${POSTGRES_DB:-pm_app}"]
       interval: 5s
@@ -39,7 +44,9 @@ services:
       db:
         condition: service_healthy
     ports:
-      - "3000:3000"
+      # Loopback do host por padrão — em produção o Nginx Proxy Manager alcança este container
+      # pela rede `proxy` (ver README), não por esta porta publicada.
+      - "${HOST_BIND_IP:-127.0.0.1}:3000:3000"
     networks:
       - default
       - proxy
@@ -54,7 +61,9 @@ services:
     depends_on:
       - backend
     ports:
-      - "5173:80"
+      # Loopback do host por padrão — em produção o Nginx Proxy Manager alcança este container
+      # pela rede `proxy` (ver README), não por esta porta publicada.
+      - "${HOST_BIND_IP:-127.0.0.1}:5173:80"
     networks:
       - default
       - proxy

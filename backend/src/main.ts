@@ -1,8 +1,11 @@
+import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module.js';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
+import { validateSecurityEnv } from './common/config/security-env.js';
 
 /**
  * Ponto de entrada da aplicação NestJS. Cria a instância do app e configura,
@@ -14,7 +17,15 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
  * frontend). Por fim sobe o servidor HTTP na porta configurada.
  */
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  // Antes de tudo: barra a subida em produção se algum segredo estiver ausente/de exemplo.
+  validateSecurityEnv();
+
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  // Em produção a aplicação roda atrás do Nginx Proxy Manager (ver README). Confiar no
+  // primeiro proxy faz o Express usar o `X-Forwarded-For` (IP real do cliente, necessário
+  // para o rate limit por IP acertar o alvo) e o `X-Forwarded-Proto` (esquema https correto).
+  app.set('trust proxy', 1);
 
   app.use(cookieParser());
   app.setGlobalPrefix('api/v1');

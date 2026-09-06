@@ -17,6 +17,13 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.10.0',
+    date: '2026-09-06',
+    changes: [
+      'Reforço de segurança: login, cadastro, confirmação de e-mail e verificação de 2FA agora têm limite de tentativas por minuto — ao exceder, a resposta passa a ser "429 Tentativas demais" por um intervalo curto, dificultando ataques de força bruta.',
+    ],
+  },
+  {
     version: '1.9.0',
     date: '2026-08-22',
     changes: [

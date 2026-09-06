@@ -3,9 +3,9 @@ import { Logger } from '@nestjs/common';
 const logger = new Logger('SecurityEnv');
 
 /**
- * Valores de exemplo que aparecem nos vários `.env.example` do repositório e nos fallbacks
- * `|| 'dev-*-secret'` espalhados pelo código de auth. Nenhum deles pode ser usado de verdade
- * em produção — se algum estiver ativo, qualquer pessoa que leia o repositório sabe o segredo.
+ * Valores de exemplo que aparecem no `.env.example` da raiz e nos fallbacks `|| 'dev-*-secret'`
+ * espalhados pelo código de auth. Nenhum deles pode ser usado de verdade em produção — se algum
+ * estiver ativo, qualquer pessoa que leia o repositório sabe o segredo.
  */
 const PLACEHOLDER_VALUES = new Set([
   'change-me-access-secret',

@@ -2,6 +2,7 @@ import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module.js';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
@@ -26,6 +27,18 @@ async function bootstrap() {
   // primeiro proxy faz o Express usar o `X-Forwarded-For` (IP real do cliente, necessário
   // para o rate limit por IP acertar o alvo) e o `X-Forwarded-Proto` (esquema https correto).
   app.set('trust proxy', 1);
+
+  app.use(
+    helmet({
+      // A API só devolve JSON — um CSP restritivo aqui não protege página nenhuma. O CSP que
+      // importa é o do frontend (`frontend/nginx.conf`).
+      contentSecurityPolicy: false,
+      // Respostas lidas via fetch com CORS pelo frontend (origem separada em dev); `same-origin`
+      // (padrão do helmet) atrapalharia sem ganho — o CORS já restringe quem pode ler.
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+      hsts: { maxAge: 63072000, includeSubDomains: true, preload: true },
+    }),
+  );
 
   app.use(cookieParser());
   app.setGlobalPrefix('api/v1');

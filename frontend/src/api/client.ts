@@ -27,6 +27,18 @@ apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const { config, response } = error;
+
+    // Admin sem 2FA obrigatório ativo (ver TwoFactorEnforcedGuard no backend): leva para a tela
+    // de configuração. Recarrega a página de propósito, para o AuthContext reidratar do zero.
+    if (
+      response?.status === 403 &&
+      response?.data?.code === 'TWO_FACTOR_REQUIRED' &&
+      !window.location.pathname.startsWith('/setup-2fa')
+    ) {
+      window.location.assign('/setup-2fa');
+      return Promise.reject(error);
+    }
+
     if (response?.status !== 401 || config._retry || config.url?.includes('/auth/')) {
       return Promise.reject(error);
     }

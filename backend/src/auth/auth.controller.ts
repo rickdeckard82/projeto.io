@@ -10,6 +10,7 @@ import { TwoFactorEnableDto } from './dto/two-factor-enable.dto.js';
 import { TwoFactorDisableDto } from './dto/two-factor-disable.dto.js';
 import { TwoFactorVerifyDto } from './dto/two-factor-verify.dto.js';
 import { Public } from '../common/decorators/public.decorator.js';
+import { Allow2faSetup } from '../common/decorators/allow-2fa-setup.decorator.js';
 import { CurrentUser, AuthenticatedUser } from '../common/decorators/current-user.decorator.js';
 
 const ACCESS_COOKIE = 'access_token';
@@ -156,6 +157,7 @@ export class AuthController {
    * @param user - usuário autenticado
    * @returns `{ qrCodeDataUrl, secret }`
    */
+  @Allow2faSetup()
   @Post('2fa/setup')
   async setupTwoFactor(@CurrentUser() user: AuthenticatedUser) {
     return this.twoFactorService.setup(user.id);
@@ -167,6 +169,7 @@ export class AuthController {
    * @param user - usuário autenticado
    * @returns mensagem de confirmação e os códigos de recuperação (mostrados só uma vez)
    */
+  @Allow2faSetup()
   @Post('2fa/enable')
   async enableTwoFactor(@Body() dto: TwoFactorEnableDto, @CurrentUser() user: AuthenticatedUser) {
     return this.twoFactorService.enable(user.id, dto.code);
@@ -268,6 +271,7 @@ export class AuthController {
    * @param res - usado apenas para limpar os cookies httpOnly (passthrough)
    * @returns mensagem de confirmação
    */
+  @Allow2faSetup()
   @Post('logout')
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     await this.authService.logout(req.cookies?.[REFRESH_COOKIE]);
@@ -282,6 +286,7 @@ export class AuthController {
    * @param user - usuário autenticado injetado pelo `@CurrentUser()` (via JwtAuthGuard/JwtStrategy)
    * @returns dados públicos do usuário autenticado
    */
+  @Allow2faSetup()
   @Get('me')
   async me(@CurrentUser() user: AuthenticatedUser) {
     return this.authService.me(user.id);

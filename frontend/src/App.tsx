@@ -1,5 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { ProtectedRoute } from './auth/ProtectedRoute';
+import { TwoFactorGate } from './auth/TwoFactorGate';
+import { TwoFactorRequiredPage } from './pages/TwoFactorRequiredPage';
 import { AppShell } from './components/layout/AppShell';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
@@ -39,33 +41,36 @@ export default function App() {
       <Route path="/privacidade" element={<PrivacyPolicyPage />} />
 
       <Route element={<ProtectedRoute />}>
-        <Route element={<AppShell />}>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/settings" element={<AccountSettingsLayout />}>
-            <Route index element={<Navigate to="profile" replace />} />
-            <Route path="profile" element={<ProfileSettingsPage />} />
-            <Route path="security" element={<SecuritySettingsPage />} />
-            <Route path="notifications" element={<NotificationSettingsPage />} />
-            <Route path="users" element={<UsersAdminPage />} />
-            <Route path="allowed-domains" element={<AllowedDomainsSettingsPage />} />
-            <Route path="smtp" element={<SmtpSettingsPage />} />
-            <Route path="telegram" element={<TelegramSettingsPage />} />
-            <Route path="pushover" element={<PushoverSettingsPage />} />
-            <Route path="privacy" element={<PrivacySettingsPage />} />
-          </Route>
-          <Route path="/notes" element={<NotesPage />} />
-          <Route path="/changelog" element={<ChangelogPage />} />
-          <Route path="/projects" element={<ProjectsListPage />} />
-          <Route path="/projects/archived" element={<ArchivedProjectsPage />} />
-          <Route path="/projects/:projectId" element={<ProjectDetailLayout />}>
-            <Route index element={<Navigate to="board" replace />} />
-            <Route path="board" element={<ProjectBoardPage />} />
-            <Route path="list" element={<ProjectListViewPage />} />
-            <Route path="documents" element={<ProjectDocumentsPage />} />
-            <Route path="documents/:documentId" element={<DocumentEditorPage />} />
-            <Route path="modules/:moduleId" element={<ModuleDetailPage />} />
-            <Route path="metrics" element={<ProjectMetricsPage />} />
-            <Route path="settings" element={<ProjectSettingsPage />} />
+        <Route path="/setup-2fa" element={<TwoFactorRequiredPage />} />
+        <Route element={<TwoFactorGate />}>
+          <Route element={<AppShell />}>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/settings" element={<AccountSettingsLayout />}>
+              <Route index element={<Navigate to="profile" replace />} />
+              <Route path="profile" element={<ProfileSettingsPage />} />
+              <Route path="security" element={<SecuritySettingsPage />} />
+              <Route path="notifications" element={<NotificationSettingsPage />} />
+              <Route path="users" element={<UsersAdminPage />} />
+              <Route path="allowed-domains" element={<AllowedDomainsSettingsPage />} />
+              <Route path="smtp" element={<SmtpSettingsPage />} />
+              <Route path="telegram" element={<TelegramSettingsPage />} />
+              <Route path="pushover" element={<PushoverSettingsPage />} />
+              <Route path="privacy" element={<PrivacySettingsPage />} />
+            </Route>
+            <Route path="/notes" element={<NotesPage />} />
+            <Route path="/changelog" element={<ChangelogPage />} />
+            <Route path="/projects" element={<ProjectsListPage />} />
+            <Route path="/projects/archived" element={<ArchivedProjectsPage />} />
+            <Route path="/projects/:projectId" element={<ProjectDetailLayout />}>
+              <Route index element={<Navigate to="board" replace />} />
+              <Route path="board" element={<ProjectBoardPage />} />
+              <Route path="list" element={<ProjectListViewPage />} />
+              <Route path="documents" element={<ProjectDocumentsPage />} />
+              <Route path="documents/:documentId" element={<DocumentEditorPage />} />
+              <Route path="modules/:moduleId" element={<ModuleDetailPage />} />
+              <Route path="metrics" element={<ProjectMetricsPage />} />
+              <Route path="settings" element={<ProjectSettingsPage />} />
+            </Route>
           </Route>
         </Route>
       </Route>

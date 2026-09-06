@@ -27,10 +27,17 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const body = isHttpException ? exception.getResponse() : { message: 'Erro interno do servidor' };
 
     const message = typeof body === 'string' ? body : (body as any).message;
+    // Um `code` legível por máquina (ex.: 'TWO_FACTOR_REQUIRED') passa adiante quando a exceção
+    // o define — o frontend reage a ele sem depender do texto da mensagem.
+    const code =
+      typeof body === 'object' && body !== null && typeof (body as any).code === 'string'
+        ? (body as any).code
+        : undefined;
 
     response.status(status).json({
       statusCode: status,
       message,
+      ...(code ? { code } : {}),
     });
   }
 }

@@ -133,6 +133,11 @@ Se a rede `proxy` ainda não existir neste host, crie antes de subir os containe
 - `https://seuapp.com.br/api/v1/health` deve responder `200`.
 - Login funciona e o cookie de sessão persiste ao recarregar (confirma que `NODE_ENV=production`/cookies `Secure` não quebraram nada sob HTTPS).
 - Abra o quadro em duas abas logadas com usuários diferentes e confirme que mover um card atualiza a outra sem reload (confirma que o `/socket.io` com Websockets Support está roteado corretamente — ver passo 4).
+- No primeiro login como administrador, o sistema exige ativar a verificação em duas etapas (2FA) antes de liberar o acesso — tenha um app autenticador à mão.
+
+### 6. Backup
+
+Configure o backup automático do banco **antes** de colocar dados de verdade — ver [`docs/backup.md`](docs/backup.md) (scripts `scripts/backup-db.sh` e `scripts/restore-test.sh`, agendamento por cron/systemd, e o gancho para envio off-site).
 
 ## Comandos úteis
 
@@ -141,4 +146,6 @@ docker compose exec backend npx prisma studio          # explorar o banco
 docker compose exec backend npx prisma migrate deploy  # rodar migrations manualmente
 docker compose logs -f backend
 docker compose down          # para os containers (mantém o volume do banco)
+./scripts/backup-db.sh                                  # backup manual do banco (ver docs/backup.md)
+./scripts/restore-test.sh                               # testa a restauração do último backup
 ```

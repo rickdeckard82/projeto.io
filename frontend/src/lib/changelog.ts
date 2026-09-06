@@ -17,6 +17,14 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.11.0',
+    date: '2026-09-06',
+    changes: [
+      'Administradores agora são obrigados a ativar a verificação em duas etapas (2FA): enquanto não ativarem, o acesso fica restrito à tela de configuração do 2FA.',
+      'Cabeçalhos de segurança HTTP reforçados no frontend e na API (HSTS, Content-Security-Policy, X-Frame-Options e afins).',
+    ],
+  },
+  {
     version: '1.10.0',
     date: '2026-09-06',
     changes: [

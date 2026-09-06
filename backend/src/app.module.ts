@@ -19,6 +19,7 @@ import { MetricsModule } from './metrics/metrics.module.js';
 import { HealthController } from './health/health.controller.js';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
 import { RolesGuard } from './common/guards/roles.guard.js';
+import { TwoFactorEnforcedGuard } from './common/guards/two-factor-enforced.guard.js';
 
 @Module({
   imports: [
@@ -49,6 +50,8 @@ import { RolesGuard } from './common/guards/roles.guard.js';
     // públicas (login, cadastro, verificação de e-mail).
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
+    // Depois do JwtAuthGuard (precisa de `req.user`): trava contas ADMIN sem 2FA ativo.
+    { provide: APP_GUARD, useClass: TwoFactorEnforcedGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
   ],
 })

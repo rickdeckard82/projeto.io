@@ -4,3 +4,4 @@ backend/src/generated/
 .env
 *.log
 .DS_Store
+backups/

@@ -281,6 +281,11 @@ export class WorkItemsService {
         )
       : undefined;
 
+    // "Esta é a última ocorrência": só faz sentido com a recorrência ligada — se o update
+    // desligar a recorrência, zera o flag junto; senão, `undefined` preserva o valor atual.
+    const recurrenceEndsHere =
+      recurrenceGiven && !recurrence!.unit ? false : dto.recurrenceEndsHere;
+
     // Prazo mudou de fato (não só foi reenviado com o mesmo valor): zera os timestamps de disparo
     // do alerta de vencimento, senão um item cujo prazo foi adiado depois de já notificado nunca
     // dispararia de novo — ver `DueDateCheckService`.
@@ -312,6 +317,7 @@ export class WorkItemsService {
         reminderNotifiedAt: reminderChanged ? null : undefined,
         recurrenceUnit: recurrenceGiven ? recurrence!.unit : undefined,
         recurrenceInterval: recurrenceGiven ? recurrence!.interval : undefined,
+        recurrenceEndsHere,
         dueSoonNotifiedAt: dueDateChanged ? null : undefined,
         overdueNotifiedAt: dueDateChanged ? null : undefined,
       },
@@ -462,7 +468,9 @@ export class WorkItemsService {
       }
     }
 
-    if (status.category === StatusCategory.COMPLETED && item.recurrenceUnit) {
+    // Gera a próxima ocorrência ao concluir — a menos que este item tenha sido marcado como o
+    // último da série (`recurrenceEndsHere`), caso em que a série simplesmente termina aqui.
+    if (status.category === StatusCategory.COMPLETED && item.recurrenceUnit && !item.recurrenceEndsHere) {
       await this.generateNextOccurrence(item, item.recurrenceUnit, item.recurrenceInterval ?? 1, actor);
     }
 

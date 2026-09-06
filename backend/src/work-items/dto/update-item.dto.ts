@@ -1,4 +1,4 @@
-import { IsDateString, IsEnum, IsInt, IsOptional, IsString, IsUUID, Min } from 'class-validator';
+import { IsBoolean, IsDateString, IsEnum, IsInt, IsOptional, IsString, IsUUID, Min } from 'class-validator';
 import { Priority, RecurrenceUnit } from '../../generated/prisma/client.js';
 
 export class UpdateItemDto {
@@ -55,4 +55,13 @@ export class UpdateItemDto {
   @IsInt()
   @Min(1)
   recurrenceInterval?: number | null;
+
+  /**
+   * `true` marca esta ocorrência como a última da série: concluí-la não gera a próxima. A
+   * recorrência em si continua ligada (a série segue contando nas métricas). Ignorado/zerado se a
+   * recorrência for desligada no mesmo update.
+   */
+  @IsOptional()
+  @IsBoolean()
+  recurrenceEndsHere?: boolean;
 }

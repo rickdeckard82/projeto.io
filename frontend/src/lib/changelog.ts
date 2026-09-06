@@ -17,6 +17,13 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.13.0',
+    date: '2026-09-06',
+    changes: [
+      'Tarefas recorrentes: novo campo "Esta é a última ocorrência" no detalhe do item — marcando-o, concluir a tarefa não gera a próxima ocorrência, encerrando a série. A série continua aparecendo em Métricas → Tarefas recorrentes, com a marca "última".',
+    ],
+  },
+  {
     version: '1.12.0',
     date: '2026-09-06',
     changes: [

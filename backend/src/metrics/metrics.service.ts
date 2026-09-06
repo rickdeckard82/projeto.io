@@ -46,6 +46,7 @@ export class MetricsService {
         recurrenceUnit: true,
         recurrenceInterval: true,
         recurrenceCount: true,
+        recurrenceEndsHere: true,
       },
     });
 
@@ -71,7 +72,7 @@ export class MetricsService {
         totalSeconds: number;
       }
     >();
-    const recurringTasks: { id: string; title: string; recurrenceCount: number }[] = [];
+    const recurringTasks: { id: string; title: string; recurrenceCount: number; endsHere: boolean }[] = [];
 
     for (const item of items) {
       byCategory[item.status.category]++;
@@ -89,12 +90,21 @@ export class MetricsService {
         inProgressSecondsOfCompleted.push(item.inProgressSeconds);
       }
 
-      // "Ativa" = ainda não chegou em COMPLETED/CANCELLED. Como o item anterior de uma série fica
-      // travado em COMPLETED assim que gera a próxima ocorrência (ver trava de item concluído/
-      // cancelado), nunca existe mais de um item ativo por série ao mesmo tempo — não precisa
-      // agrupar por série pra contar certo quantas tarefas recorrentes existem hoje.
-      if (item.recurrenceUnit && item.status.category !== StatusCategory.COMPLETED && item.status.category !== StatusCategory.CANCELLED) {
-        recurringTasks.push({ id: item.id, title: item.title, recurrenceCount: item.recurrenceCount });
+      // Representante da série recorrente: o item ainda ativo (não chegou em COMPLETED/CANCELLED)
+      // — como o item anterior fica travado em COMPLETED assim que gera a próxima ocorrência,
+      // nunca há mais de um ativo por série. Ou, quando a série já foi encerrada de propósito
+      // (`recurrenceEndsHere`), o último item concluído: a série segue aparecendo nas métricas
+      // mesmo sem ocorrência ativa.
+      const isOpen =
+        item.status.category !== StatusCategory.COMPLETED && item.status.category !== StatusCategory.CANCELLED;
+      const isEndedFinal = item.recurrenceEndsHere && item.status.category === StatusCategory.COMPLETED;
+      if (item.recurrenceUnit && (isOpen || isEndedFinal)) {
+        recurringTasks.push({
+          id: item.id,
+          title: item.title,
+          recurrenceCount: item.recurrenceCount,
+          endsHere: item.recurrenceEndsHere,
+        });
       }
 
       for (const { user } of item.assignees) {

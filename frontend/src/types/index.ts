@@ -118,6 +118,8 @@ export interface WorkItem {
   /** Presença = item recorrente; ao ser concluído, o backend gera automaticamente a próxima ocorrência. */
   recurrenceUnit: RecurrenceUnit | null;
   recurrenceInterval: number | null;
+  /** `true` = esta é a última ocorrência da série; concluí-la não gera a próxima (mas a série continua contando nas métricas). */
+  recurrenceEndsHere: boolean;
   /** Lembrete customizado, sempre resolvido para um instante absoluto pelo backend. */
   reminderAt: string | null;
   /** Presença = lembrete relativo ("N minutos antes do vencimento"), recalculado quando `dueDate` muda; `null` com `reminderAt` preenchido = data/hora absoluta digitada. */
@@ -209,6 +211,8 @@ export interface ProjectMetricsRecurringTask {
   title: string;
   /** Quantas vezes essa série já se repetiu até chegar neste item (0 = item original, nunca repetiu). */
   recurrenceCount: number;
+  /** `true` = série encerrada de propósito (esta foi marcada como a última ocorrência). */
+  endsHere: boolean;
 }
 
 export interface ProjectMetrics {
@@ -220,7 +224,7 @@ export interface ProjectMetrics {
   totalExecutionHours: number;
   projectDurationDays: number;
   perUser: ProjectMetricsUserStat[];
-  /** Tarefas recorrentes ainda ativas (não concluídas/canceladas) no projeto — no máximo uma por série. */
+  /** Tarefas recorrentes do projeto: a ocorrência ativa de cada série (ou a última concluída, se a série foi encerrada). No máximo uma por série. */
   recurringTasks: {
     count: number;
     /** Soma de quantas vezes cada série já se repetiu. */

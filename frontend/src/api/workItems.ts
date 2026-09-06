@@ -45,6 +45,8 @@ export type UpdateItemInput = Partial<
 > & {
   recurrenceUnit?: RecurrenceUnit | null;
   recurrenceInterval?: number | null;
+  /** `true` marca esta ocorrência como a última da série (concluí-la não gera a próxima). */
+  recurrenceEndsHere?: boolean;
   reminderAt?: string | null;
   reminderOffsetMinutes?: number | null;
 };

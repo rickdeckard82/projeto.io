@@ -261,14 +261,19 @@ model WorkItem {
   /// partir de agora, em `dueDate`, se o item não tinha nenhuma data).
   recurrenceUnit     RecurrenceUnit? @map("recurrence_unit")
   recurrenceInterval Int?            @map("recurrence_interval")
+  /// Marca esta ocorrência como a **última** da série: com `true`, concluir o item **não** gera a
+  /// próxima ocorrência (ver `WorkItemsService.updateStatus`). `recurrenceUnit` continua
+  /// preenchido de propósito — a série ainda conta em "tarefas recorrentes" nas métricas
+  /// (`MetricsService`) mesmo depois de encerrada. Volta a `false` se a recorrência for desligada.
+  recurrenceEndsHere Boolean         @default(false) @map("recurrence_ends_here")
   /// Quantas vezes a série já se repetiu até chegar neste item: 0 no item original (nunca
   /// repetiu), N na N-ésima ocorrência gerada — `generateNextOccurrence` propaga
   /// `completedItem.recurrenceCount + 1` para a próxima. Como cada ocorrência já nasce fora de
   /// COMPLETED/CANCELLED e a anterior fica travada nessa categoria (ver trava de item
-  /// concluído/cancelado), a query de `MetricsService` para "tarefas recorrentes ativas" filtra só
-  /// por `recurrenceUnit != null AND status.category NOT IN (COMPLETED, CANCELLED)` — nunca há mais
-  /// de um item "ativo" por série ao mesmo tempo, então não precisa de uma FK própria ligando toda
-  /// a cadeia para saber quantas vezes ela já repetiu.
+  /// concluído/cancelado), a query de `MetricsService` para "tarefas recorrentes" pega o item
+  /// ativo da série (`recurrenceUnit != null AND status NOT IN (COMPLETED, CANCELLED)`) ou, quando
+  /// a série já foi encerrada, o último item concluído com `recurrenceEndsHere = true` — nunca
+  /// mais de um por série, então não precisa de uma FK própria ligando a cadeia inteira.
   recurrenceCount Int @default(0) @map("recurrence_count")
 
   /// Preenchido pelo `DueDateCheckService` na primeira vez que os responsáveis são notificados de

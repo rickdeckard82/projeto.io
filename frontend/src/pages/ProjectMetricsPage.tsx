@@ -135,12 +135,12 @@ export function ProjectMetricsPage() {
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-slate-200">Tarefas recorrentes</h2>
           <span className="text-xs text-slate-400">
-            {metrics.recurringTasks.count} ativa{metrics.recurringTasks.count === 1 ? '' : 's'} ·{' '}
+            {metrics.recurringTasks.count} série{metrics.recurringTasks.count === 1 ? '' : 's'} ·{' '}
             {metrics.recurringTasks.totalOccurrences} repetição{metrics.recurringTasks.totalOccurrences === 1 ? '' : 'ões'} no total
           </span>
         </div>
         {metrics.recurringTasks.items.length === 0 ? (
-          <EmptyState title="Nenhuma tarefa recorrente ativa" />
+          <EmptyState title="Nenhuma tarefa recorrente" />
         ) : (
           <table className="w-full text-sm">
             <thead>
@@ -152,7 +152,17 @@ export function ProjectMetricsPage() {
             <tbody>
               {metrics.recurringTasks.items.map((task) => (
                 <tr key={task.id} className="border-b border-slate-800/60 last:border-0">
-                  <td className="py-2 text-slate-200">{task.title}</td>
+                  <td className="py-2 text-slate-200">
+                    {task.title}
+                    {task.endsHere && (
+                      <span
+                        className="ml-2 rounded bg-slate-800 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-400"
+                        title="Marcada como a última ocorrência da série"
+                      >
+                        última
+                      </span>
+                    )}
+                  </td>
                   <td className="py-2 text-right text-slate-300">{task.recurrenceCount}</td>
                 </tr>
               ))}

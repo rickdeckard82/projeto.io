@@ -198,6 +198,20 @@ export function ItemDetailModal({
                         updateItem({ id: itemId, data: { recurrenceUnit, recurrenceInterval } }).then(invalidateItem)
                       }
                     />
+                    {item.recurrenceUnit && (
+                      <label className="mt-1.5 flex items-center gap-1.5 text-xs text-slate-400">
+                        <input
+                          type="checkbox"
+                          disabled={!editable}
+                          checked={item.recurrenceEndsHere}
+                          onChange={(e) =>
+                            updateItem({ id: itemId, data: { recurrenceEndsHere: e.target.checked } }).then(invalidateItem)
+                          }
+                          className="disabled:opacity-50"
+                        />
+                        Esta é a última ocorrência (não gerar a próxima ao concluir)
+                      </label>
+                    )}
                   </div>
                 </div>
 

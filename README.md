@@ -89,6 +89,8 @@ SEED_ADMIN_PASSWORD=<troque o padrão antes do primeiro deploy>
 
 Com `NODE_ENV=production`, o backend **não sobe** se `JWT_ACCESS_SECRET`/`JWT_REFRESH_SECRET`/`ENCRYPTION_KEY` estiverem ausentes, com valor de exemplo, iguais entre si ou curtos demais; e o seed **não cria** o admin se `SEED_ADMIN_PASSWORD` ainda for o padrão (`ChangeMe123!`). Confira o log do container `projetoio-backend` no primeiro deploy.
 
+**Cloudflare Turnstile (opcional):** para ligar a verificação anti-robô em login e cadastro, defina `VITE_TURNSTILE_SITE_KEY` (site key) e `TURNSTILE_SECRET_KEY` (secret key). Sem elas, o recurso fica desligado. A site key é build-time do frontend (`docker compose build frontend` ao trocar); a secret key é lida em runtime pelo backend. O CSP do `frontend/nginx.conf` já libera `challenges.cloudflare.com`.
+
 `VITE_API_BASE_URL` é usada em **build time** do frontend (fica embutida no bundle estático) — depois de definir/alterar essa variável é preciso `docker compose build frontend` de novo; só reiniciar o container não atualiza nada.
 
 ### 2. Subir os containers

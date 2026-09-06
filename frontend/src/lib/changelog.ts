@@ -17,6 +17,13 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.14.0',
+    date: '2026-09-06',
+    changes: [
+      'Verificação anti-robô (Cloudflare Turnstile) nas telas de login e cadastro — aparece quando a instância está configurada com as chaves do Turnstile; sem elas, nada muda.',
+    ],
+  },
+  {
     version: '1.13.0',
     date: '2026-09-06',
     changes: [

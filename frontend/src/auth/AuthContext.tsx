@@ -13,9 +13,14 @@ import { User } from '../types';
 interface AuthContextValue {
   user: User | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<LoginResult>;
+  login: (email: string, password: string, turnstileToken?: string | null) => Promise<LoginResult>;
   verifyTwoFactor: (challengeToken: string, code: string, rememberDevice?: boolean) => Promise<void>;
-  register: (email: string, password: string, fullName: string) => Promise<{ message: string }>;
+  register: (
+    email: string,
+    password: string,
+    fullName: string,
+    turnstileToken?: string | null,
+  ) => Promise<{ message: string }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -49,8 +54,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user]);
 
-  const login = async (email: string, password: string) => {
-    const result = await loginApi({ email, password });
+  const login = async (email: string, password: string, turnstileToken?: string | null) => {
+    const result = await loginApi({ email, password }, turnstileToken);
     // Só há sessão pra hidratar se o login completou nesta etapa — se a conta tem 2FA,
     // `requiresTwoFactor` vem true e ainda não existe cookie de sessão nenhum (ver `verifyTwoFactor`).
     if (!result.requiresTwoFactor) {
@@ -64,10 +69,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await refreshUser();
   };
 
-  const register = async (email: string, password: string, fullName: string) => {
+  const register = async (
+    email: string,
+    password: string,
+    fullName: string,
+    turnstileToken?: string | null,
+  ) => {
     // Cadastro não inicia sessão automaticamente: a conta só fica utilizável depois de
     // confirmada por e-mail (ver AuthService.register no backend).
-    return registerApi({ email, password, fullName });
+    return registerApi({ email, password, fullName }, turnstileToken);
   };
 
   const logout = async () => {

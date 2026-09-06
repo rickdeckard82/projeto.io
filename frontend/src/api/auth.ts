@@ -7,13 +7,24 @@ export interface LoginResult {
   challengeToken?: string;
 }
 
-export async function register(data: { email: string; password: string; fullName: string }) {
-  const res = await apiClient.post('/auth/register', data);
+/** Header com o token do Cloudflare Turnstile, quando há um (senão a request vai sem — backend libera). */
+function turnstileConfig(token?: string | null) {
+  return token ? { headers: { 'X-Turnstile-Token': token } } : undefined;
+}
+
+export async function register(
+  data: { email: string; password: string; fullName: string },
+  turnstileToken?: string | null,
+) {
+  const res = await apiClient.post('/auth/register', data, turnstileConfig(turnstileToken));
   return res.data;
 }
 
-export async function login(data: { email: string; password: string }): Promise<LoginResult> {
-  const res = await apiClient.post('/auth/login', data);
+export async function login(
+  data: { email: string; password: string },
+  turnstileToken?: string | null,
+): Promise<LoginResult> {
+  const res = await apiClient.post('/auth/login', data, turnstileConfig(turnstileToken));
   return res.data;
 }
 

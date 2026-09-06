@@ -8,6 +8,7 @@ Complementa `docs/architecture.md` (cadeia de autorização, 2FA, isolamento por
 | Camada | Onde |
 | --- | --- |
 | Rate limit em login/cadastro/2FA/verificação de e-mail | `@nestjs/throttler`, `ThrottlerModule` no `AppModule` + `@Throttle` no `AuthController` |
+| Verificação anti-robô (Cloudflare Turnstile) em login e cadastro | `TurnstileGuard` (`@UseGuards` nas rotas) + widget `Turnstile.tsx`; opcional — inerte sem `TURNSTILE_SECRET_KEY` / `VITE_TURNSTILE_SITE_KEY` |
 | Segredos de produção validados na subida (aborta se ausentes/de exemplo/fracos) | `backend/src/common/config/security-env.ts` |
 | Portas dos containers publicadas só no loopback do host | `docker-compose.yml` (`HOST_BIND_IP`, padrão `127.0.0.1`) |
 | Cabeçalhos de segurança (HSTS, CSP, X-Frame-Options, nosniff, Referrer-Policy) | `helmet` na API (`main.ts`) + `frontend/nginx.conf` |
@@ -52,7 +53,9 @@ então HTML embutido no conteúdo é escapado — sem vetor de XSS por aí.
 - **Criptografia de disco em repouso** (LUKS) no host onde vivem o volume do Postgres e os backups.
 - **Backup off-site:** hoje os dumps ficam só no host — plugar `BACKUP_OFFSITE_HOOK` +
   `BACKUP_AGE_RECIPIENT` (ver `docs/backup.md`).
-- **Turnstile / captcha** nos formulários públicos (login, cadastro) — ainda não implementado.
+- **Turnstile no reenvio de confirmação de e-mail** — hoje só login e cadastro têm o widget; o
+  reenvio se apoia no cooldown de 60s + resposta genérica + rate limit. Estender é trivial
+  (`@UseGuards(TurnstileGuard)` na rota + token no `resendVerification`).
 - **Testes de autorização automatizados** — não há suíte de testes no projeto; o freio hoje é
   só o `tsc`.
 - **Agregação de logs** (stdout dos containers → coletor com retenção) — a trilha de auditoria

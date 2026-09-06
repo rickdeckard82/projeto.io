@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Query, Req, Res } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { Request, Response } from 'express';
 import { AuthService, AuthTokens } from './auth.service.js';
@@ -11,6 +11,7 @@ import { TwoFactorDisableDto } from './dto/two-factor-disable.dto.js';
 import { TwoFactorVerifyDto } from './dto/two-factor-verify.dto.js';
 import { Public } from '../common/decorators/public.decorator.js';
 import { Allow2faSetup } from '../common/decorators/allow-2fa-setup.decorator.js';
+import { TurnstileGuard } from '../common/guards/turnstile.guard.js';
 import { CurrentUser, AuthenticatedUser } from '../common/decorators/current-user.decorator.js';
 import { ClientInfo } from '../common/decorators/client-info.decorator.js';
 import { AuditService, AuditClientInfo } from '../audit/audit.service.js';
@@ -68,6 +69,7 @@ export class AuthController {
    * @returns mensagem pedindo confirmação por e-mail
    */
   @Public()
+  @UseGuards(TurnstileGuard)
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @Post('register')
   async register(@Body() dto: RegisterDto) {
@@ -111,6 +113,7 @@ export class AuthController {
    * @returns mensagem de confirmação, ou `{ requiresTwoFactor: true, challengeToken }`
    */
   @Public()
+  @UseGuards(TurnstileGuard)
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @Post('login')
   async login(

@@ -1,8 +1,9 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useCallback, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { resendVerification } from '../api/auth';
 import { Button } from '../components/common/Button';
+import { Turnstile, turnstileEnabled } from '../components/common/Turnstile';
 import logo from '../assets/projeto-io-logo.svg';
 import { APP_VERSION } from '../lib/appInfo';
 
@@ -20,13 +21,21 @@ export function LoginPage() {
   const [code, setCode] = useState('');
   const [rememberDevice, setRememberDevice] = useState(false);
 
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileKey, setTurnstileKey] = useState(0);
+  const handleTurnstile = useCallback((t: string | null) => setTurnstileToken(t), []);
+  const resetTurnstile = () => {
+    setTurnstileToken(null);
+    setTurnstileKey((k) => k + 1);
+  };
+
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
     setNeedsVerification(false);
     setLoading(true);
     try {
-      const result = await login(email, password);
+      const result = await login(email, password, turnstileToken);
       if (result.requiresTwoFactor && result.challengeToken) {
         setChallengeToken(result.challengeToken);
       } else {
@@ -36,6 +45,7 @@ export function LoginPage() {
       const message = err?.response?.data?.message || 'Falha ao entrar';
       setError(message);
       setNeedsVerification(message.includes('Confirme seu e-mail'));
+      resetTurnstile();
     } finally {
       setLoading(false);
     }
@@ -147,7 +157,8 @@ export function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               className="mb-4 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
             />
-            <Button type="submit" disabled={loading} className="w-full">
+            <Turnstile key={turnstileKey} onToken={handleTurnstile} />
+            <Button type="submit" disabled={loading || (turnstileEnabled && !turnstileToken)} className="w-full">
               {loading ? 'Entrando...' : 'Entrar'}
             </Button>
             <p className="mt-3 text-center text-xs text-slate-500">

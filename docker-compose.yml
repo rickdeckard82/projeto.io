@@ -40,6 +40,8 @@ services:
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
       NODE_ENV: ${NODE_ENV:-development}
+      # Cloudflare Turnstile (opcional): sem esta chave, a verificação anti-robô fica desligada.
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
     depends_on:
       db:
         condition: service_healthy
@@ -56,6 +58,8 @@ services:
       context: ./frontend
       args:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:3000/api/v1}
+        # Site key do Cloudflare Turnstile (opcional, build-time). Vazia = widget não renderiza.
+        VITE_TURNSTILE_SITE_KEY: ${VITE_TURNSTILE_SITE_KEY:-}
     container_name: projetoio-frontend
     restart: unless-stopped
     depends_on:

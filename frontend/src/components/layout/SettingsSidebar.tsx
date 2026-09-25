@@ -2,7 +2,14 @@ import { NavLink } from 'react-router-dom';
 import type { LucideIcon } from 'lucide-react';
 import { Bell, Globe, Home, Lock, Mail, ScrollText, Send, Shield, Smartphone, User as UserIcon, Users } from 'lucide-react';
 import { RoleGate } from '../../auth/RoleGate';
-import { SectionLabel, SidebarCollapseButton, sidebarAsideClass, sidebarLinkClass } from './sidebarShared';
+import {
+  SectionLabel,
+  SidebarBrand,
+  SidebarCollapseButton,
+  sidebarAsideClass,
+  sidebarLinkClass,
+  sidebarNavClass,
+} from './sidebarShared';
 
 interface SettingsSidebarProps {
   collapsed: boolean;
@@ -21,7 +28,8 @@ export function SettingsSidebar({ collapsed, onToggleCollapsed }: SettingsSideba
 
   return (
     <aside className={sidebarAsideClass(collapsed)}>
-      <nav className={`flex flex-1 flex-col gap-1 ${collapsed ? 'p-2' : 'p-3'}`}>
+      <SidebarBrand collapsed={collapsed} />
+      <nav className={sidebarNavClass(collapsed)}>
         <SidebarCollapseButton collapsed={collapsed} onToggle={onToggleCollapsed} />
         {item('/', Home, 'Página inicial', true)}
 

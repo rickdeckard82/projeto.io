@@ -67,7 +67,7 @@ export function SmtpSettingsPage() {
   };
 
   return (
-    <div className="max-w-lg">
+    <div>
       <h1 className="mb-2 text-lg font-semibold text-slate-100">E-mail (SMTP)</h1>
       <p className="mb-6 text-xs text-slate-500">
         Servidor usado para enviar o e-mail de confirmação de cadastro aos novos usuários.

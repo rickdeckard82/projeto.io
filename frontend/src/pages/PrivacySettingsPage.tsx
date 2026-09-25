@@ -70,7 +70,7 @@ export function PrivacySettingsPage() {
   };
 
   return (
-    <div className="max-w-lg">
+    <div>
       <h1 className="mb-2 text-lg font-semibold text-slate-100">Privacidade (LGPD)</h1>
       <p className="mb-6 text-xs text-slate-500">
         Esses dados montam a página pública de{' '}

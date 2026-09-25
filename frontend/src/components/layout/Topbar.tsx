@@ -11,11 +11,12 @@ export function Topbar() {
   const navigate = useNavigate();
 
   return (
-    <header className="relative flex h-14 items-center justify-between border-b border-slate-800 px-4">
+    <header className="relative flex h-14 shrink-0 items-center justify-between border-b border-slate-800 px-4">
       <BarWaves />
-      <img src={logo} alt="Projeto.io" className="relative z-10 h-9 w-auto" />
+      {/* No desktop o logo fica no topo do menu lateral; só aparece aqui no mobile, onde o menu some. */}
+      <img src={logo} alt="Projeto.io" className="relative z-10 h-9 w-auto sm:hidden" />
       {user && (
-        <div className="relative z-10 flex items-center gap-2">
+        <div className="relative z-10 ml-auto flex items-center gap-2">
           <NotificationBell />
           <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild>

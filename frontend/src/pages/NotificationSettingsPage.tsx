@@ -106,7 +106,7 @@ export function NotificationSettingsPage() {
   };
 
   return (
-    <div className="max-w-lg">
+    <div>
       <h1 className="mb-2 text-lg font-semibold text-slate-100">Notificações</h1>
       <p className="mb-6 text-xs text-slate-500">
         Alertas de vencimento de tarefa e de nova atribuição aparecem sempre no sino, no topo da página. Escolha

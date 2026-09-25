@@ -7,7 +7,14 @@ import { listModules } from '../../api/modules';
 import { queryKeys } from '../../api/queryKeys';
 import { useAuth } from '../../auth/AuthContext';
 import { filterProjectsByOwnership, ProjectFilter, ProjectFilterMenu } from '../projects/ProjectFilterMenu';
-import { SectionLabel, SidebarCollapseButton, sidebarAsideClass, sidebarLinkClass } from './sidebarShared';
+import {
+  SectionLabel,
+  SidebarBrand,
+  SidebarCollapseButton,
+  sidebarAsideClass,
+  sidebarLinkClass,
+  sidebarNavClass,
+} from './sidebarShared';
 
 const subLinkClass = ({ isActive }: { isActive: boolean }) =>
   `flex items-center gap-2 rounded-md py-1.5 pl-9 pr-3 text-xs ${
@@ -66,7 +73,8 @@ export function Sidebar({ collapsed, onToggleCollapsed }: SidebarProps) {
 
   return (
     <aside className={sidebarAsideClass(collapsed)}>
-      <nav className={`flex flex-1 flex-col gap-1 ${collapsed ? 'p-2' : 'p-3'}`}>
+      <SidebarBrand collapsed={collapsed} />
+      <nav className={sidebarNavClass(collapsed)}>
         <SidebarCollapseButton collapsed={collapsed} onToggle={onToggleCollapsed} />
         <NavLink to="/" end className={navLinkClass} title={collapsed ? 'Página inicial' : undefined}>
           <Home size={16} className="shrink-0" />

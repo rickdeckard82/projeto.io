@@ -17,6 +17,15 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.17.0',
+    date: '2026-09-25',
+    changes: [
+      'Página de Política de Privacidade ganhou as ondas animadas e o copyright no rodapé; o link "Voltar" agora leva à página inicial (ou ao login, se não houver sessão).',
+      'Páginas de Configurações (Perfil, Segurança, Notificações e as de administração) agora ficam centralizadas, na mesma largura da página inicial.',
+      'Menu lateral agora vai até o topo da tela, com o logo do Projeto.io no alto (recolhido, só o ícone); a barra superior com ondas fica ao lado dele, igual ao rodapé.',
+    ],
+  },
+  {
     version: '1.16.0',
     date: '2026-09-25',
     changes: [

@@ -54,7 +54,7 @@ export function TelegramSettingsPage() {
   };
 
   return (
-    <div className="max-w-lg">
+    <div>
       <h1 className="mb-2 text-lg font-semibold text-slate-100">Telegram</h1>
       <p className="mb-6 text-xs text-slate-500">
         Bot usado para enviar notificações por Telegram aos usuários que habilitarem esse canal em suas preferências.

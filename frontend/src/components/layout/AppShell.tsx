@@ -31,20 +31,19 @@ export function AppShell() {
   const toggleCollapsed = () => setCollapsed((v) => !v);
 
   return (
-    <div className="flex h-screen flex-col">
-      <Topbar />
-      <div className="flex flex-1 overflow-hidden">
-        {isSettings ? (
-          <SettingsSidebar collapsed={collapsed} onToggleCollapsed={toggleCollapsed} />
-        ) : (
-          <Sidebar collapsed={collapsed} onToggleCollapsed={toggleCollapsed} />
-        )}
-        <div className="flex min-w-0 flex-1 flex-col">
-          <main className="thin-scrollbar flex-1 overflow-y-auto p-6">
-            <Outlet />
-          </main>
-          <AppFooter />
-        </div>
+    // Menu lateral em altura total (com o logo no topo); Topbar e rodapé ficam só sobre a coluna de conteúdo.
+    <div className="flex h-screen overflow-hidden">
+      {isSettings ? (
+        <SettingsSidebar collapsed={collapsed} onToggleCollapsed={toggleCollapsed} />
+      ) : (
+        <Sidebar collapsed={collapsed} onToggleCollapsed={toggleCollapsed} />
+      )}
+      <div className="flex min-w-0 flex-1 flex-col">
+        <Topbar />
+        <main className="thin-scrollbar flex-1 overflow-y-auto p-6">
+          <Outlet />
+        </main>
+        <AppFooter />
       </div>
     </div>
   );

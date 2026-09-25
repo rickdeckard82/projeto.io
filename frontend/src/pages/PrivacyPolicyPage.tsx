@@ -2,8 +2,10 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { getPrivacySettings } from '../api/privacySettings';
 import { queryKeys } from '../api/queryKeys';
+import { AuthWaves } from '../components/common/AuthWaves';
 import { Spinner } from '../components/common/Spinner';
 import logo from '../assets/projeto-io-logo.svg';
+import { APP_VERSION } from '../lib/appInfo';
 
 /**
  * Página pública de Política de Privacidade. O conteúdo é montado a partir de duas fontes:
@@ -19,10 +21,11 @@ export function PrivacyPolicyPage() {
   });
 
   return (
-    <div className="flex min-h-screen flex-col items-center px-4 py-10">
-      <img src={logo} alt="Projeto.io" className="mb-8 h-16 w-auto" />
+    <div className="relative flex min-h-screen flex-col items-center overflow-hidden px-4 pt-10">
+      <AuthWaves />
+      <img src={logo} alt="Projeto.io" className="relative z-10 mb-8 h-16 w-auto" />
 
-      <div className="w-full max-w-2xl rounded-lg border border-slate-800 bg-slate-900 p-8 text-sm text-slate-300">
+      <div className="relative z-10 w-full max-w-2xl rounded-lg border border-slate-800 bg-slate-900 p-8 text-sm text-slate-300">
         <h1 className="mb-6 text-lg font-semibold text-slate-100">Política de Privacidade</h1>
 
         {isLoading ? (
@@ -113,11 +116,16 @@ export function PrivacyPolicyPage() {
         )}
 
         <p className="mt-8 text-center text-xs text-slate-500">
-          <Link to="/login" className="text-indigo-400">
-            Voltar para o login
+          {/* "/" leva à página inicial se houver sessão; sem sessão, o ProtectedRoute redireciona ao login. */}
+          <Link to="/" className="text-indigo-400">
+            Voltar para a página inicial
           </Link>
         </p>
       </div>
+
+      <footer className="relative z-10 mt-auto pb-6 pt-10 text-center text-xs text-slate-600">
+        Pulsar © 2026 Projeto.io • v{APP_VERSION}
+      </footer>
     </div>
   );
 }

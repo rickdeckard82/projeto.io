@@ -47,7 +47,7 @@ export function PushoverSettingsPage() {
   };
 
   return (
-    <div className="max-w-lg">
+    <div>
       <h1 className="mb-2 text-lg font-semibold text-slate-100">Pushover</h1>
       <p className="mb-6 text-xs text-slate-500">
         API token da aplicação usada para enviar notificações por Pushover aos usuários que habilitarem esse canal em

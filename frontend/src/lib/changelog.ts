@@ -17,6 +17,15 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.16.0',
+    date: '2026-09-25',
+    changes: [
+      'Barra superior e rodapé ganharam ondas animadas sutis, no mesmo estilo da tela de login.',
+      'Copyright, versão e Política de Privacidade saíram do menu lateral e agora ficam sempre visíveis no rodapé da página.',
+      'Menu lateral pode ser recolhido (botão no topo do menu) para uma faixa só de ícones — os projetos aparecem pelo ícone, com o nome ao passar o mouse. A escolha fica lembrada neste navegador.',
+    ],
+  },
+  {
     version: '1.15.0',
     date: '2026-09-25',
     changes: [

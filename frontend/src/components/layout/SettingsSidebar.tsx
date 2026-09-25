@@ -1,83 +1,46 @@
-import { Link, NavLink } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
+import type { LucideIcon } from 'lucide-react';
 import { Bell, Globe, Home, Lock, Mail, ScrollText, Send, Shield, Smartphone, User as UserIcon, Users } from 'lucide-react';
 import { RoleGate } from '../../auth/RoleGate';
-import { APP_VERSION } from '../../lib/appInfo';
+import { SectionLabel, SidebarCollapseButton, sidebarAsideClass, sidebarLinkClass } from './sidebarShared';
 
-const navLinkClass = ({ isActive }: { isActive: boolean }) =>
-  `flex items-center gap-2 rounded-md px-3 py-2 text-sm ${
-    isActive ? 'bg-slate-800 text-white' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'
-  }`;
-
-function SectionLabel({ children }: { children: string }) {
-  return <p className="mb-1 mt-4 px-3 text-xs font-semibold uppercase tracking-wide text-slate-600">{children}</p>;
+interface SettingsSidebarProps {
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
 }
 
-export function SettingsSidebar() {
-  return (
-    <aside className="thin-scrollbar hidden w-64 shrink-0 flex-col overflow-y-auto border-r border-slate-800 sm:flex">
-      <nav className="flex flex-1 flex-col gap-1 p-3">
-        <NavLink to="/" end className={navLinkClass}>
-          <Home size={16} />
-          Página inicial
-        </NavLink>
+export function SettingsSidebar({ collapsed, onToggleCollapsed }: SettingsSidebarProps) {
+  const linkClass = sidebarLinkClass(collapsed);
 
-        <SectionLabel>Configurações</SectionLabel>
-        <NavLink to="/settings/profile" className={navLinkClass}>
-          <UserIcon size={16} />
-          Perfil
-        </NavLink>
-        <NavLink to="/settings/security" className={navLinkClass}>
-          <Lock size={16} />
-          Segurança
-        </NavLink>
-        <NavLink to="/settings/notifications" className={navLinkClass}>
-          <Bell size={16} />
-          Notificações
-        </NavLink>
+  const item = (to: string, Icon: LucideIcon, label: string, end = false) => (
+    <NavLink to={to} end={end} className={linkClass} title={collapsed ? label : undefined}>
+      <Icon size={16} className="shrink-0" />
+      {!collapsed && label}
+    </NavLink>
+  );
+
+  return (
+    <aside className={sidebarAsideClass(collapsed)}>
+      <nav className={`flex flex-1 flex-col gap-1 ${collapsed ? 'p-2' : 'p-3'}`}>
+        <SidebarCollapseButton collapsed={collapsed} onToggle={onToggleCollapsed} />
+        {item('/', Home, 'Página inicial', true)}
+
+        <SectionLabel collapsed={collapsed}>Configurações</SectionLabel>
+        {item('/settings/profile', UserIcon, 'Perfil')}
+        {item('/settings/security', Lock, 'Segurança')}
+        {item('/settings/notifications', Bell, 'Notificações')}
 
         <RoleGate allow={['ADMIN']}>
-          <SectionLabel>Administração</SectionLabel>
-          <NavLink to="/settings/users" className={navLinkClass}>
-            <Users size={16} />
-            Usuários
-          </NavLink>
-          <NavLink to="/settings/audit" className={navLinkClass}>
-            <ScrollText size={16} />
-            Auditoria
-          </NavLink>
-          <NavLink to="/settings/allowed-domains" className={navLinkClass}>
-            <Globe size={16} />
-            Domínios permitidos
-          </NavLink>
-          <NavLink to="/settings/smtp" className={navLinkClass}>
-            <Mail size={16} />
-            E-mail (SMTP)
-          </NavLink>
-          <NavLink to="/settings/telegram" className={navLinkClass}>
-            <Send size={16} />
-            Telegram
-          </NavLink>
-          <NavLink to="/settings/pushover" className={navLinkClass}>
-            <Smartphone size={16} />
-            Pushover
-          </NavLink>
-          <NavLink to="/settings/privacy" className={navLinkClass}>
-            <Shield size={16} />
-            Privacidade (LGPD)
-          </NavLink>
+          <SectionLabel collapsed={collapsed}>Administração</SectionLabel>
+          {item('/settings/users', Users, 'Usuários')}
+          {item('/settings/audit', ScrollText, 'Auditoria')}
+          {item('/settings/allowed-domains', Globe, 'Domínios permitidos')}
+          {item('/settings/smtp', Mail, 'E-mail (SMTP)')}
+          {item('/settings/telegram', Send, 'Telegram')}
+          {item('/settings/pushover', Smartphone, 'Pushover')}
+          {item('/settings/privacy', Shield, 'Privacidade (LGPD)')}
         </RoleGate>
       </nav>
-
-      <footer className="px-3 py-3 text-center text-[11px] text-slate-600">
-        Pulsar © 2026 Projeto.io •{' '}
-        <Link to="/changelog" className="hover:text-slate-400">
-          v{APP_VERSION}
-        </Link>
-        <br />
-        <Link to="/privacidade" target="_blank" className="hover:text-slate-400">
-          Política de Privacidade
-        </Link>
-      </footer>
     </aside>
   );
 }

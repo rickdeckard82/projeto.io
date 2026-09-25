@@ -13,7 +13,7 @@ This file provides guidance to AI coding agents (Codex, Claude Code, and others)
 
 **Mensagens de commit:** sempre em português, sem linha de coautoria (`Co-Authored-By: Claude ...` / equivalente de outros agentes).
 
-**Versionamento e changelog:** ao commitar uma mudança perceptível para quem usa o app (feature, correção de bug visível — mudança interna sem efeito perceptível, tipo refatoração ou ajuste de tsconfig, não precisa), suba `APP_VERSION` em `frontend/src/lib/appInfo.ts` **e** a `version` em `frontend/package.json`/`backend/package.json` (os três nunca devem divergir), e adicione uma entrada em `frontend/src/lib/changelog.ts` descrevendo a mudança em português — é o que alimenta a página `/changelog` (link clicável no "v{APP_VERSION}" do rodapé do Sidebar/SettingsSidebar).
+**Versionamento e changelog:** ao commitar uma mudança perceptível para quem usa o app (feature, correção de bug visível — mudança interna sem efeito perceptível, tipo refatoração ou ajuste de tsconfig, não precisa), suba `APP_VERSION` em `frontend/src/lib/appInfo.ts` **e** a `version` em `frontend/package.json`/`backend/package.json` (os três nunca devem divergir), e adicione uma entrada em `frontend/src/lib/changelog.ts` descrevendo a mudança em português — é o que alimenta a página `/changelog` (link clicável no "v{APP_VERSION}" do rodapé do app, `components/layout/AppFooter.tsx`).
 
 ## Visão geral
 

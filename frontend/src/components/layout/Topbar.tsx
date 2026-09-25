@@ -2,6 +2,7 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import { Avatar } from '../common/Avatar';
+import { BarWaves } from '../common/BarWaves';
 import { NotificationBell } from './NotificationBell';
 import logo from '../../assets/projeto-io-logo.svg';
 
@@ -10,10 +11,11 @@ export function Topbar() {
   const navigate = useNavigate();
 
   return (
-    <header className="flex h-14 items-center justify-between border-b border-slate-800 px-4">
-      <img src={logo} alt="Projeto.io" className="h-9 w-auto" />
+    <header className="relative flex h-14 items-center justify-between border-b border-slate-800 px-4">
+      <BarWaves />
+      <img src={logo} alt="Projeto.io" className="relative z-10 h-9 w-auto" />
       {user && (
-        <div className="flex items-center gap-2">
+        <div className="relative z-10 flex items-center gap-2">
           <NotificationBell />
           <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild>

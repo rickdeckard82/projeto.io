@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthContext';
 import { resendVerification } from '../api/auth';
 import { Button } from '../components/common/Button';
 import { Turnstile, turnstileEnabled } from '../components/common/Turnstile';
+import { AuthWaves } from '../components/common/AuthWaves';
 import logo from '../assets/projeto-io-logo.svg';
 import { APP_VERSION } from '../lib/appInfo';
 
@@ -47,8 +48,9 @@ export function RegisterPage() {
   };
 
   return (
-    <div className="flex h-screen flex-col items-center">
-      <div className="flex flex-1 flex-col items-center justify-center gap-8">
+    <div className="relative flex h-screen flex-col items-center overflow-hidden">
+      <AuthWaves />
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-center gap-8">
         <img src={logo} alt="Projeto.io" className="h-24 w-auto" />
 
         {submitted ? (
@@ -123,7 +125,7 @@ export function RegisterPage() {
         )}
       </div>
 
-      <footer className="pb-6 text-center text-xs text-slate-600">
+      <footer className="relative z-10 pb-6 text-center text-xs text-slate-600">
         Pulsar © 2026 Projeto.io • v{APP_VERSION}
         <br />
         <Link to="/privacidade" target="_blank" className="hover:text-slate-400">

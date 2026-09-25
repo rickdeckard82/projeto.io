@@ -55,3 +55,21 @@ body {
 .thin-scrollbar:hover::-webkit-scrollbar-thumb:hover {
   background-color: rgb(71 85 105);
 }
+
+/* Ondas decorativas no fundo das telas de autenticação (AuthWaves). */
+@keyframes wave-drift {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.animate-wave-drift {
+  animation: wave-drift linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-wave-drift {
+    animation: none;
+  }
+}

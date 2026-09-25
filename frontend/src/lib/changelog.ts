@@ -17,6 +17,13 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.15.0',
+    date: '2026-09-25',
+    changes: [
+      'Telas de login, cadastro, confirmação de e-mail e 2FA obrigatório ganharam ondas animadas sutis no fundo (desligadas quando o sistema pede movimento reduzido).',
+    ],
+  },
+  {
     version: '1.14.0',
     date: '2026-09-06',
     changes: [

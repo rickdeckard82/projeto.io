@@ -3,6 +3,7 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { TwoFactorSetupDialog } from '../components/security/TwoFactorSetupDialog';
 import { Button } from '../components/common/Button';
+import { AuthWaves } from '../components/common/AuthWaves';
 import logo from '../assets/projeto-io-logo.svg';
 
 /**
@@ -39,8 +40,9 @@ export function TwoFactorRequiredPage() {
   };
 
   return (
-    <div className="flex h-screen flex-col items-center">
-      <div className="flex flex-1 flex-col items-center justify-center gap-8">
+    <div className="relative flex h-screen flex-col items-center overflow-hidden">
+      <AuthWaves />
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-center gap-8">
         <img src={logo} alt="Projeto.io" className="h-24 w-auto" />
         <div className="w-full max-w-sm rounded-lg border border-slate-800 bg-slate-900 p-6">
           <h1 className="mb-2 text-lg font-semibold text-slate-100">Ative a verificação em duas etapas</h1>

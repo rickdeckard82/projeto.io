@@ -17,11 +17,15 @@ export function SectionLabel({ children, collapsed }: { children: string; collap
   return <p className="mb-1 mt-4 px-3 text-xs font-semibold uppercase tracking-wide text-slate-600">{children}</p>;
 }
 
-/** `<aside>` em altura total (vai até o topo da tela); largura conforme o estado recolhido/expandido. */
-export const sidebarAsideClass = (collapsed: boolean) =>
-  `hidden shrink-0 flex-col overflow-hidden border-r border-slate-800 transition-[width] duration-150 ease-out sm:flex ${
-    collapsed ? 'w-14' : 'w-64'
-  }`;
+/**
+ * `<aside>` em altura total (vai até o topo da tela). No desktop (`sm:` pra cima) fica fixo na lateral,
+ * com largura conforme recolhido/expandido; no mobile vira uma gaveta sobreposta, aberta pelo botão
+ * de menu do Topbar (`mobileOpen`).
+ */
+export const sidebarAsideClass = (collapsed: boolean, mobileOpen: boolean) =>
+  `fixed inset-y-0 left-0 z-40 flex w-64 max-w-[84vw] shrink-0 flex-col overflow-hidden border-r border-slate-800 bg-slate-950 transition-transform duration-200 ease-out sm:static sm:z-auto sm:max-w-none sm:translate-x-0 sm:transition-[width] sm:duration-150 ${
+    collapsed ? 'sm:w-14' : 'sm:w-64'
+  } ${mobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`;
 
 /** `<nav>` rolável abaixo do logo. */
 export const sidebarNavClass = (collapsed: boolean) =>
@@ -44,7 +48,7 @@ export function SidebarBrand({ collapsed }: { collapsed: boolean }) {
 export function SidebarCollapseButton({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
   const label = collapsed ? 'Expandir menu' : 'Recolher menu';
   return (
-    <div className={`mb-1 flex ${collapsed ? 'justify-center' : 'justify-end'}`}>
+    <div className={`mb-1 hidden sm:flex ${collapsed ? 'justify-center' : 'justify-end'}`}>
       <button
         type="button"
         onClick={onToggle}

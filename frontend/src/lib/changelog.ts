@@ -17,6 +17,13 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.17.2',
+    date: '2026-09-25',
+    changes: [
+      'Celular: o menu lateral agora abre pelo botão ☰ na barra superior, como uma gaveta sobre a tela (fecha ao tocar fora ou ao navegar). Antes ele simplesmente não aparecia em telas pequenas.',
+    ],
+  },
+  {
     version: '1.17.1',
     date: '2026-09-25',
     changes: ['Logo do Projeto.io maior no topo do menu lateral.'],

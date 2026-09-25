@@ -1,20 +1,31 @@
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useNavigate } from 'react-router-dom';
+import { Menu } from 'lucide-react';
 import { useAuth } from '../../auth/AuthContext';
 import { Avatar } from '../common/Avatar';
 import { BarWaves } from '../common/BarWaves';
 import { NotificationBell } from './NotificationBell';
 import logo from '../../assets/projeto-io-logo.svg';
 
-export function Topbar() {
+export function Topbar({ onOpenMenu }: { onOpenMenu: () => void }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   return (
     <header className="relative flex h-14 shrink-0 items-center justify-between border-b border-slate-800 px-4">
       <BarWaves />
-      {/* No desktop o logo fica no topo do menu lateral; só aparece aqui no mobile, onde o menu some. */}
-      <img src={logo} alt="Projeto.io" className="relative z-10 h-9 w-auto sm:hidden" />
+      {/* No mobile o menu lateral vira gaveta: botão pra abrir + logo aqui (no desktop o logo fica no menu). */}
+      <div className="relative z-10 flex items-center gap-2 sm:hidden">
+        <button
+          type="button"
+          onClick={onOpenMenu}
+          aria-label="Abrir menu"
+          className="-ml-1 rounded-md p-2 text-slate-300 hover:bg-slate-800"
+        >
+          <Menu size={20} />
+        </button>
+        <img src={logo} alt="Projeto.io" className="h-9 w-auto" />
+      </div>
       {user && (
         <div className="relative z-10 ml-auto flex items-center gap-2">
           <NotificationBell />

@@ -44,9 +44,11 @@ function ProjectModuleLinks({ projectId, isExpanded }: { projectId: string; isEx
 interface SidebarProps {
   collapsed: boolean;
   onToggleCollapsed: () => void;
+  /** Gaveta aberta no mobile (no desktop é ignorado). */
+  mobileOpen: boolean;
 }
 
-export function Sidebar({ collapsed, onToggleCollapsed }: SidebarProps) {
+export function Sidebar({ collapsed, onToggleCollapsed, mobileOpen }: SidebarProps) {
   const navLinkClass = sidebarLinkClass(collapsed);
   const location = useLocation();
   const { user } = useAuth();
@@ -72,7 +74,7 @@ export function Sidebar({ collapsed, onToggleCollapsed }: SidebarProps) {
   };
 
   return (
-    <aside className={sidebarAsideClass(collapsed)}>
+    <aside className={sidebarAsideClass(collapsed, mobileOpen)}>
       <SidebarBrand collapsed={collapsed} />
       <nav className={sidebarNavClass(collapsed)}>
         <SidebarCollapseButton collapsed={collapsed} onToggle={onToggleCollapsed} />

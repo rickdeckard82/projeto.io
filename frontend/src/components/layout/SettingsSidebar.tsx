@@ -14,9 +14,11 @@ import {
 interface SettingsSidebarProps {
   collapsed: boolean;
   onToggleCollapsed: () => void;
+  /** Gaveta aberta no mobile (no desktop é ignorado). */
+  mobileOpen: boolean;
 }
 
-export function SettingsSidebar({ collapsed, onToggleCollapsed }: SettingsSidebarProps) {
+export function SettingsSidebar({ collapsed, onToggleCollapsed, mobileOpen }: SettingsSidebarProps) {
   const linkClass = sidebarLinkClass(collapsed);
 
   const item = (to: string, Icon: LucideIcon, label: string, end = false) => (
@@ -27,7 +29,7 @@ export function SettingsSidebar({ collapsed, onToggleCollapsed }: SettingsSideba
   );
 
   return (
-    <aside className={sidebarAsideClass(collapsed)}>
+    <aside className={sidebarAsideClass(collapsed, mobileOpen)}>
       <SidebarBrand collapsed={collapsed} />
       <nav className={sidebarNavClass(collapsed)}>
         <SidebarCollapseButton collapsed={collapsed} onToggle={onToggleCollapsed} />

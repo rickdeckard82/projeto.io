@@ -27,14 +27,14 @@ export const sidebarAsideClass = (collapsed: boolean) =>
 export const sidebarNavClass = (collapsed: boolean) =>
   `thin-scrollbar flex flex-1 flex-col gap-1 overflow-y-auto overflow-x-hidden ${collapsed ? 'p-2' : 'p-3'}`;
 
-/** Logo no topo do menu lateral, na altura do Topbar (h-14); recolhido, só o ícone. */
+/** Logo no topo do menu lateral; recolhido, só o ícone. */
 export function SidebarBrand({ collapsed }: { collapsed: boolean }) {
   return (
-    <Link to="/" className={`flex h-14 shrink-0 items-center ${collapsed ? 'justify-center' : 'px-4'}`}>
+    <Link to="/" className={`flex h-16 shrink-0 items-center ${collapsed ? 'justify-center' : 'px-3'}`}>
       {collapsed ? (
-        <img src={icon} alt="Projeto.io" className="h-7 w-auto" />
+        <img src={icon} alt="Projeto.io" className="h-8 w-auto" />
       ) : (
-        <img src={logo} alt="Projeto.io" className="h-9 w-auto" />
+        <img src={logo} alt="Projeto.io" className="h-14 w-auto" />
       )}
     </Link>
   );

@@ -17,6 +17,11 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.17.1',
+    date: '2026-09-25',
+    changes: ['Logo do Projeto.io maior no topo do menu lateral.'],
+  },
+  {
     version: '1.17.0',
     date: '2026-09-25',
     changes: [

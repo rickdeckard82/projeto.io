@@ -21,7 +21,7 @@ This file provides guidance to AI coding agents (Codex, Claude Code, and others)
 
 Não há Node/npm instalado no host — todo build/lint/execução acontece dentro dos containers Docker (ou via containers descartáveis do `node:20-alpine`, ver seção de migrations abaixo).
 
-**App Android** em `mobile/` (React Native + Expo SDK 58 + Expo Router), fora do Docker Compose. Consome a mesma API em modo token (header `X-Client-Type: mobile`, sem cookies). Comandos, fluxo de auth e build do APK estão em `mobile/README.md`; regras do Expo em `mobile/AGENTS.md`. Os tipos de `mobile/src/types.ts` espelham parte de `frontend/src/types/index.ts`: ao mudar um shape da API, atualize os dois. O app tem versão própria, fora da regra de versionamento abaixo.
+**App Android** em `mobile/` (React Native + Expo SDK 57 + Expo Router — fixado no 57 porque é o SDK que o Expo Go da Play Store suporta; só subir quando o Expo Go acompanhar), fora do Docker Compose. Consome a mesma API em modo token (header `X-Client-Type: mobile`, sem cookies). Comandos, fluxo de auth e build do APK estão em `mobile/README.md`; regras do Expo em `mobile/AGENTS.md`. Os tipos de `mobile/src/types.ts` espelham parte de `frontend/src/types/index.ts`: ao mudar um shape da API, atualize os dois. O app tem versão própria, fora da regra de versionamento abaixo.
 
 Arquitetura completa (módulos do backend, modelo de dados, autenticação/2FA, tempo real, LGPD, recorrência, métricas, fuso horário, rotas do frontend) está em `docs/architecture.md` — só é preciso ler quando a tarefa exigir esse nível de detalhe.
 

@@ -1,6 +1,6 @@
 # Projeto.io — app Android
 
-App nativo (React Native + **Expo SDK 58**, Expo Router) que consome a mesma API do frontend web. Antes de mexer em APIs do Expo, leia `mobile/AGENTS.md`: o Expo muda bastante a cada SDK.
+App nativo (React Native + **Expo SDK 57**, Expo Router) que consome a mesma API do frontend web. O SDK fica no 57 de propósito: é o que o Expo Go publicado suporta (o site oferece o 58, mas o APK baixado ainda é do 57). Só suba o SDK depois de confirmar em Expo Go → Settings → "Supported SDKs". Antes de mexer em APIs do Expo, leia `mobile/AGENTS.md`: o Expo muda bastante a cada SDK.
 
 ## Estado atual (fase 1)
 

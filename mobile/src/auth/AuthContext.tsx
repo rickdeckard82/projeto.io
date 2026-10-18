@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import * as authApi from '../api/auth';
 import { setOnSessionExpired } from '../api/client';
+import { connectSocket, disconnectSocket } from '../lib/realtime';
 import { clearTokens, getTokens, loadSession, SessionTokens, setDeviceToken, setTokens } from '../lib/session';
 import { User } from '../types';
 
@@ -39,6 +40,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setOnSessionExpired(resetSession);
     return () => setOnSessionExpired(null);
   }, [resetSession]);
+
+  // Tempo real acompanha a sessão: conecta ao logar, derruba ao sair (igual ao AuthContext web).
+  useEffect(() => {
+    if (user) connectSocket();
+    else disconnectSocket();
+  }, [user]);
 
   useEffect(() => {
     (async () => {

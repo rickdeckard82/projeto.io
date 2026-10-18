@@ -2,13 +2,16 @@
 
 App nativo (React Native + **Expo SDK 57**, Expo Router) que consome a mesma API do frontend web. O SDK fica no 57 de propósito: é o que o Expo Go publicado suporta (o site oferece o 58, mas o APK baixado ainda é do 57). Só suba o SDK depois de confirmar em Expo Go → Settings → "Supported SDKs". Antes de mexer em APIs do Expo, leia `mobile/AGENTS.md`: o Expo muda bastante a cada SDK.
 
-## Estado atual (fase 1)
+## Estado atual
 
 - Login com servidor informado no primeiro acesso (sem endereço padrão embutido, porque cada organização hospeda o seu e ele pode mudar; validado por `GET /api/v1/health`), 2FA (TOTP/código de recuperação, "lembrar dispositivo") e Turnstile via WebView
 - Lista de projetos ativos
-- Itens do projeto agrupados por status (somente leitura)
+- Projeto em **Quadro** (colunas com rolagem horizontal) ou **Lista**, com criação de item
+- Detalhe do item: título/descrição editáveis, status (com as mesmas travas do web), prioridade, responsáveis, etiquetas, datas, sub-itens, histórico e comentários
+- Tempo real via Socket.IO (`src/lib/realtime.ts` + `src/hooks/useProjectRealtime.ts`)
+- Visual igual ao web: tema escuro `slate` + `indigo` (`src/lib/theme.ts`), logo e ondas animadas. Ícone, ícone adaptativo/monocromático e splash em `assets/`, gerados do SVG do logo
 
-Próximas fases: kanban e mudança de status, detalhe/edição do item, comentários/atividade, tempo real (Socket.IO), notificações, documentos, notas.
+Próximas fases: editar responsáveis/etiquetas/datas, notificações, documentos, notas, home ("meus itens").
 
 ## Como o app autentica
 

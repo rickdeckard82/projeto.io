@@ -4,20 +4,25 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../auth/AuthContext';
 import { errorCode, errorMessage } from '../api/client';
 import { listProjects } from '../api/projects';
+import { queryKeys } from '../api/queryKeys';
+import { Logo } from '../components/Logo';
+import { Avatar } from '../components/ui';
 import { colors } from '../lib/theme';
 import { Project } from '../types';
 
 /** Projetos ativos do usuário (mesma lista do Sidebar/`/projects` do web). */
 export default function ProjectsScreen() {
   const { user, logout } = useAuth();
-  const projects = useQuery({ queryKey: ['projects', { archived: false }], queryFn: () => listProjects(false) });
+  const projects = useQuery({ queryKey: queryKeys.projects(false), queryFn: () => listProjects(false) });
 
   return (
     <>
       <Stack.Screen
         options={{
+          headerTitle: () => <Logo height={26} />,
           headerRight: () => (
-            <Pressable onPress={logout} hitSlop={8}>
+            <Pressable onPress={logout} hitSlop={8} style={styles.headerRight}>
+              {user && <Avatar name={user.fullName} size={26} />}
               <Text style={styles.headerAction}>Sair</Text>
             </Pressable>
           ),
@@ -32,9 +37,15 @@ export default function ProjectsScreen() {
             refreshing={projects.isRefetching}
             onRefresh={() => void projects.refetch()}
             colors={[colors.primary]}
+            progressBackgroundColor={colors.surface}
           />
         }
-        ListHeaderComponent={<Text style={styles.greeting}>Olá, {user?.fullName.split(' ')[0]}</Text>}
+        ListHeaderComponent={
+          <View style={styles.header}>
+            <Text style={styles.greeting}>Olá, {user?.fullName.split(' ')[0]}</Text>
+            <Text style={styles.subtitle}>Seus projetos</Text>
+          </View>
+        }
         ListEmptyComponent={
           projects.isPending ? undefined : (
             <Text style={styles.empty}>
@@ -55,45 +66,60 @@ export default function ProjectsScreen() {
 function ProjectRow({ project }: { project: Project }) {
   return (
     <Pressable
-      style={({ pressed }) => [styles.card, pressed && { opacity: 0.7 }]}
+      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
       onPress={() => router.push({ pathname: '/projects/[projectId]', params: { projectId: project.id } })}
     >
-      <View style={[styles.icon, { backgroundColor: project.coverColor ?? colors.primaryLight }]}>
-        <Text style={styles.iconText}>{project.icon ?? project.name.charAt(0).toUpperCase()}</Text>
-      </View>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.name} numberOfLines={1}>
-          {project.name}
-        </Text>
-        {project.key && <Text style={styles.key}>{project.key}</Text>}
-        {project.description && (
-          <Text style={styles.description} numberOfLines={2}>
-            {project.description}
+      <View style={[styles.cover, { backgroundColor: project.coverColor ?? colors.primary }]} />
+      <View style={styles.cardBody}>
+        <View style={styles.icon}>
+          <Text style={styles.iconText}>{project.icon ?? project.name.charAt(0).toUpperCase()}</Text>
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.name} numberOfLines={1}>
+            {project.name}
           </Text>
-        )}
+          {project.key && <Text style={styles.key}>{project.key}</Text>}
+          {project.description && (
+            <Text style={styles.description} numberOfLines={2}>
+              {project.description}
+            </Text>
+          )}
+        </View>
       </View>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  headerAction: { color: '#fff', fontWeight: '600' },
-  list: { padding: 16, gap: 10 },
-  greeting: { fontSize: 22, fontWeight: '600', color: colors.text, marginBottom: 6 },
-  empty: { color: colors.textMuted, textAlign: 'center', marginTop: 32 },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  headerAction: { color: colors.textSecondary, fontWeight: '500' },
+  list: { padding: 16, gap: 12 },
+  header: { marginBottom: 4 },
+  greeting: { fontSize: 22, fontWeight: '600', color: colors.text },
+  subtitle: { fontSize: 13, color: colors.textMuted, marginTop: 2 },
+  empty: { color: colors.textMuted, textAlign: 'center', marginTop: 32, paddingHorizontal: 16 },
   card: {
-    flexDirection: 'row',
-    gap: 12,
-    alignItems: 'center',
     backgroundColor: colors.surface,
-    borderRadius: 12,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: colors.border,
-    padding: 14,
+    overflow: 'hidden',
   },
-  icon: { width: 44, height: 44, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  iconText: { fontSize: 20, color: '#fff', fontWeight: '700' },
+  cardPressed: { borderColor: colors.borderStrong, backgroundColor: colors.surfaceRaised },
+  cover: { height: 6 },
+  cardBody: { flexDirection: 'row', gap: 12, alignItems: 'center', padding: 14 },
+  icon: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surfaceRaised,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+  },
+  iconText: { fontSize: 18, color: colors.text, fontWeight: '700' },
   name: { fontSize: 16, fontWeight: '600', color: colors.text },
-  key: { fontSize: 12, color: colors.textMuted, marginTop: 1 },
+  key: { fontSize: 12, color: colors.textFaint, marginTop: 1 },
   description: { fontSize: 13, color: colors.textMuted, marginTop: 4 },
 });

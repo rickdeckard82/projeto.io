@@ -1,20 +1,12 @@
 import { useState } from 'react';
-import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../auth/AuthContext';
 import { checkServer, errorCode, errorMessage } from '../api/client';
+import { Logo } from '../components/Logo';
 import { TurnstileModal } from '../components/TurnstileModal';
+import { Button, Card, ErrorText, FieldLabel, Input } from '../components/ui';
+import { Waves } from '../components/Waves';
 import { getServerUrl, normalizeServerUrl, setServerUrl } from '../lib/session';
 import { colors } from '../lib/theme';
 
@@ -105,122 +97,131 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
+      <Waves variant="auth" />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-          <Text style={styles.brand}>Projeto.io</Text>
-          <View style={styles.card}>
+          <View style={styles.logo}>
+            <Logo height={56} />
+          </View>
+          <Card style={styles.card}>
             {step === 'server' ? (
               <>
                 <Text style={styles.title}>Servidor</Text>
                 <Text style={styles.muted}>Informe o endereço do Projeto.io da sua organização.</Text>
-                <TextInput
-                  style={styles.input}
-                  value={serverInput}
-                  onChangeText={setServerInput}
-                  placeholder="projeto.suaempresa.com.br"
-                  keyboardType="url"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  autoFocus
-                  editable={!busy}
-                  onSubmitEditing={() => canSubmit && submitServer()}
-                />
+                <View>
+                  <FieldLabel>Endereço</FieldLabel>
+                  <Input
+                    value={serverInput}
+                    onChangeText={setServerInput}
+                    placeholder="projeto.suaempresa.com.br"
+                    keyboardType="url"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    autoFocus
+                    editable={!busy}
+                    onSubmitEditing={() => canSubmit && submit()}
+                  />
+                </View>
               </>
             ) : step === 'twoFactor' ? (
               <>
                 <Text style={styles.title}>Verificação em duas etapas</Text>
                 <Text style={styles.muted}>Digite o código do app autenticador ou um código de recuperação.</Text>
-                <TextInput
-                  style={styles.input}
-                  value={code}
-                  onChangeText={setCode}
-                  placeholder="000000"
-                  autoCapitalize="characters"
-                  autoCorrect={false}
-                  autoFocus
-                  editable={!busy}
-                />
+                <View>
+                  <FieldLabel>Código</FieldLabel>
+                  <Input
+                    value={code}
+                    onChangeText={setCode}
+                    placeholder="000000"
+                    autoCapitalize="characters"
+                    autoCorrect={false}
+                    autoFocus
+                    editable={!busy}
+                    onSubmitEditing={() => canSubmit && submit()}
+                  />
+                </View>
                 <View style={styles.switchRow}>
-                  <Switch value={rememberDevice} onValueChange={setRememberDevice} trackColor={{ true: colors.primaryLight }} />
+                  <Switch
+                    value={rememberDevice}
+                    onValueChange={setRememberDevice}
+                    trackColor={{ true: colors.primary, false: colors.borderStrong }}
+                    thumbColor={colors.text}
+                  />
                   <Text style={styles.switchLabel}>Lembrar este dispositivo por 30 dias</Text>
                 </View>
               </>
             ) : (
               <>
                 <Text style={styles.title}>Entrar</Text>
-                <TextInput
-                  style={styles.input}
-                  value={email}
-                  onChangeText={setEmail}
-                  placeholder="E-mail"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoComplete="email"
-                  editable={!busy}
-                />
-                <TextInput
-                  style={styles.input}
-                  value={password}
-                  onChangeText={setPassword}
-                  placeholder="Senha"
-                  secureTextEntry
-                  autoComplete="password"
-                  editable={!busy}
-                  onSubmitEditing={() => canSubmit && submit()}
-                />
-                <Pressable
-                  disabled={busy}
-                  onPress={() => {
-                    setError(null);
-                    setEditingServer(true);
-                  }}
-                >
-                  <Text style={styles.link}>
-                    {serverUrl?.replace(/^https?:\/\//, '')} · trocar servidor
-                  </Text>
-                </Pressable>
+                <View>
+                  <FieldLabel>E-mail</FieldLabel>
+                  <Input
+                    value={email}
+                    onChangeText={setEmail}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoComplete="email"
+                    editable={!busy}
+                  />
+                </View>
+                <View>
+                  <FieldLabel>Senha</FieldLabel>
+                  <Input
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry
+                    autoComplete="password"
+                    editable={!busy}
+                    onSubmitEditing={() => canSubmit && submit()}
+                  />
+                </View>
               </>
             )}
 
-            {error && <Text style={styles.error}>{error}</Text>}
+            {error && <ErrorText>{error}</ErrorText>}
 
-            <Pressable
-              style={[styles.button, (!canSubmit || busy) && styles.buttonDisabled]}
-              disabled={!canSubmit || busy}
+            <Button
+              title={step === 'server' ? 'Continuar' : step === 'twoFactor' ? 'Verificar' : 'Entrar'}
               onPress={submit}
-            >
-              {busy ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.buttonText}>
-                  {step === 'server' ? 'Continuar' : step === 'twoFactor' ? 'Verificar' : 'Entrar'}
-                </Text>
-              )}
-            </Pressable>
+              disabled={!canSubmit}
+              loading={busy}
+            />
 
             {step === 'twoFactor' && (
-              <Pressable
+              <TextLink
+                label="Voltar"
                 onPress={() => {
                   setChallengeToken(null);
                   setCode('');
                   setError(null);
                 }}
-              >
-                <Text style={[styles.link, { textAlign: 'center' }]}>Voltar</Text>
-              </Pressable>
+              />
             )}
             {step === 'server' && serverUrl && (
-              <Pressable
+              <TextLink
+                label="Cancelar"
                 onPress={() => {
                   setServerInput(serverUrl);
                   setError(null);
                   setEditingServer(false);
                 }}
-              >
-                <Text style={[styles.link, { textAlign: 'center' }]}>Cancelar</Text>
-              </Pressable>
+              />
             )}
-          </View>
+          </Card>
+
+          {step === 'credentials' && (
+            <Pressable
+              disabled={busy}
+              onPress={() => {
+                setError(null);
+                setEditingServer(true);
+              }}
+              style={styles.serverRow}
+            >
+              <Text style={styles.serverText}>{serverUrl?.replace(/^https?:\/\//, '')}</Text>
+              <Text style={styles.serverLink}>Trocar servidor</Text>
+            </Pressable>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
 
@@ -236,27 +237,25 @@ export default function LoginScreen() {
   );
 }
 
+function TextLink({ label, onPress }: { label: string; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} hitSlop={8}>
+      <Text style={styles.link}>{label}</Text>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.primary },
+  safe: { flex: 1, backgroundColor: colors.background },
   scroll: { flexGrow: 1, justifyContent: 'center', padding: 24 },
-  brand: { color: '#fff', fontSize: 32, fontWeight: '700', textAlign: 'center', marginBottom: 24 },
-  card: { backgroundColor: colors.surface, borderRadius: 16, padding: 20, gap: 12 },
-  title: { fontSize: 20, fontWeight: '600', color: colors.text },
-  muted: { color: colors.textMuted },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 16,
-    color: colors.text,
-  },
+  logo: { alignItems: 'center', marginBottom: 32 },
+  card: { gap: 14, padding: 20 },
+  title: { fontSize: 18, fontWeight: '600', color: colors.text },
+  muted: { fontSize: 13, color: colors.textMuted },
   switchRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  switchLabel: { color: colors.text, flex: 1 },
-  link: { color: colors.primary, fontSize: 13 },
-  error: { color: colors.danger },
-  button: { backgroundColor: colors.primary, borderRadius: 8, paddingVertical: 12, alignItems: 'center' },
-  buttonDisabled: { opacity: 0.5 },
-  buttonText: { color: '#fff', fontWeight: '600', fontSize: 16 },
+  switchLabel: { color: colors.textMuted, fontSize: 13, flex: 1 },
+  link: { color: colors.accent, fontSize: 13, textAlign: 'center' },
+  serverRow: { alignItems: 'center', marginTop: 20, gap: 2 },
+  serverText: { color: colors.textFaint, fontSize: 12 },
+  serverLink: { color: colors.accent, fontSize: 13 },
 });

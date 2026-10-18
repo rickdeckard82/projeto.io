@@ -53,11 +53,18 @@ export function TurnstileModal({ visible, onToken, onCancel }: Props) {
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
-  sheet: { backgroundColor: colors.surface, borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 20 },
+  backdrop: { flex: 1, backgroundColor: 'rgba(2,6,23,0.7)', justifyContent: 'flex-end' },
+  sheet: {
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 20,
+  },
   title: { fontSize: 18, fontWeight: '600', color: colors.text },
   subtitle: { marginTop: 4, color: colors.textMuted },
-  webviewBox: { height: 140, marginVertical: 16, borderRadius: 8, overflow: 'hidden' },
+  webviewBox: { height: 140, marginVertical: 16, borderRadius: 8, overflow: 'hidden', backgroundColor: '#fff' },
   cancel: { alignSelf: 'center', padding: 8 },
-  cancelText: { color: colors.primary, fontWeight: '600' },
+  cancelText: { color: colors.accent, fontWeight: '600' },
 });

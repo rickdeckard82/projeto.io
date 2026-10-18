@@ -62,11 +62,41 @@ export interface WorkItem {
   startDate: string | null;
   dueDate: string | null;
   createdById: string;
+  createdBy?: Pick<User, 'id' | 'fullName' | 'avatarUrl'>;
   statusLockedById: string | null;
+  statusLockedBy?: Pick<User, 'id' | 'fullName' | 'avatarUrl'> | null;
+  inProgressSeconds?: number;
+  inProgressSince?: string | null;
   recurrenceUnit: RecurrenceUnit | null;
   recurrenceInterval: number | null;
   createdAt: string;
   updatedAt: string;
   assignees: { user: Pick<User, 'id' | 'fullName' | 'avatarUrl'> }[];
   labels: { label: Label }[];
+  /** Só vem em `GET /items/:id` — include raso, sem assignees/labels aninhados. */
+  subItems?: { id: string; title: string; status: Status }[];
+}
+
+export type ActivityType =
+  | 'CREATED'
+  | 'TITLE_CHANGED'
+  | 'DESCRIPTION_CHANGED'
+  | 'STATUS_CHANGED'
+  | 'PRIORITY_CHANGED'
+  | 'LABEL_ADDED'
+  | 'LABEL_REMOVED'
+  | 'ASSIGNEE_ADDED'
+  | 'ASSIGNEE_REMOVED'
+  | 'COMMENT'
+  | 'RECURRENCE_GENERATED';
+
+export interface ItemActivity {
+  id: string;
+  workItemId: string;
+  userId: string;
+  type: ActivityType;
+  message: string | null;
+  metadata: Record<string, string | null | undefined> | null;
+  createdAt: string;
+  user: Pick<User, 'id' | 'fullName' | 'avatarUrl'>;
 }

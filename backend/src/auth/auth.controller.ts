@@ -9,6 +9,8 @@ import { ResendVerificationDto } from './dto/resend-verification.dto.js';
 import { TwoFactorEnableDto } from './dto/two-factor-enable.dto.js';
 import { TwoFactorDisableDto } from './dto/two-factor-disable.dto.js';
 import { TwoFactorVerifyDto } from './dto/two-factor-verify.dto.js';
+import { RefreshTokenDto } from './dto/refresh-token.dto.js';
+import { isMobileClient, readDeviceToken } from './mobile-client.util.js';
 import { Public } from '../common/decorators/public.decorator.js';
 import { Allow2faSetup } from '../common/decorators/allow-2fa-setup.decorator.js';
 import { TurnstileGuard } from '../common/guards/turnstile.guard.js';
@@ -110,7 +112,9 @@ export class AuthController {
    * @param dto - credenciais de login (e-mail e senha)
    * @param req - usado apenas para ler o cookie `device_token`, se presente
    * @param res - usado apenas para setar os cookies httpOnly quando o login completa nesta etapa (passthrough)
-   * @returns mensagem de confirmação, ou `{ requiresTwoFactor: true, challengeToken }`
+   * No app mobile (`X-Client-Type: mobile`), o dispositivo confiável vem do header `X-Device-Token`
+   * e os tokens de sessão voltam no corpo em vez de cookies — ver `isMobileClient`.
+   * @returns mensagem de confirmação (ou `{ accessToken, refreshToken }` no mobile), ou `{ requiresTwoFactor: true, challengeToken }`
    */
   @Public()
   @UseGuards(TurnstileGuard)
@@ -122,8 +126,11 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
     @ClientInfo() client: AuditClientInfo,
   ) {
-    const result = await this.authService.login(dto, req.cookies?.[DEVICE_COOKIE], client);
+    const result = await this.authService.login(dto, readDeviceToken(req, DEVICE_COOKIE), client);
     if ('requiresTwoFactor' in result) {
+      return result;
+    }
+    if (isMobileClient(req)) {
       return result;
     }
     setAuthCookies(res, result);
@@ -138,7 +145,7 @@ export class AuthController {
    * @param dto - token de desafio recebido no `POST /auth/login`, o código informado pelo usuário, e se deve lembrar este dispositivo
    * @param req - usado apenas para ler o `User-Agent` (guardado no `TrustedDevice`, só para exibição futura)
    * @param res - usado para setar os cookies httpOnly (passthrough)
-   * @returns mensagem de confirmação
+   * @returns mensagem de confirmação (ou `{ accessToken, refreshToken, deviceToken? }` no app mobile — ver `isMobileClient`)
    */
   @Public()
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
@@ -156,6 +163,9 @@ export class AuthController {
       req.get('user-agent'),
       client,
     );
+    if (isMobileClient(req)) {
+      return { ...tokens, deviceToken };
+    }
     setAuthCookies(res, tokens);
     if (deviceToken) {
       const secure = process.env.NODE_ENV === 'production';
@@ -261,7 +271,7 @@ export class AuthController {
    */
   @Get('2fa/trusted-devices')
   async listTrustedDevices(@CurrentUser() user: AuthenticatedUser, @Req() req: Request) {
-    return this.twoFactorService.listDevices(user.id, req.cookies?.[DEVICE_COOKIE]);
+    return this.twoFactorService.listDevices(user.id, readDeviceToken(req, DEVICE_COOKIE));
   }
 
   /**
@@ -281,7 +291,7 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const result = await this.twoFactorService.revokeDevice(user.id, id, req.cookies?.[DEVICE_COOKIE]);
+    const result = await this.twoFactorService.revokeDevice(user.id, id, readDeviceToken(req, DEVICE_COOKIE));
     if (result.wasCurrentDevice) {
       res.clearCookie(DEVICE_COOKIE);
     }
@@ -293,14 +303,20 @@ export class AuthController {
    * regravando ambos os cookies com os novos tokens. É pública porque é
    * chamada justamente quando o access token expirou (interceptor do
    * frontend chama esta rota em qualquer 401).
+   * No app mobile, o refresh token vem só do corpo (nunca do cookie) e o novo par volta no corpo —
+   * ver `isMobileClient`.
+   * @param dto - `{ refreshToken }`, usado apenas pelo app mobile
    * @param req - usado apenas para ler o cookie `refresh_token`
    * @param res - usado apenas para setar os novos cookies httpOnly (passthrough)
-   * @returns mensagem de confirmação
+   * @returns mensagem de confirmação (ou `{ accessToken, refreshToken }` no mobile)
    */
   @Public()
   @Throttle({ default: { limit: 30, ttl: 60_000 } })
   @Post('refresh')
-  async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+  async refresh(@Body() dto: RefreshTokenDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    if (isMobileClient(req)) {
+      return this.authService.refresh(dto.refreshToken);
+    }
     const tokens = await this.authService.refresh(req.cookies?.[REFRESH_COOKIE]);
     setAuthCookies(res, tokens);
     return { message: 'Token renovado' };
@@ -309,6 +325,7 @@ export class AuthController {
   /**
    * Encerra a sessão: revoga o refresh token no banco e limpa os cookies de
    * access/refresh no navegador. Requer autenticação (não é `@Public()`).
+   * @param dto - `{ refreshToken }`, usado apenas pelo app mobile (que não tem cookie)
    * @param req - usado apenas para ler o cookie `refresh_token`
    * @param res - usado apenas para limpar os cookies httpOnly (passthrough)
    * @returns mensagem de confirmação
@@ -316,12 +333,13 @@ export class AuthController {
   @Allow2faSetup()
   @Post('logout')
   async logout(
+    @Body() dto: RefreshTokenDto,
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
     @CurrentUser() user: AuthenticatedUser,
     @ClientInfo() client: AuditClientInfo,
   ) {
-    await this.authService.logout(req.cookies?.[REFRESH_COOKIE]);
+    await this.authService.logout(isMobileClient(req) ? dto.refreshToken : req.cookies?.[REFRESH_COOKIE]);
     res.clearCookie(ACCESS_COOKIE);
     res.clearCookie(REFRESH_COOKIE);
     await this.auditService.record({

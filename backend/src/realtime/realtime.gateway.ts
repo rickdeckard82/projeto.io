@@ -26,7 +26,8 @@ function parseCookies(header?: string): Record<string, string> {
  * mudança feita por outro colega ao recarregar a página (não havia tempo real no v1, por decisão
  * documentada no CLAUDE.md; revertida aqui a pedido).
  *
- * Autenticação: a conexão só é aceita se o cookie httpOnly `access_token` (o mesmo do HTTP)
+ * Autenticação: a conexão só é aceita se o cookie httpOnly `access_token` (o mesmo do HTTP) — ou,
+ * no app mobile (sem cookies), o `handshake.auth.token` —
  * contiver um JWT válido — reaproveita o mesmo segredo/verificação do `JwtStrategy`, mas não pode
  * reusar o `JwtAuthGuard`/Passport diretamente porque o handshake do socket não passa pelo pipeline
  * HTTP de guards do Nest.
@@ -62,7 +63,9 @@ export class RealtimeGateway implements OnGatewayConnection {
    */
   handleConnection(client: Socket) {
     const cookies = parseCookies(client.handshake.headers.cookie);
-    const token = cookies['access_token'];
+    // App mobile não tem cookie: manda o access token em `io(url, { auth: { token } })`.
+    const authToken: unknown = client.handshake.auth?.token;
+    const token = cookies['access_token'] || (typeof authToken === 'string' ? authToken : undefined);
     if (!token) {
       this.logger.warn(`Conexão recusada (sem access_token): ${client.id}`);
       client.disconnect();

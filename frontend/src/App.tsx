@@ -32,6 +32,7 @@ import { NotificationSettingsPage } from './pages/NotificationSettingsPage';
 import { PrivacySettingsPage } from './pages/PrivacySettingsPage';
 import { ChangelogPage } from './pages/ChangelogPage';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { MobileTurnstilePage } from './pages/MobileTurnstilePage';
 
 export default function App() {
   return (
@@ -40,6 +41,7 @@ export default function App() {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/verify-email" element={<VerifyEmailPage />} />
       <Route path="/privacidade" element={<PrivacyPolicyPage />} />
+      <Route path="/mobile/turnstile" element={<MobileTurnstilePage />} />
 
       <Route element={<ProtectedRoute />}>
         <Route path="/setup-2fa" element={<TwoFactorRequiredPage />} />

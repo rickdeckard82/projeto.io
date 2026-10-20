@@ -42,6 +42,8 @@ services:
       NODE_ENV: ${NODE_ENV:-development}
       # Cloudflare Turnstile (opcional): sem esta chave, a verificação anti-robô fica desligada.
       TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
+      # Fuso do horário do backup automático por FTP (Configurações > Backup).
+      BACKUP_TIMEZONE: ${BACKUP_TIMEZONE:-America/Sao_Paulo}
     depends_on:
       db:
         condition: service_healthy

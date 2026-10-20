@@ -18,6 +18,10 @@ export const AUDIT_ACTIONS = {
   ALLOWED_DOMAIN_REMOVED: 'settings.allowed_domain.removed',
   SMTP_SETTINGS_UPDATED: 'settings.smtp.updated',
   PRIVACY_SETTINGS_UPDATED: 'settings.privacy.updated',
+  BACKUP_SETTINGS_UPDATED: 'settings.backup.updated',
+  BACKUP_RUN_REQUESTED: 'backup.run.requested',
+  BACKUP_RUN_SUCCEEDED: 'backup.run.succeeded',
+  BACKUP_RUN_FAILED: 'backup.run.failed',
 } as const;
 
 export type AuditActionValue = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];

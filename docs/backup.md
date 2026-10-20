@@ -63,6 +63,45 @@ WantedBy=timers.target
 
 `systemctl enable --now projetoio-backup.timer` (idem para um `projetoio-restore-test.timer` semanal).
 
+## Backup automático por FTP (pela interface)
+
+Em **Configurações > Backup** (só administradores) o próprio backend envia todo dia, no horário
+configurado (fuso `BACKUP_TIMEZONE`, padrão `America/Sao_Paulo`), um dump completo do banco para
+um servidor FTP/FTPS: `projetoio-banco-AAAAMMDD-HHMMSS.sql.gz`.
+
+- **O que cobre:** o banco é todo o estado do sistema — projetos, itens, documentos (markdown fica
+  no banco), notas, usuários, papéis, 2FA, notificações, auditoria e configurações. O app não grava
+  arquivos em disco (não há anexos; avatar é só uma URL).
+- **O que não cobre:** o `.env`. Guarde à parte, fora do servidor, pelo menos a `ENCRYPTION_KEY`:
+  restaurar o banco com outra chave perde os segredos cifrados nele (segredos de 2FA — esses
+  usuários precisam ter o 2FA refeito —, senhas do SMTP/FTP e tokens do Telegram/Pushover, que
+  precisam ser digitados de novo). `JWT_*` podem ser novos (só derrubam as sessões abertas).
+- **FTPS explícito** ligado por padrão (o certificado não é validado — servidores de backup costumam
+  ter certificado autoassinado). Sem FTPS o dump trafega em claro.
+- Envio como `.part`, conferência de tamanho (quando o servidor tem `SIZE`) e renomeação no fim;
+  mantém as N cópias mais recentes na pasta (só arquivos com o padrão de nome acima).
+- **Destino só de gravação (Pulse Backup):** envia direto com o nome final, sem `SIZE`/`DELE`/renomear,
+  e não apaga nada; o Pulse Backup valida o `.sql.gz` pelo marcador final do `pg_dump`, cifra e cuida
+  da retenção.
+- **Não fica cópia local:** o arquivo é gerado numa pasta temporária do container e apagado assim que
+  enviado; sobras de um backend que morreu no meio são removidas ao iniciar.
+- Se o backend estava parado no horário, roda quando voltar, desde que em até 6 horas.
+- Cada execução fica na **Auditoria** (`Backup enviado` / `Backup falhou`) e o último resultado aparece
+  na própria tela.
+
+### Restaurar o `.sql.gz`
+
+O dump tem `DROP ... IF EXISTS` antes de cada objeto, então recria as tabelas por cima do banco
+existente. Pare o backend antes (para ninguém gravar no meio) e use o mesmo `.env` (`ENCRYPTION_KEY`):
+
+```bash
+docker compose stop backend
+gunzip -c projetoio-banco-20261019-023000.sql.gz |   docker exec -i projetoio-db psql -U app_user -d pm_app -v ON_ERROR_STOP=1
+docker compose start backend   # o entrypoint roda as migrations novas, se o backup for de versão anterior
+```
+
+Em servidor novo: suba só o `db` (`docker compose up -d db`), restaure como acima e depois suba o resto.
+
 ## Off-site (pendente de configuração)
 
 Hoje os dumps ficam **só no host** — o que não protege contra perda do servidor inteiro. Os

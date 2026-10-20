@@ -281,6 +281,29 @@ export interface PushoverSettings {
   updatedAt: string;
 }
 
+export type BackupStatus = 'running' | 'success' | 'error';
+
+export interface BackupSettings {
+  enabled: boolean;
+  /** "HH:MM" no fuso `timezone`. */
+  runTime: string;
+  keepCount: number;
+  ftpHost: string | null;
+  ftpPort: number;
+  ftpUser: string | null;
+  hasFtpPassword: boolean;
+  ftpDirectory: string | null;
+  ftpTls: boolean;
+  ftpWriteOnly: boolean;
+  runRequestedAt: string | null;
+  lastAttemptAt: string | null;
+  lastSuccessAt: string | null;
+  lastStatus: BackupStatus | null;
+  lastMessage: string | null;
+  nextRunAt: string | null;
+  timezone: string;
+}
+
 export interface ProjectDocument {
   id: string;
   projectId: string;

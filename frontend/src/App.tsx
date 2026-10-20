@@ -30,6 +30,7 @@ import { TelegramSettingsPage } from './pages/TelegramSettingsPage';
 import { PushoverSettingsPage } from './pages/PushoverSettingsPage';
 import { NotificationSettingsPage } from './pages/NotificationSettingsPage';
 import { PrivacySettingsPage } from './pages/PrivacySettingsPage';
+import { BackupSettingsPage } from './pages/BackupSettingsPage';
 import { ChangelogPage } from './pages/ChangelogPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { MobileTurnstilePage } from './pages/MobileTurnstilePage';
@@ -60,6 +61,7 @@ export default function App() {
               <Route path="telegram" element={<TelegramSettingsPage />} />
               <Route path="pushover" element={<PushoverSettingsPage />} />
               <Route path="privacy" element={<PrivacySettingsPage />} />
+              <Route path="backup" element={<BackupSettingsPage />} />
             </Route>
             <Route path="/notes" element={<NotesPage />} />
             <Route path="/changelog" element={<ChangelogPage />} />

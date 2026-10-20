@@ -34,6 +34,10 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   'settings.allowed_domain.removed': 'Domínio permitido removido',
   'settings.smtp.updated': 'E-mail (SMTP) atualizado',
   'settings.privacy.updated': 'Privacidade (LGPD) atualizada',
+  'settings.backup.updated': 'Backup (FTP) atualizado',
+  'backup.run.requested': 'Backup pedido manualmente',
+  'backup.run.succeeded': 'Backup enviado',
+  'backup.run.failed': 'Backup falhou',
 };
 
 export async function listAuditLogs(params: {

@@ -15,7 +15,9 @@ RUN npm prune --omit=dev
 
 # ---- runtime stage ----
 FROM node:20-alpine AS runtime
-RUN apk add --no-cache openssl
+# postgresql16-client: pg_dump do backup automático por FTP (backup/). Mesma versão major do
+# Postgres do docker-compose — o pg_dump recusa servidor mais novo que ele.
+RUN apk add --no-cache openssl postgresql16-client
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=build /app/node_modules ./node_modules

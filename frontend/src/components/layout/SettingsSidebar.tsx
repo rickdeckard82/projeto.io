@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import type { LucideIcon } from 'lucide-react';
-import { Bell, Globe, Home, Lock, Mail, ScrollText, Send, Shield, Smartphone, User as UserIcon, Users } from 'lucide-react';
+import { Bell, DatabaseBackup, Globe, Home, Lock, Mail, ScrollText, Send, Shield, Smartphone, User as UserIcon, Users } from 'lucide-react';
 import { RoleGate } from '../../auth/RoleGate';
 import {
   SectionLabel,
@@ -49,6 +49,7 @@ export function SettingsSidebar({ collapsed, onToggleCollapsed, mobileOpen }: Se
           {item('/settings/telegram', Send, 'Telegram')}
           {item('/settings/pushover', Smartphone, 'Pushover')}
           {item('/settings/privacy', Shield, 'Privacidade (LGPD)')}
+          {item('/settings/backup', DatabaseBackup, 'Backup')}
         </RoleGate>
       </nav>
     </aside>

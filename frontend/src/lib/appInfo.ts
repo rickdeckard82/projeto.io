@@ -3,4 +3,4 @@
  * `/changelog`. Ao commitar uma mudança perceptível, suba junto com uma entrada em
  * `lib/changelog.ts` e a versão em `frontend/package.json`/`backend/package.json`.
  */
-export const APP_VERSION = '1.17.2';
+export const APP_VERSION = '1.18.0';

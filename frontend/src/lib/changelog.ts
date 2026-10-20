@@ -17,6 +17,14 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.18.0',
+    date: '2026-10-19',
+    changes: [
+      'Backup automático do banco por FTP (Configurações > Backup, só administradores): horário diário, servidor FTP/FTPS, pasta, cópias mantidas, "Testar conexão" e "Executar agora". O dump vai como .sql.gz, não fica cópia no servidor e cada execução aparece na Auditoria.',
+      'Opção "Destino só de gravação (Pulse Backup)": envia direto com o nome final e deixa a retenção por conta do servidor de backup.',
+    ],
+  },
+  {
     version: '1.17.2',
     date: '2026-09-25',
     changes: [

@@ -139,7 +139,7 @@ Se a rede `proxy` ainda não existir neste host, crie antes de subir os containe
 
 ### 6. Backup
 
-Configure o backup automático do banco **antes** de colocar dados de verdade — ver [`docs/backup.md`](docs/backup.md) (scripts `scripts/backup-db.sh` e `scripts/restore-test.sh`, agendamento por cron/systemd, e o gancho para envio off-site).
+Configure o backup automático do banco **antes** de colocar dados de verdade — ver [`docs/backup.md`](docs/backup.md). O mais simples é pela interface: **Configurações > Backup** envia um `.sql.gz` diário para um FTP/FTPS (inclusive o Pulse Backup, em modo só de gravação). Alternativa no host: scripts `scripts/backup-db.sh` e `scripts/restore-test.sh`, com cron/systemd e gancho para envio off-site. Em qualquer caso, guarde a `ENCRYPTION_KEY` do `.env` fora do servidor — sem ela o backup restaura sem os segredos cifrados (2FA, senhas do SMTP/FTP).
 
 ## Comandos úteis
 

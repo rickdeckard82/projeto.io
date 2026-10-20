@@ -17,6 +17,7 @@ import { NotesModule } from './notes/notes.module.js';
 import { NotificationsModule } from './notifications/notifications.module.js';
 import { MetricsModule } from './metrics/metrics.module.js';
 import { AuditModule } from './audit/audit.module.js';
+import { BackupModule } from './backup/backup.module.js';
 import { HealthController } from './health/health.controller.js';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
 import { RolesGuard } from './common/guards/roles.guard.js';
@@ -45,6 +46,7 @@ import { TwoFactorEnforcedGuard } from './common/guards/two-factor-enforced.guar
     NotificationsModule,
     MetricsModule,
     AuditModule,
+    BackupModule,
   ],
   controllers: [HealthController],
   providers: [

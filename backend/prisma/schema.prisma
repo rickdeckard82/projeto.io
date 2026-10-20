@@ -445,6 +445,39 @@ model PushoverSettings {
   @@map("pushover_settings")
 }
 
+/// Configuração única (singleton) do backup automático do banco por FTP (`/settings/backup`) e o
+/// resultado da última execução. Quem executa é o `BackupRunnerService` (`backup/`), dentro do
+/// próprio backend: gera um `pg_dump` em `.sql.gz`, envia ao FTP e não deixa cópia local.
+model BackupSettings {
+  id                   String    @id @default("singleton")
+  enabled              Boolean   @default(false)
+  /// Horário diário "HH:MM", no fuso `BACKUP_TIMEZONE` do backend.
+  runTime              String    @default("02:30") @map("run_time")
+  /// Cópias mantidas na pasta do FTP (ignorado em `ftpWriteOnly`, cuja retenção é do destino).
+  keepCount            Int       @default(7) @map("keep_count")
+  ftpHost              String?   @map("ftp_host")
+  ftpPort              Int       @default(21) @map("ftp_port")
+  ftpUser              String?   @map("ftp_user")
+  /// AES-256-GCM com `ENCRYPTION_KEY`, mesmo padrão da senha do SMTP.
+  ftpPasswordEncrypted String?   @map("ftp_password_encrypted")
+  ftpDirectory         String?   @map("ftp_directory")
+  /// FTPS explícito (AUTH TLS), com o canal de dados também criptografado.
+  ftpTls               Boolean   @default(true) @map("ftp_tls")
+  /// Destino só de gravação (ex.: Pulse Backup): envia direto com o nome final, sem `.part`,
+  /// SIZE, DELE nem renomear, e não apaga cópias antigas.
+  ftpWriteOnly         Boolean   @default(false) @map("ftp_write_only")
+  /// "Executar agora" pedido e ainda não atendido.
+  runRequestedAt       DateTime? @map("run_requested_at")
+  lastAttemptAt        DateTime? @map("last_attempt_at")
+  lastSuccessAt        DateTime? @map("last_success_at")
+  /// `running` | `success` | `error`
+  lastStatus           String?   @map("last_status")
+  lastMessage          String?   @map("last_message")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  @@map("backup_settings")
+}
+
 /// Dados do controlador/encarregado (LGPD) usados para montar a página pública de Política de
 /// Privacidade. Deliberadamente não hardcoda nenhuma empresa específica: este software é
 /// reutilizável por qualquer organização que suba os próprios containers, então essa

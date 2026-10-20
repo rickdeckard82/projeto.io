@@ -143,6 +143,8 @@ Configure o backup automático do banco **antes** de colocar dados de verdade �
 
 ## Comandos úteis
 
+O `Makefile` reúne os atalhos (`make help` lista todos): `make init` (cria o `.env` com segredos aleatórios), `make up`, `make rebuild`, `make logs s=backend`, `make migration n=nome`, `make typecheck`, `make psql`, `make backup`. Equivalentes diretos:
+
 ```bash
 docker compose exec backend npx prisma studio          # explorar o banco
 docker compose exec backend npx prisma migrate deploy  # rodar migrations manualmente

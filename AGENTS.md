@@ -27,6 +27,8 @@ Arquitetura completa (módulos do backend, modelo de dados, autenticação/2FA, 
 
 ## Comandos
 
+Há um `Makefile` com atalhos para os comandos abaixo (`make help`): `init`, `up`, `rebuild`, `migrate`, `migration n=nome` (fluxo seguro do banco-sombra `pm_app_shadow`), `typecheck`, `psql`, `backup`, `restore-test`. `make clean` apaga o volume do banco e pede confirmação.
+
 ### Subir a aplicação completa
 ```bash
 cp .env.example .env   # defina JWT_ACCESS_SECRET / JWT_REFRESH_SECRET / ENCRYPTION_KEY com valores aleatórios

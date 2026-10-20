@@ -17,6 +17,15 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.19.0',
+    date: '2026-10-19',
+    changes: [
+      'Etiquetas agora são globais: a mesma lista aparece em todos os projetos. Nova página Espaço de trabalho > Etiquetas para criar, renomear, trocar a cor e excluir, com a contagem de itens que usam cada uma.',
+      'Etiquetas de mesmo nome que existiam em projetos diferentes foram unidas numa só (ficou a mais antiga, com a cor dela); nenhum item perdeu etiqueta.',
+      'Renomear, trocar a cor e excluir etiquetas ficam com Administradores e Seniores, porque a mudança vale para todos os projetos; Membros continuam podendo criar.',
+    ],
+  },
+  {
     version: '1.18.1',
     date: '2026-10-19',
     changes: [

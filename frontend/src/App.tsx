@@ -9,6 +9,7 @@ import { RegisterPage } from './pages/RegisterPage';
 import { VerifyEmailPage } from './pages/VerifyEmailPage';
 import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
 import { NotesPage } from './pages/NotesPage';
+import { LabelsPage } from './pages/LabelsPage';
 import { ProjectsListPage } from './pages/ProjectsListPage';
 import { ArchivedProjectsPage } from './pages/ArchivedProjectsPage';
 import { ProjectDetailLayout } from './pages/ProjectDetailLayout';
@@ -64,6 +65,7 @@ export default function App() {
               <Route path="backup" element={<BackupSettingsPage />} />
             </Route>
             <Route path="/notes" element={<NotesPage />} />
+            <Route path="/labels" element={<LabelsPage />} />
             <Route path="/changelog" element={<ChangelogPage />} />
             <Route path="/projects" element={<ProjectsListPage />} />
             <Route path="/projects/archived" element={<ArchivedProjectsPage />} />

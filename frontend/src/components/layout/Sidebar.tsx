@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Archive, Boxes, ChevronDown, ChevronRight, FileText, FolderKanban, Home, ListTodo, StickyNote } from 'lucide-react';
+import { Archive, Boxes, ChevronDown, ChevronRight, FileText, FolderKanban, Home, ListTodo, StickyNote, Tag } from 'lucide-react';
 import { listProjects } from '../../api/projects';
 import { listModules } from '../../api/modules';
 import { queryKeys } from '../../api/queryKeys';
@@ -103,6 +103,10 @@ export function Sidebar({ collapsed, onToggleCollapsed, mobileOpen }: SidebarPro
         <NavLink to="/notes" className={navLinkClass} title={collapsed ? 'Notas' : undefined}>
           <StickyNote size={16} className="shrink-0" />
           {!collapsed && 'Notas'}
+        </NavLink>
+        <NavLink to="/labels" className={navLinkClass} title={collapsed ? 'Etiquetas' : undefined}>
+          <Tag size={16} className="shrink-0" />
+          {!collapsed && 'Etiquetas'}
         </NavLink>
 
         {collapsed ? (

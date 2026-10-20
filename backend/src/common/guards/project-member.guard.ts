@@ -30,7 +30,7 @@ export class ProjectMemberGuard implements CanActivate {
    * 2. Sem `request.user`, nega o acesso (não deveria ocorrer pois `JwtAuthGuard` roda antes).
    * 3. Admin global (`GlobalRole.ADMIN`) sempre passa, sem nem resolver o projeto.
    * 4. Resolve o id do projeto a partir do parâmetro de rota: direto se `kind: 'project'`,
-   *    ou via lookup (`resolveProjectId`) se o parâmetro referencia um work item, documento ou label.
+   *    ou via lookup (`resolveProjectId`) se o parâmetro referencia um work item, documento ou módulo.
    * 5. Busca a membership (`project_members`) do usuário nesse projeto.
    * 6. Sem membership: se o método é `GET` e o projeto é público (`isPublic: true`), libera a
    *    leitura mesmo assim; qualquer outro método, ou projeto não público, é bloqueado com 403.
@@ -91,10 +91,10 @@ export class ProjectMemberGuard implements CanActivate {
   /**
    * Traduz o id de um recurso de rota para o id do projeto ao qual ele
    * pertence. Para `kind: 'project'` o próprio id já é o projeto; para os
-   * demais tipos (`workItem`, `document`, `label`, `module`) faz um lookup pontual
+   * demais tipos (`workItem`, `document`, `module`) faz um lookup pontual
    * (`select: { projectId: true }`) na respectiva tabela.
    * @param kind - tipo do recurso referenciado pelo parâmetro de rota
-   * @param resourceId - id do recurso (projeto, work item, documento, label ou módulo)
+   * @param resourceId - id do recurso (projeto, work item, documento ou módulo)
    * @returns id do projeto correspondente, ou `null` se o recurso não existir
    */
   private async resolveProjectId(
@@ -117,13 +117,6 @@ export class ProjectMemberGuard implements CanActivate {
           select: { projectId: true },
         });
         return doc?.projectId ?? null;
-      }
-      case 'label': {
-        const label = await this.prisma.label.findUnique({
-          where: { id: resourceId },
-          select: { projectId: true },
-        });
-        return label?.projectId ?? null;
       }
       case 'module': {
         const module = await this.prisma.module.findUnique({

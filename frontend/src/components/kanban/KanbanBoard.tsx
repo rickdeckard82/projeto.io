@@ -33,13 +33,13 @@ export function KanbanBoard({ projectId, moduleId }: { projectId: string; module
   });
 
   const { data: labels } = useQuery({
-    queryKey: queryKeys.projectLabels(projectId),
-    queryFn: () => listLabels(projectId),
+    queryKey: queryKeys.labels,
+    queryFn: listLabels,
   });
 
   const createLabelMutation = useMutation({
-    mutationFn: (data: { name: string; color: string }) => createLabel(projectId, data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.projectLabels(projectId) }),
+    mutationFn: createLabel,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.labels }),
   });
 
   // Só membros do projeto podem ser responsáveis por um item dele — mesmo escopo de `AssigneePicker`.

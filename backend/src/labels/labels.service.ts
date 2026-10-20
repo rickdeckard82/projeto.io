@@ -1,63 +1,82 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateLabelDto } from './dto/create-label.dto.js';
 import { UpdateLabelDto } from './dto/update-label.dto.js';
 
 /**
- * Regras de negócio de etiquetas (labels) de projeto, usadas para categorizar/filtrar itens de
- * trabalho. A validação de acesso ao projeto é feita pelo `ProjectMemberGuard` nos controllers.
+ * Regras de negócio das etiquetas (labels), usadas para categorizar/filtrar itens de trabalho.
+ * São globais: a mesma lista vale para todos os projetos (gerida em `/labels` no frontend).
  */
 @Injectable()
 export class LabelsService {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * Lista as etiquetas de um projeto.
-   * @param projectId - projeto ao qual as etiquetas pertencem
-   * @returns etiquetas do projeto, em ordem alfabética por nome
+   * Lista todas as etiquetas, com quantos itens usam cada uma.
+   * @returns etiquetas em ordem alfabética por nome, com `itemCount`
    */
-  async list(projectId: string) {
-    return this.prisma.label.findMany({ where: { projectId }, orderBy: { name: 'asc' } });
+  async list() {
+    const labels = await this.prisma.label.findMany({
+      orderBy: { name: 'asc' },
+      include: { _count: { select: { items: true } } },
+    });
+    return labels.map(({ _count, ...label }) => ({ ...label, itemCount: _count.items }));
   }
 
   /**
-   * Cria uma nova etiqueta no projeto.
-   * @param projectId - projeto ao qual a etiqueta pertencerá
+   * Cria uma nova etiqueta global.
    * @param dto - nome e cor da etiqueta
    * @returns a etiqueta criada
+   * @throws ConflictException - se já existir etiqueta com o mesmo nome (sem diferenciar maiúsculas)
    */
-  async create(projectId: string, dto: CreateLabelDto) {
-    return this.prisma.label.create({ data: { projectId, name: dto.name, color: dto.color } });
+  async create(dto: CreateLabelDto) {
+    const name = dto.name.trim();
+    await this.assertNameAvailable(name);
+    return this.prisma.label.create({ data: { name, color: dto.color } });
   }
 
   /**
-   * Atualiza nome e/ou cor de uma etiqueta existente.
+   * Atualiza nome e/ou cor de uma etiqueta existente — vale para todos os projetos que a usam.
    * @param labelId - id da etiqueta a atualizar
    * @param dto - campos a atualizar
    * @returns a etiqueta atualizada
    * @throws NotFoundException - se a etiqueta não existir
+   * @throws ConflictException - se o novo nome já for de outra etiqueta
    */
   async update(labelId: string, dto: UpdateLabelDto) {
-    const label = await this.prisma.label.findUnique({ where: { id: labelId } });
-    if (!label) {
-      throw new NotFoundException('Etiqueta não encontrada');
-    }
-    return this.prisma.label.update({ where: { id: labelId }, data: dto });
+    await this.findOrFail(labelId);
+    const name = dto.name?.trim();
+    if (name) await this.assertNameAvailable(name, labelId);
+    return this.prisma.label.update({ where: { id: labelId }, data: { name: name || undefined, color: dto.color } });
   }
 
   /**
-   * Remove definitivamente uma etiqueta. Note que isso não remove os itens que a usam, apenas o
-   * vínculo etiqueta-item deixa de existir (join table `ItemLabel`) por cascade do schema.
+   * Remove definitivamente uma etiqueta. Os itens que a usam continuam existindo; só o vínculo
+   * etiqueta-item (`ItemLabel`) some, por cascade do schema — em todos os projetos.
    * @param labelId - id da etiqueta a remover
    * @returns mensagem de confirmação
    * @throws NotFoundException - se a etiqueta não existir
    */
   async remove(labelId: string) {
+    await this.findOrFail(labelId);
+    await this.prisma.label.delete({ where: { id: labelId } });
+    return { message: 'Etiqueta removida' };
+  }
+
+  private async findOrFail(labelId: string) {
     const label = await this.prisma.label.findUnique({ where: { id: labelId } });
     if (!label) {
       throw new NotFoundException('Etiqueta não encontrada');
     }
-    await this.prisma.label.delete({ where: { id: labelId } });
-    return { message: 'Etiqueta removida' };
+    return label;
+  }
+
+  private async assertNameAvailable(name: string, exceptId?: string) {
+    const existing = await this.prisma.label.findFirst({
+      where: { name: { equals: name, mode: 'insensitive' }, ...(exceptId ? { id: { not: exceptId } } : {}) },
+    });
+    if (existing) {
+      throw new ConflictException(`Já existe a etiqueta "${existing.name}"`);
+    }
   }
 }

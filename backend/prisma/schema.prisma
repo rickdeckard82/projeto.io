@@ -164,7 +164,6 @@ model Project {
   members  ProjectMember[]
   statuses Status[]
   items    WorkItem[]
-  labels   Label[]
   documents Document[]
   modules   Module[]
 
@@ -328,17 +327,17 @@ model ItemAssignee {
   @@map("item_assignees")
 }
 
+/// Etiqueta global: a mesma lista vale para todos os projetos, gerida em `/labels` (Espaço de
+/// trabalho). O nome é único sem diferenciar maiúsculas (checado no `LabelsService`; o índice
+/// do banco é sensível a caixa).
 model Label {
   id        String   @id @default(uuid())
-  projectId String   @map("project_id")
-  name      String
+  name      String   @unique
   color     String
   createdAt DateTime @default(now()) @map("created_at")
 
-  project Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  items   ItemLabel[]
+  items ItemLabel[]
 
-  @@unique([projectId, name])
   @@map("labels")
 }
 

@@ -597,13 +597,13 @@ export class WorkItemsService {
    * @returns o item atualizado, com a nova lista de etiquetas
    * @throws NotFoundException - se o item não existir
    * @throws ForbiddenException - se o projeto do item estiver arquivado
-   * @throws BadRequestException - se alguma etiqueta informada não pertencer ao projeto do item
+   * @throws BadRequestException - se alguma etiqueta informada não existir
    */
   async updateLabels(id: string, labelIds: string[], actor: AuthenticatedUser) {
     const item = await this.findOne(id);
     await this.assertProjectNotArchived(item.projectId);
     for (const labelId of labelIds) {
-      await this.assertLabelBelongsToProject(labelId, item.projectId);
+      await this.assertLabelExists(labelId);
     }
     const previousIds = item.labels.map((l) => l.labelId);
 
@@ -731,11 +731,11 @@ export class WorkItemsService {
     }
   }
 
-  /** Garante que a etiqueta informada existe e pertence ao projeto esperado, evitando que um item receba etiquetas de outro projeto. */
-  private async assertLabelBelongsToProject(labelId: string, projectId: string) {
+  /** Garante que a etiqueta informada existe (etiquetas são globais, valem para qualquer projeto). */
+  private async assertLabelExists(labelId: string) {
     const label = await this.prisma.label.findUnique({ where: { id: labelId } });
-    if (!label || label.projectId !== projectId) {
-      throw new BadRequestException('Etiqueta inválida para este projeto');
+    if (!label) {
+      throw new BadRequestException('Etiqueta inválida');
     }
   }
 

@@ -41,9 +41,9 @@ export interface Status {
   position: number;
 }
 
+/** Etiqueta global (vale para todos os projetos). */
 export interface Label {
   id: string;
-  projectId: string;
   name: string;
   color: string;
 }

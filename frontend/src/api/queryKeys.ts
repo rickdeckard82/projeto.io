@@ -4,6 +4,7 @@ export const queryKeys = {
   users: ['users'] as const,
   userDirectory: ['users', 'directory'] as const,
   allowedDomains: ['allowed-domains'] as const,
+  labels: ['labels'] as const,
   smtpSettings: ['smtp-settings'] as const,
   telegramSettings: ['telegram-settings'] as const,
   pushoverSettings: ['pushover-settings'] as const,
@@ -17,7 +18,6 @@ export const queryKeys = {
   project: (id: string) => ['projects', id] as const,
   projectMembers: (id: string) => ['projects', id, 'members'] as const,
   projectStatuses: (id: string) => ['projects', id, 'statuses'] as const,
-  projectLabels: (id: string) => ['projects', id, 'labels'] as const,
   projectModules: (id: string) => ['projects', id, 'modules'] as const,
   module: (id: string) => ['modules', id] as const,
   projectItems: (id: string, filters?: Record<string, string | undefined>) =>

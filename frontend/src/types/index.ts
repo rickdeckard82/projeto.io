@@ -56,11 +56,13 @@ export interface Status {
   position: number;
 }
 
+/** Etiqueta global (vale para todos os projetos). */
 export interface Label {
   id: string;
-  projectId: string;
   name: string;
   color: string;
+  /** Quantos itens usam a etiqueta — só vem em `GET /labels`. */
+  itemCount?: number;
 }
 
 export interface Module {

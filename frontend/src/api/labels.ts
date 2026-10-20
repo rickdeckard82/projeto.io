@@ -1,16 +1,19 @@
 import { apiClient } from './client';
 import { Label } from '../types';
 
-export async function listLabels(projectId: string): Promise<Label[]> {
-  const res = await apiClient.get(`/projects/${projectId}/labels`);
+/** Etiquetas são globais: a mesma lista vale para todos os projetos. */
+export async function listLabels(): Promise<Label[]> {
+  const res = await apiClient.get('/labels');
   return res.data;
 }
 
-export async function createLabel(
-  projectId: string,
-  data: { name: string; color: string },
-): Promise<Label> {
-  const res = await apiClient.post(`/projects/${projectId}/labels`, data);
+export async function createLabel(data: { name: string; color: string }): Promise<Label> {
+  const res = await apiClient.post('/labels', data);
+  return res.data;
+}
+
+export async function updateLabel(labelId: string, data: { name?: string; color?: string }): Promise<Label> {
+  const res = await apiClient.patch(`/labels/${labelId}`, data);
   return res.data;
 }
 

@@ -20,8 +20,8 @@ export function ItemListTable({ projectId, moduleId }: { projectId: string; modu
 
   const { data: users } = useQuery({ queryKey: queryKeys.userDirectory, queryFn: listUserDirectory });
   const { data: labels } = useQuery({
-    queryKey: queryKeys.projectLabels(projectId),
-    queryFn: () => listLabels(projectId),
+    queryKey: queryKeys.labels,
+    queryFn: listLabels,
   });
 
   const { items, isLoading } = useWorkItems(projectId, {

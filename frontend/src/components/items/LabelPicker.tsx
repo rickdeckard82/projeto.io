@@ -4,19 +4,17 @@ import { queryKeys } from '../../api/queryKeys';
 import { Badge } from '../common/Badge';
 
 export function LabelPicker({
-  projectId,
   selectedLabelIds,
   onChange,
   disabled,
 }: {
-  projectId: string;
   selectedLabelIds: string[];
   onChange: (labelIds: string[]) => void;
   disabled?: boolean;
 }) {
   const { data: labels } = useQuery({
-    queryKey: queryKeys.projectLabels(projectId),
-    queryFn: () => listLabels(projectId),
+    queryKey: queryKeys.labels,
+    queryFn: listLabels,
   });
 
   const toggle = (labelId: string) => {
@@ -40,7 +38,7 @@ export function LabelPicker({
           <Badge color={label.color}>{label.name}</Badge>
         </button>
       ))}
-      {labels?.length === 0 && <p className="text-xs text-slate-500">Nenhuma etiqueta criada neste projeto.</p>}
+      {labels?.length === 0 && <p className="text-xs text-slate-500">Nenhuma etiqueta criada.</p>}
     </div>
   );
 }

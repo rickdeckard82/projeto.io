@@ -21,6 +21,14 @@ const subLinkClass = ({ isActive }: { isActive: boolean }) =>
     isActive ? 'bg-slate-800 text-white' : 'text-slate-500 hover:bg-slate-900 hover:text-slate-300'
   }`;
 
+/** Até duas iniciais do nome ("Pulse Backup" → "PB", "Projeto.io" → "PI", "UNIVESP" → "UN"). */
+function projectInitials(name: string): string {
+  const words = name.split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+  if (words.length === 0) return '?';
+  const letters = words.length === 1 ? words[0].slice(0, 2) : words[0][0] + words[1][0];
+  return letters.toUpperCase();
+}
+
 /** Sub-links dos módulos de um projeto expandido — só busca quando o projeto está expandido, para não disparar uma query por projeto na lista inteira. */
 function ProjectModuleLinks({ projectId, isExpanded }: { projectId: string; isExpanded: boolean }) {
   const { data: modules } = useQuery({
@@ -99,7 +107,8 @@ export function Sidebar({ collapsed, onToggleCollapsed, mobileOpen }: SidebarPro
 
         {collapsed ? (
           <>
-            {/* Recolhido: cada projeto vira só o ícone (emoji) dele, com o nome no tooltip. */}
+            {/* Recolhido: cada projeto vira as iniciais num quadradinho monocromático (mesma cor e
+                tamanho dos ícones do menu), com o nome no tooltip. */}
             <SectionLabel collapsed>Projetos</SectionLabel>
             {filteredProjects?.map((project) => (
               <NavLink
@@ -108,7 +117,9 @@ export function Sidebar({ collapsed, onToggleCollapsed, mobileOpen }: SidebarPro
                 title={project.name}
                 className={navLinkClass({ isActive: location.pathname.startsWith(`/projects/${project.id}`) })}
               >
-                <span className="text-base leading-none">{project.icon || '📁'}</span>
+                <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] border border-current text-[8px] font-semibold leading-none">
+                  {projectInitials(project.name)}
+                </span>
               </NavLink>
             ))}
           </>

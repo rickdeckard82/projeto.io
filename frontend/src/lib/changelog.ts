@@ -17,6 +17,13 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.18.1',
+    date: '2026-10-19',
+    changes: [
+      'Menu lateral recolhido: os projetos agora aparecem com as iniciais do nome num ícone monocromático, no mesmo estilo dos demais ícones, em vez do emoji colorido.',
+    ],
+  },
+  {
     version: '1.18.0',
     date: '2026-10-19',
     changes: [

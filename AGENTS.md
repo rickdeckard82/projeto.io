@@ -5,7 +5,7 @@ This file provides guidance to AI coding agents (Codex, Claude Code, and others)
 ## Regras críticas
 
 - **Nunca aponte `SHADOW_DATABASE_URL` para `pm_app` (o banco real).** O Prisma usa essa URL como scratch space (recria/derruba estruturas nela); apontar pro banco real já causou perda total de dados neste projeto. Use sempre o banco dedicado `pm_app_shadow` (criado uma vez só — passo 2 em "Criar uma migration do Prisma" abaixo). Se não existir, o Prisma falha com `P1003` em vez de usar o banco errado.
-- **No Nginx Proxy Manager, aponte sempre para o `container_name` (`projetoio-frontend`/`projetoio-backend`), nunca para o nome "cru" do serviço (`frontend`/`backend`).** Na rede `proxy` compartilhada com outros apps do host, o Compose registra um apelido de rede igual ao nome do serviço — outro app com serviço de mesmo nome causa colisão de DNS (já aconteceu neste projeto: `projetoio.suaempresa.com.br` estava abrindo o app errado).
+- **No Nginx Proxy Manager, aponte sempre para o `container_name` (`projetoio-frontend`/`projetoio-backend`), nunca para o nome "cru" do serviço (`frontend`/`backend`).** Na rede `proxy` compartilhada com outros apps do host, o Compose registra um apelido de rede igual ao nome do serviço — outro app com serviço de mesmo nome causa colisão de DNS (já aconteceu neste projeto: o domínio do app estava abrindo outro app).
 
 ## Convenções
 

@@ -41,7 +41,7 @@ docker run --rm -it -p 8081:8081 -e REACT_NATIVE_PACKAGER_HOSTNAME=<IP_DO_PC_NA_
   -v "<CAMINHO_ABSOLUTO>/mobile:/app" -w /app node:20-alpine npx expo start
 ```
 
-No primeiro acesso o app pede o endereço do servidor (o de teste é `projetoio.ehs.eti.br`; sem `https://` o app completa sozinho). Depois dá para trocar pelo link "trocar servidor" no login. Com o stack local (`docker compose up`), use `http://<IP_DO_PC_NA_REDE>:3000`; `localhost` no celular é o próprio celular. Isso exige `HOST_BIND_IP=0.0.0.0` no `.env` e funciona só sem Turnstile, porque a página `/mobile/turnstile` é servida pelo frontend na porta 5173, não pela API.
+No primeiro acesso o app pede o endereço do servidor (ex.: `projetoio.seudominio.com.br`; sem `https://` o app completa sozinho). Depois dá para trocar pelo link "trocar servidor" no login. Com o stack local (`docker compose up`), use `http://<IP_DO_PC_NA_REDE>:3000`; `localhost` no celular é o próprio celular. Isso exige `HOST_BIND_IP=0.0.0.0` no `.env` e funciona só sem Turnstile, porque a página `/mobile/turnstile` é servida pelo frontend na porta 5173, não pela API.
 
 Para adicionar dependências use sempre `npx expo install <pacote>`, que resolve a versão compatível com o SDK.
 

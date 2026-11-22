@@ -2,7 +2,7 @@
   "name": "pm-app-backend",
   "version": "1.19.0",
   "private": true,
-  "license": "UNLICENSED",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "build": "nest build && tsc -p tsconfig.seed.json",

@@ -1,4 +1,4 @@
-import { IsBoolean, IsOptional, IsString, IsUrl, ValidateIf } from 'class-validator';
+import { IsBoolean, IsOptional, IsString, IsUrl, Matches, ValidateIf } from 'class-validator';
 
 export class UpdatePreferencesDto {
   @IsOptional()
@@ -21,7 +21,7 @@ export class UpdatePreferencesDto {
   /** Vazio/ausente limpa a URL (e o segredo) salvos. */
   @IsOptional()
   @ValidateIf((o) => !!o.webhookUrl)
-  @IsUrl({ require_tld: false })
+  @IsUrl({ protocols: ['https'], require_protocol: true }, { message: 'A URL do webhook precisa começar com https://' })
   webhookUrl?: string;
 
   @IsOptional()
@@ -40,6 +40,6 @@ export class UpdatePreferencesDto {
   /** Vazio/ausente limpa a URL salva. */
   @IsOptional()
   @ValidateIf((o) => !!o.googleChatWebhookUrl)
-  @IsUrl({ require_tld: false })
+  @Matches(/^https:\/\/chat\.googleapis\.com\//, { message: 'Use a URL de webhook gerada pelo Google Chat (https://chat.googleapis.com/...)' })
   googleChatWebhookUrl?: string;
 }

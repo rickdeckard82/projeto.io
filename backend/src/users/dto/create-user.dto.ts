@@ -1,7 +1,9 @@
 import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, Matches, MinLength } from 'class-validator';
+import { NormalizeEmail } from '../../common/decorators/normalize-email.decorator.js';
 import { GlobalRole } from '../../generated/prisma/client.js';
 
 export class CreateUserDto {
+  @NormalizeEmail()
   @IsEmail()
   email: string;
 

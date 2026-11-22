@@ -9,6 +9,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import { GlobalRole } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { jwtAccessSecret } from '../common/config/security-env.js';
 
 function parseCookies(header?: string): Record<string, string> {
   if (!header) return {};
@@ -74,7 +75,7 @@ export class RealtimeGateway implements OnGatewayConnection {
 
     try {
       const payload = this.jwtService.verify<{ sub: string }>(token, {
-        secret: process.env.JWT_ACCESS_SECRET || 'dev-access-secret',
+        secret: jwtAccessSecret(),
       });
       client.data.userId = payload.sub;
       // Sala pessoal automática (não depende de nenhum "join-*" do frontend), usada para entregar

@@ -77,3 +77,20 @@ export function fileStamp(now: Date, zone = backupTimezone()): string {
   const pad = (value: number) => String(value).padStart(2, '0');
   return `${p.year}${pad(p.month)}${pad(p.day)}-${pad(p.hour)}${pad(p.minute)}${pad(p.second)}`;
 }
+
+/**
+ * "Agora" no mesmo formato dos campos literais (`dueDate`/`reminderAt`): o relógio de parede do fuso
+ * gravado como se fosse UTC. Comparar esses campos com o `new Date()` real adiantaria tudo pelo offset.
+ * shortcut: usa um fuso só para o app inteiro (BACKUP_TIMEZONE); trocar pelo `User.timezone` de cada
+ * responsável se houver equipes em fusos diferentes.
+ */
+export function literalNow(now: Date, zone = backupTimezone()): Date {
+  const p = zonedParts(now, zone);
+  return new Date(Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second));
+}
+
+/** Meia-noite (literal) de hoje no fuso do app — mesma régua de "atrasada" do `isOverdue` do frontend. */
+export function startOfLiteralToday(now: Date, zone = backupTimezone()): Date {
+  const local = literalNow(now, zone);
+  return new Date(Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate()));
+}

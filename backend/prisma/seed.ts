@@ -5,7 +5,7 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) });
 
 async function main() {
-  const adminEmail = process.env.SEED_ADMIN_EMAIL || 'admin@example.com';
+  const adminEmail = (process.env.SEED_ADMIN_EMAIL || 'admin@example.com').trim().toLowerCase();
   const adminPassword = process.env.SEED_ADMIN_PASSWORD || 'ChangeMe123!';
 
   // Em produção, recusa criar o admin com a senha de exemplo — melhor não ter admin (e o

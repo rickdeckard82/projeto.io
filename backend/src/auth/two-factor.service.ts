@@ -16,6 +16,7 @@ import { AuditClientInfo } from '../audit/audit.service.js';
 import { encrypt, decrypt } from '../common/utils/crypto.util.js';
 import { hashToken } from '../common/utils/token-hash.util.js';
 import { TWO_FACTOR_CHALLENGE_PURPOSE } from './two-factor-challenge.constants.js';
+import { twoFactorChallengeSecret } from '../common/config/security-env.js';
 
 const RECOVERY_CODE_COUNT = 8;
 /** Deve bater com o `maxAge` do cookie `device_token` setado em `AuthController.verifyTwoFactor`. */
@@ -219,7 +220,7 @@ export class TwoFactorService {
     let payload: { sub: string; purpose?: string };
     try {
       payload = this.jwtService.verify(challengeToken, {
-        secret: process.env.JWT_ACCESS_SECRET || 'dev-access-secret',
+        secret: twoFactorChallengeSecret(),
       });
     } catch {
       throw new UnauthorizedException('Sessão de verificação expirada. Faça login novamente.');

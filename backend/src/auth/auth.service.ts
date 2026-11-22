@@ -19,6 +19,7 @@ import { hashToken } from '../common/utils/token-hash.util.js';
 import { TWO_FACTOR_CHALLENGE_PURPOSE } from './two-factor-challenge.constants.js';
 import { AuditService, AuditClientInfo } from '../audit/audit.service.js';
 import { AUDIT_ACTIONS } from '../audit/audit-actions.js';
+import { jwtAccessSecret, jwtRefreshSecret, twoFactorChallengeSecret } from '../common/config/security-env.js';
 
 const TWO_FACTOR_CHALLENGE_TTL = '5m';
 
@@ -166,7 +167,7 @@ export class AuthService {
 
       const challengeToken = this.jwtService.sign(
         { sub: user.id, purpose: TWO_FACTOR_CHALLENGE_PURPOSE },
-        { secret: process.env.JWT_ACCESS_SECRET || 'dev-access-secret', expiresIn: TWO_FACTOR_CHALLENGE_TTL },
+        { secret: twoFactorChallengeSecret(), expiresIn: TWO_FACTOR_CHALLENGE_TTL },
       );
       return { requiresTwoFactor: true, challengeToken };
     }
@@ -265,7 +266,7 @@ export class AuthService {
     let payload: { sub: string };
     try {
       payload = this.jwtService.verify(rawRefreshToken, {
-        secret: process.env.JWT_REFRESH_SECRET || 'dev-refresh-secret',
+        secret: jwtRefreshSecret(),
       });
     } catch {
       throw new UnauthorizedException('Refresh token inválido');
@@ -367,13 +368,13 @@ export class AuthService {
   async issueTokens(userId: string, email: string): Promise<AuthTokens> {
     const accessToken = this.jwtService.sign(
       { sub: userId, email },
-      { secret: process.env.JWT_ACCESS_SECRET || 'dev-access-secret', expiresIn: ACCESS_TOKEN_TTL },
+      { secret: jwtAccessSecret(), expiresIn: ACCESS_TOKEN_TTL },
     );
 
     const refreshToken = this.jwtService.sign(
       { sub: userId },
       {
-        secret: process.env.JWT_REFRESH_SECRET || 'dev-refresh-secret',
+        secret: jwtRefreshSecret(),
         expiresIn: Math.floor(REFRESH_TOKEN_TTL_MS / 1000),
       },
     );

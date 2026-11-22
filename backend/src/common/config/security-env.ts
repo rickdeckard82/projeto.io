@@ -80,3 +80,9 @@ export function validateSecurityEnv(): void {
   }
   logger.warn(`${summary}\n(tolerado em desenvolvimento; com NODE_ENV=production isso abortaria a subida.)`);
 }
+
+/** Segredo do access token (fallback só para desenvolvimento — `validateSecurityEnv` barra em produção). */
+export const jwtAccessSecret = () => process.env.JWT_ACCESS_SECRET || 'dev-access-secret';
+export const jwtRefreshSecret = () => process.env.JWT_REFRESH_SECRET || 'dev-refresh-secret';
+/** Segredo próprio do token de desafio do 2FA: diferente do access, para o desafio nunca valer como sessão. */
+export const twoFactorChallengeSecret = () => `${jwtAccessSecret()}:2fa-challenge`;

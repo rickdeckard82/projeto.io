@@ -17,6 +17,20 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.20.0',
+    date: '2026-11-22',
+    changes: [
+      'Segurança: a autenticação em dois fatores não pode mais ser contornada só com a senha.',
+      'Alertas de vencimento, atraso e lembretes passam a respeitar o horário local: um item não é mais avisado como "atrasado" na véspera do prazo, e lembretes não chegam mais horas antes.',
+      'Projetos arquivados não enviam mais alertas de vencimento nem lembretes.',
+      'Webhooks e Google Chat: a URL precisa ser https e pública (endereços internos são recusados), e o envio tem tempo limite.',
+      'E-mail no login e no cadastro deixa de diferenciar maiúsculas de minúsculas.',
+      'Não é mais possível tornar um item pai de um ancestral dele (o que travava os dois para sempre), nem atribuir itens a quem não é membro do projeto.',
+      'Concluir um item recorrente duas vezes ao mesmo tempo não cria mais a próxima ocorrência em dobro.',
+      'O último administrador ativo não pode mais ser rebaixado nem desativado.',
+    ],
+  },
+  {
     version: '1.19.1',
     date: '2026-11-22',
     changes: [

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { postToPublicUrl } from './outbound-url.util.js';
 import * as crypto from 'crypto';
 
 /**
@@ -23,8 +24,7 @@ export class WebhookChannelService {
     });
     const signature = crypto.createHmac('sha256', secret).update(payload).digest('hex');
 
-    const res = await fetch(url, {
-      method: 'POST',
+    const res = await postToPublicUrl(url, {
       headers: { 'Content-Type': 'application/json', 'X-Signature': `sha256=${signature}` },
       body: payload,
     });

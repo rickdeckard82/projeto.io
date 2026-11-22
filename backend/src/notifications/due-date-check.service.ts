@@ -4,6 +4,7 @@ import { NotificationType, StatusCategory } from '../generated/prisma/client.js'
 import { PrismaService } from '../prisma/prisma.service.js';
 import { NotificationsService } from './notifications.service.js';
 import { formatDateTimeLiteral, formatOffsetMinutes, priorityLabel } from './notification-message.util.js';
+import { literalNow, startOfLiteralToday } from '../backup/backup-schedule.util.js';
 
 const DUE_SOON_WINDOW_MS = 24 * 60 * 60 * 1000;
 const OVERDUE_REMINDER_INTERVAL_MS = 24 * 60 * 60 * 1000;
@@ -45,7 +46,9 @@ export class DueDateCheckService {
     const now = new Date();
     const items = await this.prisma.workItem.findMany({
       where: {
-        dueDate: { gte: now, lte: new Date(now.getTime() + DUE_SOON_WINDOW_MS) },
+        // dueDate é literal (relógio de parede gravado como UTC): compara com o "agora" literal.
+        dueDate: { gte: startOfLiteralToday(now), lte: new Date(literalNow(now).getTime() + DUE_SOON_WINDOW_MS) },
+        project: { archivedAt: null },
         dueSoonNotifiedAt: null,
         status: { category: { notIn: OPEN_CATEGORIES } },
       },
@@ -75,7 +78,8 @@ export class DueDateCheckService {
     const now = new Date();
     const items = await this.prisma.workItem.findMany({
       where: {
-        dueDate: { lt: now },
+        dueDate: { lt: startOfLiteralToday(now) },
+        project: { archivedAt: null },
         // Nunca notificada, ou notificada há mais de ~24h — lembrete diário, não a cada hora.
         OR: [{ overdueNotifiedAt: null }, { overdueNotifiedAt: { lte: new Date(now.getTime() - OVERDUE_REMINDER_INTERVAL_MS) } }],
         status: { category: { notIn: OPEN_CATEGORIES } },
@@ -111,7 +115,7 @@ export class DueDateCheckService {
   private async notifyReminders(): Promise<void> {
     const now = new Date();
     const items = await this.prisma.workItem.findMany({
-      where: { reminderAt: { lte: now }, reminderNotifiedAt: null },
+      where: { reminderAt: { lte: literalNow(now) }, reminderNotifiedAt: null, project: { archivedAt: null } },
       include: { assignees: true, project: { select: { name: true } } },
     });
 

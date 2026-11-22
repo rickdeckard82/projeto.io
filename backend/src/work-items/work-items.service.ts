@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { ActivityType, GlobalRole, NotificationType, Prisma, RecurrenceUnit, StatusCategory } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateItemDto } from './dto/create-item.dto.js';
@@ -40,7 +40,7 @@ function normalizeRecurrence(
 }
 
 /** Soma `interval` unidades de `unit` a `date`, sem alterar `date`. Mês trata corretamente o fim do mês (ex.: 31/jan + 1 mês = 28/fev, não 3/mar). */
-function addRecurrenceInterval(date: Date, unit: RecurrenceUnit, interval: number): Date {
+export function addRecurrenceInterval(date: Date, unit: RecurrenceUnit, interval: number): Date {
   const result = new Date(date);
   if (unit === 'DAY') {
     result.setDate(result.getDate() + interval);
@@ -267,6 +267,20 @@ export class WorkItemsService {
         throw new BadRequestException('Um item não pode ser pai de si mesmo');
       }
       await this.assertItemBelongsToProject(dto.parentId, item.projectId);
+      // Sobe a cadeia de pais do novo pai: se passar por este item, viraria um ciclo (A→B→A) e
+      // nenhum dos dois poderia mais ser concluído (a conclusão exige os sub-itens finalizados).
+      const seen = new Set<string>(); // ciclos antigos já gravados não podem travar o laço
+      for (let cursor: string | null = dto.parentId; cursor && !seen.has(cursor); ) {
+        seen.add(cursor);
+        const ancestor: { parentId: string | null } | null = await this.prisma.workItem.findUnique({
+          where: { id: cursor },
+          select: { parentId: true },
+        });
+        if (ancestor?.parentId === id) {
+          throw new BadRequestException('Este item já é ancestral do item escolhido como pai — isso criaria um ciclo');
+        }
+        cursor = ancestor?.parentId ?? null;
+      }
     }
 
     if (dto.moduleId) {
@@ -430,16 +444,21 @@ export class WorkItemsService {
       inProgressSince = now;
     }
 
-    const updated = await this.prisma.workItem.update({
-      where: { id },
+    // Só grava se o status ainda for o que foi lido: dois "concluir" simultâneos (clique duplo,
+    // duas pessoas) passariam ambos pelas checagens acima e gerariam a próxima ocorrência em dobro.
+    const claimed = await this.prisma.workItem.updateMany({
+      where: { id, statusId: item.statusId },
       data: {
         statusId,
         statusLockedById: status.category === StatusCategory.STARTED ? actor.id : null,
         inProgressSince,
         inProgressSeconds,
       },
-      include: ITEM_INCLUDE,
     });
+    if (claimed.count === 0) {
+      throw new ConflictException('Outra pessoa acabou de mudar o status deste item. Recarregue e tente de novo.');
+    }
+    const updated = await this.prisma.workItem.findUniqueOrThrow({ where: { id }, include: ITEM_INCLUDE });
 
     if (item.statusId !== statusId) {
       await this.logActivity(id, actor.id, ActivityType.STATUS_CHANGED, {
@@ -550,6 +569,17 @@ export class WorkItemsService {
     await this.assertProjectNotArchived(item.projectId);
     const previousIds = item.assignees.map((a) => a.userId);
     const project = await this.prisma.project.findUniqueOrThrow({ where: { id: item.projectId }, select: { name: true } });
+
+    // Só membros do projeto (os que o seletor oferece) — quem já era responsável continua aceito,
+    // para não travar a edição de itens de ex-membros.
+    const members = await this.prisma.projectMember.findMany({
+      where: { projectId: item.projectId, userId: { in: userIds } },
+      select: { userId: true },
+    });
+    const allowed = new Set([...members.map((m) => m.userId), ...previousIds]);
+    if (userIds.some((uid) => !allowed.has(uid))) {
+      throw new BadRequestException('Só é possível atribuir o item a membros do projeto.');
+    }
 
     await this.prisma.$transaction([
       this.prisma.itemAssignee.deleteMany({ where: { workItemId: id } }),

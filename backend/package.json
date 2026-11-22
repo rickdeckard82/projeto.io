@@ -1,6 +1,6 @@
 {
   "name": "pm-app-backend",
-  "version": "1.19.1",
+  "version": "1.20.0",
   "private": true,
   "license": "MIT",
   "type": "module",
@@ -9,6 +9,7 @@
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main.js",
+    "test": "nest build && node --test dist/regression.test.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",

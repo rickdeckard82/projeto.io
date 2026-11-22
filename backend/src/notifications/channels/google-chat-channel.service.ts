@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { postToPublicUrl } from './outbound-url.util.js';
 
 /**
  * Envia uma notificação para um Space do Google Chat via webhook de entrada (URL pessoal
@@ -14,8 +15,7 @@ export class GoogleChatChannelService {
       .filter(Boolean)
       .join('\n\n');
 
-    const res = await fetch(webhookUrl, {
-      method: 'POST',
+    const res = await postToPublicUrl(webhookUrl, {
       headers: { 'Content-Type': 'application/json; charset=UTF-8' },
       body: JSON.stringify({ text }),
     });

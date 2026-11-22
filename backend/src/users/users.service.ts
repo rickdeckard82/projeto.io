@@ -184,7 +184,18 @@ export class UsersService {
    * @returns Usuário atualizado (campos seguros, sem hash de senha).
    */
   async updateRole(id: string, globalRole: GlobalRole) {
+    if (globalRole !== GlobalRole.ADMIN) await this.assertNotLastAdmin(id);
     return this.prisma.user.update({ where: { id }, data: { globalRole }, select: SAFE_SELECT });
+  }
+
+  /** Impede rebaixar/desativar o último admin ativo — sem ele, ninguém mais administra o sistema. */
+  private async assertNotLastAdmin(id: string) {
+    const otherAdmins = await this.prisma.user.count({
+      where: { globalRole: GlobalRole.ADMIN, isActive: true, id: { not: id } },
+    });
+    if (otherAdmins === 0) {
+      throw new ForbiddenException('Este é o último administrador ativo — promova outro usuário a admin antes.');
+    }
   }
 
   /**
@@ -194,6 +205,7 @@ export class UsersService {
    * @returns Usuário atualizado (campos seguros, sem hash de senha).
    */
   async deactivate(id: string) {
+    await this.assertNotLastAdmin(id);
     return this.prisma.user.update({ where: { id }, data: { isActive: false }, select: SAFE_SELECT });
   }
 

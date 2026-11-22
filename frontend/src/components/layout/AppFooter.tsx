@@ -8,7 +8,7 @@ export function AppFooter() {
     <footer className="relative shrink-0">
       <BarWaves />
       <div className="relative z-10 py-2 text-center text-[11px] leading-relaxed text-slate-500">
-        Pulsar © 2026 Projeto.io •{' '}
+        H2NODE © 2026 Projeto.io •{' '}
         <Link to="/changelog" className="text-indigo-400 hover:underline">
           v{APP_VERSION}
         </Link>

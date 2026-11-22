@@ -126,7 +126,7 @@ export function RegisterPage() {
       </div>
 
       <footer className="relative z-10 pb-6 text-center text-xs text-slate-600">
-        Pulsar © 2026 Projeto.io • v{APP_VERSION}
+        H2NODE © 2026 Projeto.io • v{APP_VERSION}
         <br />
         <Link to="/privacidade" target="_blank" className="hover:text-slate-400">
           Política de Privacidade

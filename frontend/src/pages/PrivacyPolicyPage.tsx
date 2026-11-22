@@ -124,7 +124,7 @@ export function PrivacyPolicyPage() {
       </div>
 
       <footer className="relative z-10 mt-auto pb-6 pt-10 text-center text-xs text-slate-600">
-        Pulsar © 2026 Projeto.io • v{APP_VERSION}
+        H2NODE © 2026 Projeto.io • v{APP_VERSION}
       </footer>
     </div>
   );

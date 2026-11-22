@@ -17,6 +17,13 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.19.1',
+    date: '2026-11-22',
+    changes: [
+      'O rodapé passa a exibir "H2NODE © 2026 Projeto.io": o Projeto.io agora faz parte da família H2NODE.',
+    ],
+  },
+  {
     version: '1.19.0',
     date: '2026-10-19',
     changes: [

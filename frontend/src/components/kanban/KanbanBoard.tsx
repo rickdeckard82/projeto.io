@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { listProjectMembers, listProjectStatuses } from '../../api/projects';
@@ -10,6 +10,7 @@ import { useWorkItems } from '../../hooks/useWorkItems';
 import { Spinner } from '../common/Spinner';
 import { Toast } from '../common/Toast';
 import { KanbanColumn } from './KanbanColumn';
+import { KanbanLinks } from './KanbanLinks';
 import { KanbanCardPreview } from './KanbanCard';
 import { ItemDetailModal } from '../items/ItemDetailModal';
 
@@ -24,6 +25,7 @@ export function KanbanBoard({ projectId, moduleId }: { projectId: string; module
   const [openItemId, setOpenItemId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const boardRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
@@ -83,7 +85,8 @@ export function KanbanBoard({ projectId, moduleId }: { projectId: string; module
   return (
     <>
       <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
-        <div className="thin-scrollbar flex h-full gap-3 overflow-x-auto pb-3">
+        <div ref={boardRef} className="thin-scrollbar relative flex h-full gap-3 overflow-x-auto pb-3">
+          <KanbanLinks boardRef={boardRef} items={items} />
           {statuses?.map((status) => (
             <KanbanColumn
               key={status.id}

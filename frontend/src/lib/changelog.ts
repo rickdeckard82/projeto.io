@@ -17,6 +17,11 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.22.0',
+    date: '2026-11-25',
+    changes: ['No quadro, linhas curvas ligam cada tarefa às suas subtarefas, na cor do status da subtarefa.'],
+  },
+  {
     version: '1.21.1',
     date: '2026-11-25',
     changes: [

@@ -11,7 +11,7 @@ import { PRIORITY_OPTIONS, priorityColor, priorityLabel } from '../items/Priorit
 const stop = (e: { stopPropagation: () => void }) => e.stopPropagation();
 
 /** Cor da borda neon do card conforme a categoria do status atual; `BACKLOG` fica sem brilho (borda neutra padrão). */
-const STATUS_GLOW: Partial<Record<StatusCategory, string>> = {
+export const STATUS_GLOW: Partial<Record<StatusCategory, string>> = {
   UNSTARTED: '#38bdf8',
   STARTED: '#facc15',
   COMPLETED: '#4ade80',
@@ -354,7 +354,8 @@ export function KanbanCard({
       {...listeners}
       {...attributes}
       onClick={onOpen}
-      className={`mb-2 cursor-pointer rounded-md border border-slate-800 bg-slate-900 p-3 transition-shadow ${
+      data-item-id={item.id}
+      className={`relative z-[2] mb-2 cursor-pointer rounded-md border border-slate-800 bg-slate-900 p-3 transition-shadow ${
         glowColor ? '' : 'hover:border-indigo-600'
       } ${isDragging ? 'opacity-40' : ''}`}
     >

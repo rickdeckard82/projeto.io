@@ -60,7 +60,7 @@ export function KanbanColumn({
         <span className="text-xs text-slate-600">{items.length}</span>
       </div>
 
-      <div className="thin-scrollbar min-h-[4rem] flex-1 overflow-y-auto px-0.5">
+      <div data-kanban-scroll className="thin-scrollbar min-h-[4rem] flex-1 overflow-y-auto px-0.5">
         {items.map((item) => (
           <KanbanCard
             key={item.id}

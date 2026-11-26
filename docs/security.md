@@ -25,25 +25,22 @@ Complementa `docs/architecture.md` (cadeia de autorização, 2FA, isolamento por
 `renovate.json` está pronto para um Renovate self-hosted apontado para o Gitea (PRs semanais +
 alertas de vulnerabilidade a qualquer hora; `prisma`/`@prisma/client` exigem aprovação manual).
 
-### Vulnerabilidades conhecidas e aceitas (revisar a cada bump do Prisma)
+### Vulnerabilidades conhecidas e aceitas
 
-`npm audit` no backend reporta ~10 avisos, **todos** em dependências transitivas do **CLI
-`prisma`** (`@prisma/dev`, `@prisma/config`, `hono`, `@hono/node-server`, `mysql2`, `fast-uri`,
-`qs`, `valibot`, `deepmerge-ts`). O CLI está em `dependencies` (não `devDependencies`) só porque
-o `docker-entrypoint.sh` roda `prisma migrate deploy` na subida do container.
+Estado em 2026-11-25: `./scripts/audit.sh` passa (nada de severidade `high` ou acima). Sobram só avisos
+`moderate`, aceitos porque a correção exige trocar de versão principal e o caminho vulnerável não roda aqui:
 
-Por que são aceitas hoje:
+- **Backend — `glob`/`minimatch` via `@nestjs/cli`**: só no build (`nest build`); a correção exige o
+  `@nestjs/cli` 12.
+- **Frontend — `react-router` 6**: open redirect por barra invertida em `<Link>`/`useNavigate`, quando o
+  destino vem do usuário. O app só navega para caminhos próprios ou gerados pelo servidor; a correção
+  exige o React Router 7.
 
-- **Nenhum dos caminhos vulneráveis executa neste app.** As falhas estão no servidor HTTP do
-  `prisma dev` (`hono`/`@hono/node-server`/`qs`), no driver `mysql2` e no parser `fast-uri` —
-  este projeto usa PostgreSQL via `@prisma/adapter-pg` e nunca sobe o `prisma dev`. Em runtime
-  só roda `migrate deploy`, que não toca nesse código.
-- `npm audit fix --force` quer **rebaixar `prisma` para a série 6.x**, o que quebraria o setup do
-  Prisma 7 (adapter driver, `prisma.config.ts`) — inaceitável (ver `AGENTS.md`).
-
-O que fazer: subir `prisma` + `@prisma/client` juntos quando sair uma versão 7.x que atualize
-essas transitivas, e reconferir `./scripts/audit.sh`. Se o ruído incomodar antes disso, mover o
-CLI para um estágio separado do `Dockerfile` (rodar as migrations fora do container de runtime).
+`overrides` no `backend/package.json` forçam versões corrigidas de transitivas sem correção upstream
+na série atual: `effect` (do CLI `prisma` — a série 7.x do Prisma ainda depende de `effect` vulnerável)
+e `brace-expansion` 1.x (do `@nestjs/cli`). Ao subir o Prisma, confira se o override do `effect`
+ainda é necessário (`npm ls effect`) e rode `prisma migrate deploy` + `migrate diff` contra um banco
+descartável antes do deploy.
 
 `react-markdown` (frontend) renderiza markdown de documentos sem `rehype-raw` / `skipHtml=false`,
 então HTML embutido no conteúdo é escapado — sem vetor de XSS por aí.

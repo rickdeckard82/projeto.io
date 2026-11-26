@@ -110,11 +110,11 @@ export function ItemDetailModal({
   };
 
   const saveStartDate = (date: string, time: string) => {
-    updateItem({ id: itemId, data: { startDate: date ? combineDateTime(date, time) : undefined } }).then(invalidateItem);
+    updateItem({ id: itemId, data: { startDate: date ? combineDateTime(date, time) : null } }).then(invalidateItem);
   };
 
   const saveDueDate = (date: string, time: string) => {
-    updateItem({ id: itemId, data: { dueDate: date ? combineDateTime(date, time) : undefined } }).then(invalidateItem);
+    updateItem({ id: itemId, data: { dueDate: date ? combineDateTime(date, time) : null } }).then(invalidateItem);
   };
 
   return (

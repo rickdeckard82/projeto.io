@@ -39,6 +39,12 @@ Com 2FA ativo, `AuthService.login()` não emite os cookies de sessão direto: de
 
 `AuthService` e `TwoFactorService` estão em arquivos separados de propósito — `TwoFactorService` depende de `AuthService.issueTokens()`, então a constante `TWO_FACTOR_CHALLENGE_PURPOSE` mora num terceiro arquivo (`two-factor-challenge.constants.ts`) só para as duas não precisarem se importar uma à outra.
 
+### Chaves de API e MCP (`backend/src/api-keys/`, `backend/src/mcp/`)
+
+Chave de API (`Authorization: Bearer pio_...`, hash SHA-256 em `api_keys`, 90 dias) age como o usuário dono. O `JwtAuthGuard` só a aceita em handlers com `@AllowApiKey()` — rotas novas nascem fechadas para ela, inclusive a própria gestão em `/api-keys`. Contas `ADMIN` não podem ter chave (ela não passa pelo 2FA), mas Admin cria e revoga chaves dos demais usuários.
+
+`POST /api/v1/mcp` é um servidor MCP (Streamable HTTP, sem sessão). As ferramentas (`mcp-server.ts`) chamam a própria API por HTTP no loopback repassando a chave, em vez de usar os services, para que guards, DTOs e auditoria continuem valendo. Uma ferramenta que use rota nova exige `@AllowApiKey()` nessa rota.
+
 ### Autocadastro restrito por domínio + confirmação por e-mail
 
 `POST /auth/register` só cria a conta se o domínio do e-mail estiver em `AllowedDomain` (tabela vazia = autocadastro bloqueado para todos) e o `SmtpSettings` singleton existir; a conta nasce com `emailVerifiedAt = null` e **não** inicia sessão. Um token de confirmação (bruto, hash SHA-256 salvo, validade 48h) é gerado e enviado por `MailModule` → `MailerService` (monta um `nodemailer` transport novo a cada envio, a partir do `SmtpSettings` do banco — nunca de env vars — decriptando a senha com `crypto.util.ts`). Se o envio falhar, a conta recém-criada é apagada (rollback) para não deixar um usuário eternamente não-confirmável; o erro real vai para o log do backend via `Logger`, nunca é exposto na resposta.

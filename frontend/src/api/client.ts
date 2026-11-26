@@ -12,7 +12,7 @@ export const apiClient = axios.create({
 // Flag e fila usadas pelo interceptor abaixo para evitar disparar múltiplos refreshes de token
 // em paralelo quando várias requisições falham com 401 ao mesmo tempo.
 let isRefreshing = false;
-let pendingQueue: (() => void)[] = [];
+let pendingQueue: { resolve: () => void; reject: (err: unknown) => void }[] = [];
 
 /**
  * Interceptor de resposta que implementa o fluxo de renovação automática de sessão: ao receber um 401, tenta um `POST /auth/refresh` (que troca o refresh token pelo cookie de access token) e, se der certo, repete (replay) a requisição original que falhou — tudo de forma transparente para quem chamou.
@@ -46,18 +46,20 @@ apiClient.interceptors.response.use(
     config._retry = true;
 
     if (isRefreshing) {
-      return new Promise((resolve) => {
-        pendingQueue.push(() => resolve(apiClient(config)));
+      return new Promise((resolve, reject) => {
+        pendingQueue.push({ resolve: () => resolve(apiClient(config)), reject });
       });
     }
 
     isRefreshing = true;
     try {
       await apiClient.post('/auth/refresh');
-      pendingQueue.forEach((fn) => fn());
+      pendingQueue.forEach((p) => p.resolve());
       pendingQueue = [];
       return apiClient(config);
     } catch (refreshError) {
+      // Sem rejeitar, as requisições da fila ficariam pendentes para sempre (spinner eterno).
+      pendingQueue.forEach((p) => p.reject(refreshError));
       pendingQueue = [];
       return Promise.reject(refreshError);
     } finally {

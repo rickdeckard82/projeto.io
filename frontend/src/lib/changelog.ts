@@ -17,6 +17,18 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.21.0',
+    date: '2026-11-25',
+    changes: [
+      'Integração com o Claude Code (MCP): crie e acompanhe projetos e tarefas, defina responsáveis e adicione membros direto do Claude, com as mesmas permissões do usuário.',
+      'Nova tela "Chaves de API" nas configurações: crie e revogue chaves de acesso, com validade de 90 dias.',
+      'Trocar a senha agora pede a senha atual e encerra as outras sessões, os dispositivos confiáveis e as chaves de API da conta.',
+      'Agora é possível apagar a data de início e o vencimento de uma tarefa.',
+      'Lembretes não disparam mais para tarefas já concluídas ou canceladas.',
+      'Quando a sessão expira, as telas deixam de ficar carregando para sempre.',
+    ],
+  },
+  {
     version: '1.20.0',
     date: '2026-11-22',
     changes: [

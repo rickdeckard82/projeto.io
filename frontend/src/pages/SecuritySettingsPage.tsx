@@ -39,14 +39,16 @@ function describeDevice(userAgent: string | null): string {
 export function SecuritySettingsPage() {
   const { user, refreshUser } = useAuth();
   const queryClient = useQueryClient();
+  const [currentPassword, setCurrentPassword] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
   const mutation = useMutation({
-    mutationFn: () => updateUser(user!.id, { password }),
+    mutationFn: () => updateUser(user!.id, { password, currentPassword }),
     onSuccess: () => {
+      setCurrentPassword('');
       setPassword('');
       setConfirmPassword('');
       setSuccess(true);
@@ -114,6 +116,16 @@ export function SecuritySettingsPage() {
       <form onSubmit={onSubmit} className="mb-6 rounded-lg border border-slate-800 bg-slate-900 p-6">
         <h2 className="mb-4 text-sm font-semibold text-slate-200">Alterar senha</h2>
 
+        <label className="mb-1 block text-xs text-slate-400">Senha atual</label>
+        <input
+          type="password"
+          required
+          autoComplete="current-password"
+          value={currentPassword}
+          onChange={(e) => setCurrentPassword(e.target.value)}
+          className="mb-4 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+        />
+
         <label className="mb-1 block text-xs text-slate-400">Nova senha</label>
         <input
           type="password"
@@ -135,7 +147,11 @@ export function SecuritySettingsPage() {
         />
 
         {error && <p className="mb-3 text-sm text-red-400">{error}</p>}
-        {mutation.isError && <p className="mb-3 text-sm text-red-400">Falha ao alterar a senha.</p>}
+        {mutation.isError && (
+          <p className="mb-3 text-sm text-red-400">
+            {(mutation.error as any)?.response?.data?.message || 'Falha ao alterar a senha.'}
+          </p>
+        )}
         {success && <p className="mb-3 text-sm text-emerald-400">Senha alterada com sucesso.</p>}
 
         <Button type="submit" disabled={mutation.isPending}>

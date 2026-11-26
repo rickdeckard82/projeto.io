@@ -13,6 +13,8 @@ Complementa `docs/architecture.md` (cadeia de autorização, 2FA, isolamento por
 | Portas dos containers publicadas só no loopback do host | `docker-compose.yml` (`HOST_BIND_IP`, padrão `127.0.0.1`) |
 | Cabeçalhos de segurança (HSTS, CSP, X-Frame-Options, nosniff, Referrer-Policy) | `helmet` na API (`main.ts`) + `frontend/nginx.conf` |
 | 2FA obrigatório para `ADMIN` | `TwoFactorEnforcedGuard` + `frontend` `TwoFactorGate` / `/setup-2fa` |
+| Trocar a própria senha exige a atual; toda troca revoga as outras sessões, os dispositivos confiáveis e as chaves de API | `UsersService.update` |
+| Chaves de API só em rotas liberadas (`@AllowApiKey`), com validade e nunca para `ADMIN` | `JwtAuthGuard` + `backend/src/api-keys/` |
 | Trilha de auditoria (login, logout, 2FA, papéis, desativação, anonimização, settings) | `backend/src/audit/` — leitura em `/settings/audit` (só `ADMIN`) |
 | Backup + teste de restauração | `scripts/backup-db.sh`, `scripts/restore-test.sh` (ver `docs/backup.md`) |
 | Criptografia de segredos em repouso (SMTP, tokens de bot, segredo TOTP) | AES-256-GCM, `common/utils/crypto.util.ts` |

@@ -6,6 +6,7 @@ import { UpdateProjectDto } from './dto/update-project.dto.js';
 import { Roles } from '../common/decorators/roles.decorator.js';
 import { ProjectResource } from '../common/decorators/project-resource.decorator.js';
 import { ProjectMemberGuard } from '../common/guards/project-member.guard.js';
+import { AllowApiKey } from '../common/decorators/allow-api-key.decorator.js';
 import { CurrentUser, AuthenticatedUser } from '../common/decorators/current-user.decorator.js';
 
 /**
@@ -20,6 +21,7 @@ export class ProjectsController {
   constructor(private readonly projectsService: ProjectsService) {}
 
   /** Lista os projetos visíveis para o usuário autenticado (todos, se admin; membros/públicos, caso contrário). */
+  @AllowApiKey()
   @Get()
   list(@CurrentUser() user: AuthenticatedUser, @Query('archived') archived?: string) {
     return this.projectsService.list(user, archived === 'true');
@@ -27,6 +29,7 @@ export class ProjectsController {
 
   /** Cria um novo projeto. Restrito a administradores e Senior (`@Roles(ADMIN, SENIOR)`). */
   @Roles(GlobalRole.ADMIN, GlobalRole.SENIOR)
+  @AllowApiKey()
   @Post()
   create(@Body() dto: CreateProjectDto, @CurrentUser() user: AuthenticatedUser) {
     return this.projectsService.create(dto, user);
@@ -79,6 +82,7 @@ export class ProjectsController {
   /** Lista as colunas (statuses) do kanban do projeto. Exige membership (ou projeto público) via `ProjectMemberGuard`. */
   @UseGuards(ProjectMemberGuard)
   @ProjectResource('project', 'id')
+  @AllowApiKey()
   @Get(':id/statuses')
   listStatuses(@Param('id') id: string) {
     return this.projectsService.listStatuses(id);

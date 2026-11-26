@@ -22,13 +22,15 @@ export class UpdateItemDto {
   @IsUUID()
   moduleId?: string | null;
 
+  /** `null` apaga a data. */
   @IsOptional()
   @IsDateString()
-  startDate?: string;
+  startDate?: string | null;
 
+  /** `null` apaga a data (e um lembrete relativo a ela). */
   @IsOptional()
   @IsDateString()
-  dueDate?: string;
+  dueDate?: string | null;
 
   /**
    * Lembrete em data/hora absoluta; ignorado se `reminderOffsetMinutes` também for informado.

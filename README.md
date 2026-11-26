@@ -70,6 +70,17 @@ Falhas de envio de e-mail (SMTP incorreto, credenciais inválidas etc.) ficam re
 24. Abra o quadro de um projeto ativo em duas janelas/navegadores com usuários diferentes (ambos membros do projeto). Em uma, arquive o projeto (**Configurações → Arquivar**). A outra janela deve mostrar um aviso ("projeto foi arquivado por outro usuário") e voltar sozinha para a lista de projetos, sem precisar recarregar; confirme também que tentar mover/criar/editar um item desse projeto (mesmo direto pela API) passa a retornar erro. Abrir um projeto que já estava arquivado direto pela página **Arquivos** continua funcionando normalmente (só leitura).
 25. Acesse a aba **Métricas** de um projeto como Admin ou Senior e confirme os números (total de itens, concluídos/cancelados, tempo médio até concluir, duração do projeto, resumo por responsável). Logado como Membro ou Visualizador, confirme que a aba não aparece e que acessar a URL (`/projects/:id/metrics`) direto redireciona para o quadro.
 
+## Claude Code (MCP)
+
+1. Como Admin, crie um usuário **Senior** (ex.: "Claude") em Configurações > Usuários e adicione-o aos projetos existentes que ele deve acessar.
+2. Em Configurações > Chaves de API, crie uma chave para ele e rode o comando exibido:
+
+```bash
+claude mcp add --scope user --transport http projetoio https://seuapp.com.br/api/v1/mcp --header "Authorization: Bearer pio_..."
+```
+
+A chave fica salva na configuração do Claude Code: não a coloque num `.mcp.json` versionado. Claude web e celular ainda não são atendidos (exigem OAuth).
+
 ## Deploy em produção (domínio próprio + Nginx Proxy Manager)
 
 Cenário: servidor com Docker, Nginx Proxy Manager (NPM) rodando em outro container no mesmo host, expondo a app em um domínio próprio (ex.: `https://seuapp.com.br`) com frontend e API sob o **mesmo domínio**, por caminho — é o arranjo mais simples porque elimina CORS e mantém os cookies de sessão simples (sem `Domain` cross-subdomain), e já bate com como o WebSocket de tempo real (`lib/socket.ts`) foi implementado (conecta na mesma origem, sem prefixo `/api/v1`).

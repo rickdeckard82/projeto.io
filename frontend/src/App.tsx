@@ -25,6 +25,7 @@ import { ProfileSettingsPage } from './pages/ProfileSettingsPage';
 import { SecuritySettingsPage } from './pages/SecuritySettingsPage';
 import { UsersAdminPage } from './pages/UsersAdminPage';
 import { AuditLogPage } from './pages/AuditLogPage';
+import { ApiKeysSettingsPage } from './pages/ApiKeysSettingsPage';
 import { AllowedDomainsSettingsPage } from './pages/AllowedDomainsSettingsPage';
 import { SmtpSettingsPage } from './pages/SmtpSettingsPage';
 import { TelegramSettingsPage } from './pages/TelegramSettingsPage';
@@ -54,6 +55,7 @@ export default function App() {
               <Route index element={<Navigate to="profile" replace />} />
               <Route path="profile" element={<ProfileSettingsPage />} />
               <Route path="security" element={<SecuritySettingsPage />} />
+              <Route path="api-keys" element={<ApiKeysSettingsPage />} />
               <Route path="notifications" element={<NotificationSettingsPage />} />
               <Route path="users" element={<UsersAdminPage />} />
               <Route path="audit" element={<AuditLogPage />} />

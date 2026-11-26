@@ -1,6 +1,8 @@
-import { ExecutionContext, Injectable } from '@nestjs/common';
+import { ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
+import { ApiKeysService, readApiKey } from '../../api-keys/api-keys.service.js';
+import { ALLOW_API_KEY } from '../decorators/allow-api-key.decorator.js';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator.js';
 
 /**
@@ -8,10 +10,14 @@ import { IS_PUBLIC_KEY } from '../decorators/public.decorator.js';
  * em toda rota, exceto as marcadas com `@Public()`. Antes de delegar para a
  * estratégia Passport (`JwtStrategy`), verifica os metadados `IS_PUBLIC_KEY`
  * no handler e na classe — se presentes, libera o acesso sem autenticar.
+ * Chave de API (`Bearer pio_...`) só é aceita em rotas `@AllowApiKey()`.
  */
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
-  constructor(private readonly reflector: Reflector) {
+  constructor(
+    private readonly reflector: Reflector,
+    private readonly apiKeysService: ApiKeysService,
+  ) {
     super();
   }
 
@@ -21,7 +27,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
    * @param context - contexto de execução do request atual
    * @returns `true` se a rota é pública ou se o JWT é válido; caso contrário lança/retorna conforme o comportamento padrão do `AuthGuard`
    */
-  canActivate(context: ExecutionContext) {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
@@ -29,6 +35,15 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     if (isPublic) {
       return true;
     }
-    return super.canActivate(context);
+    const request = context.switchToHttp().getRequest();
+    const apiKey = readApiKey(request.headers.authorization);
+    if (apiKey) {
+      request.user = await this.apiKeysService.authenticate(apiKey);
+      if (!this.reflector.get<boolean>(ALLOW_API_KEY, context.getHandler())) {
+        throw new ForbiddenException('Esta rota não aceita chave de API');
+      }
+      return true;
+    }
+    return super.canActivate(context) as Promise<boolean>;
   }
 }

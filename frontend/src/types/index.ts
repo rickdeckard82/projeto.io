@@ -171,6 +171,16 @@ export interface RecentWorkItem extends WorkItem {
   project: { id: string; name: string };
 }
 
+export interface ApiKey {
+  id: string;
+  name: string;
+  prefix: string;
+  expiresAt: string;
+  lastUsedAt: string | null;
+  createdAt: string;
+  user: { id: string; fullName: string };
+}
+
 export interface AllowedDomain {
   id: string;
   domain: string;

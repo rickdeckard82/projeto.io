@@ -94,6 +94,7 @@ model User {
 
   refreshTokens   RefreshToken[]
   trustedDevices  TrustedDevice[]
+  apiKeys         ApiKey[]
   ownedProjects   Project[]        @relation("ProjectOwner")
   projectMembers  ProjectMember[]
   createdItems    WorkItem[]       @relation("WorkItemCreatedBy")
@@ -145,6 +146,25 @@ model TrustedDevice {
   @@index([userId])
   @@index([tokenHash])
   @@map("trusted_devices")
+}
+
+/// Chave de API de um usuário (`Authorization: Bearer pio_...`), usada pelo MCP. Vale só nas rotas
+/// com `@AllowApiKey()` e nunca para contas ADMIN. Revogar apaga o registro.
+model ApiKey {
+  id         String    @id @default(uuid())
+  userId     String    @map("user_id")
+  name       String
+  /// Início da chave, só para reconhecê-la na lista.
+  prefix     String
+  tokenHash  String    @unique @map("token_hash")
+  expiresAt  DateTime  @map("expires_at")
+  lastUsedAt DateTime? @map("last_used_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("api_keys")
 }
 
 model Project {

@@ -30,6 +30,8 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   'user.role_changed': 'Papel alterado',
   'user.deactivated': 'Usuário desativado',
   'user.anonymized': 'Usuário anonimizado',
+  'api_key.created': 'Chave de API criada',
+  'api_key.revoked': 'Chave de API revogada',
   'settings.allowed_domain.added': 'Domínio permitido adicionado',
   'settings.allowed_domain.removed': 'Domínio permitido removido',
   'settings.smtp.updated': 'E-mail (SMTP) atualizado',

@@ -22,6 +22,8 @@ export class RecentItemsController {
   list(@CurrentUser() user: AuthenticatedUser, @Query('limit') limit?: string, @Query('sortBy') sortBy?: string) {
     const parsed = limit ? parseInt(limit, 10) : 10;
     const sort = sortBy === 'priority' ? 'priority' : 'dueDate';
-    return this.workItemsService.listPendingForUser(user, Number.isFinite(parsed) ? parsed : 10, sort);
+    // Entre 1 e 50: `take` negativo inverte a ordem no Prisma, e sem teto a resposta não tem limite.
+    const take = Number.isFinite(parsed) ? Math.min(Math.max(parsed, 1), 50) : 10;
+    return this.workItemsService.listPendingForUser(user, take, sort);
   }
 }

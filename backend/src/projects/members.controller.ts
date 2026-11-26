@@ -2,6 +2,7 @@ import { Body, Controller, Delete, Get, Param, Post, UseGuards } from '@nestjs/c
 import { GlobalRole } from '../generated/prisma/client.js';
 import { ProjectsService } from './projects.service.js';
 import { AddMemberDto } from './dto/add-member.dto.js';
+import { AllowApiKey } from '../common/decorators/allow-api-key.decorator.js';
 import { Roles } from '../common/decorators/roles.decorator.js';
 import { ProjectResource } from '../common/decorators/project-resource.decorator.js';
 import { ProjectMemberGuard } from '../common/guards/project-member.guard.js';
@@ -27,6 +28,7 @@ export class MembersController {
 
   /** Adiciona um usuário como membro do projeto. Restrito a administradores e Senior. */
   @Roles(GlobalRole.ADMIN, GlobalRole.SENIOR)
+  @AllowApiKey()
   @Post()
   add(@Param('id') id: string, @Body() dto: AddMemberDto) {
     return this.projectsService.addMember(id, dto.userId);

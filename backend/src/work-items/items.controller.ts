@@ -6,6 +6,7 @@ import { QueryItemsDto } from './dto/query-items.dto.js';
 import { Roles } from '../common/decorators/roles.decorator.js';
 import { ProjectResource } from '../common/decorators/project-resource.decorator.js';
 import { ProjectMemberGuard } from '../common/guards/project-member.guard.js';
+import { AllowApiKey } from '../common/decorators/allow-api-key.decorator.js';
 import { CurrentUser, AuthenticatedUser } from '../common/decorators/current-user.decorator.js';
 
 /**
@@ -21,6 +22,7 @@ export class ProjectItemsController {
   constructor(private readonly workItemsService: WorkItemsService) {}
 
   /** Lista os itens do projeto aplicando os filtros da querystring (status, responsável, etiqueta, item pai). */
+  @AllowApiKey()
   @Get()
   list(@Param('projectId') projectId: string, @Query() query: QueryItemsDto) {
     return this.workItemsService.list(projectId, query);
@@ -28,6 +30,7 @@ export class ProjectItemsController {
 
   /** Cria um novo item de trabalho no projeto; restrito a Admin/Senior/Membro (Visualizador não pode escrever). */
   @Roles(GlobalRole.ADMIN, GlobalRole.SENIOR, GlobalRole.MEMBER)
+  @AllowApiKey()
   @Post()
   create(
     @Param('projectId') projectId: string,

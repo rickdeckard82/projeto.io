@@ -39,10 +39,12 @@ export async function getItem(id: string): Promise<WorkItem> {
   return res.data;
 }
 
-/** Igual a `CreateItemInput`, mas com recorrência e lembrete aceitando `null` explícito para limpá-los. */
+/** Igual a `CreateItemInput`, mas com datas, recorrência e lembrete aceitando `null` explícito para limpá-los. */
 export type UpdateItemInput = Partial<
-  Omit<CreateItemInput, 'recurrenceUnit' | 'recurrenceInterval' | 'reminderAt' | 'reminderOffsetMinutes'>
+  Omit<CreateItemInput, 'startDate' | 'dueDate' | 'recurrenceUnit' | 'recurrenceInterval' | 'reminderAt' | 'reminderOffsetMinutes'>
 > & {
+  startDate?: string | null;
+  dueDate?: string | null;
   recurrenceUnit?: RecurrenceUnit | null;
   recurrenceInterval?: number | null;
   /** `true` marca esta ocorrência como a última da série (concluí-la não gera a próxima). */

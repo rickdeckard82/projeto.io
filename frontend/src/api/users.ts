@@ -35,7 +35,7 @@ export async function exportMyData(): Promise<unknown> {
 
 export async function updateUser(
   id: string,
-  data: { fullName?: string; avatarUrl?: string; password?: string; timezone?: string },
+  data: { fullName?: string; avatarUrl?: string; password?: string; currentPassword?: string; timezone?: string },
 ): Promise<User> {
   const res = await apiClient.patch(`/users/${id}`, data);
   return res.data;

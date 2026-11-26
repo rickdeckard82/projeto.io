@@ -300,11 +300,14 @@ export class WorkItemsService {
     const recurrenceEndsHere =
       recurrenceGiven && !recurrence!.unit ? false : dto.recurrenceEndsHere;
 
+    // `null` apaga a data; `undefined` mantém a atual.
+    const toDate = (value: string | null | undefined, current: Date | null) =>
+      value === undefined ? current : value === null ? null : new Date(value);
+    const dueDate = toDate(dto.dueDate, item.dueDate);
     // Prazo mudou de fato (não só foi reenviado com o mesmo valor): zera os timestamps de disparo
     // do alerta de vencimento, senão um item cujo prazo foi adiado depois de já notificado nunca
     // dispararia de novo — ver `DueDateCheckService`.
-    const dueDateChanged = !!dto.dueDate && new Date(dto.dueDate).getTime() !== item.dueDate?.getTime();
-    const dueDate = dto.dueDate ? new Date(dto.dueDate) : item.dueDate;
+    const dueDateChanged = dueDate?.getTime() !== item.dueDate?.getTime();
 
     // Lembrete: recalcula se o usuário mexeu nele diretamente, ou se ele é relativo e o vencimento
     // mudou (senão um lembrete "30min antes" ficaria preso ao prazo antigo).
@@ -312,7 +315,8 @@ export class WorkItemsService {
     const reminder = reminderGiven
       ? resolveReminder(dto.reminderAt, dto.reminderOffsetMinutes, dueDate)
       : dueDateChanged && item.reminderOffsetMinutes != null
-        ? resolveReminder(undefined, item.reminderOffsetMinutes, dueDate)
+        ? // Sem vencimento, o lembrete relativo a ele deixa de existir.
+          resolveReminder(undefined, dueDate ? item.reminderOffsetMinutes : null, dueDate)
         : undefined;
     const reminderChanged = reminder && reminder.reminderAt?.getTime() !== item.reminderAt?.getTime();
 
@@ -322,10 +326,10 @@ export class WorkItemsService {
         title: dto.title,
         description: dto.description,
         priority: dto.priority,
-        parentId: dto.parentId === undefined ? undefined : dto.parentId,
-        moduleId: dto.moduleId === undefined ? undefined : dto.moduleId,
-        startDate: dto.startDate ? new Date(dto.startDate) : undefined,
-        dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
+        parentId: dto.parentId,
+        moduleId: dto.moduleId,
+        startDate: toDate(dto.startDate, item.startDate),
+        dueDate,
         reminderAt: reminder ? reminder.reminderAt : undefined,
         reminderOffsetMinutes: reminder ? reminder.reminderOffsetMinutes : undefined,
         reminderNotifiedAt: reminderChanged ? null : undefined,

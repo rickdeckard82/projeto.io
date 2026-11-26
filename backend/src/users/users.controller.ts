@@ -1,10 +1,12 @@
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Req } from '@nestjs/common';
+import { Request } from 'express';
 import { GlobalRole } from '../generated/prisma/client.js';
 import { UsersService } from './users.service.js';
 import { CreateUserDto } from './dto/create-user.dto.js';
 import { UpdateUserDto } from './dto/update-user.dto.js';
 import { UpdateRoleDto } from './dto/update-role.dto.js';
 import { Roles } from '../common/decorators/roles.decorator.js';
+import { AllowApiKey } from '../common/decorators/allow-api-key.decorator.js';
 import { CurrentUser, AuthenticatedUser } from '../common/decorators/current-user.decorator.js';
 import { ClientInfo } from '../common/decorators/client-info.decorator.js';
 import { AuditService, AuditClientInfo } from '../audit/audit.service.js';
@@ -35,6 +37,7 @@ export class UsersController {
    * autenticado. Separado de `GET /users` para não expor e-mail além do necessário
    * (minimização de dados, LGPD art. 6º, III).
    */
+  @AllowApiKey()
   @Get('directory')
   directory() {
     return this.usersService.directory();
@@ -73,12 +76,6 @@ export class UsersController {
     return this.usersService.exportOwnData(user.id);
   }
 
-  /** Busca um usuário pelo id. */
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(id);
-  }
-
   /** Atualiza o perfil de um usuário; a checagem de que só o próprio usuário (ou um admin) pode editar é feita no service. */
   @Patch(':id')
   async update(
@@ -86,8 +83,9 @@ export class UsersController {
     @Body() dto: UpdateUserDto,
     @CurrentUser() user: AuthenticatedUser,
     @ClientInfo() client: AuditClientInfo,
+    @Req() req: Request,
   ) {
-    const result = await this.usersService.update(id, dto, user);
+    const result = await this.usersService.update(id, dto, user, req.cookies?.refresh_token);
     if (dto.password) {
       await this.auditService.record({
         action: AUDIT_ACTIONS.PASSWORD_CHANGED,

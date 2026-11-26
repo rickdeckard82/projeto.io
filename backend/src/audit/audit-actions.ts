@@ -14,6 +14,8 @@ export const AUDIT_ACTIONS = {
   USER_ROLE_CHANGED: 'user.role_changed',
   USER_DEACTIVATED: 'user.deactivated',
   USER_ANONYMIZED: 'user.anonymized',
+  API_KEY_CREATED: 'api_key.created',
+  API_KEY_REVOKED: 'api_key.revoked',
   ALLOWED_DOMAIN_ADDED: 'settings.allowed_domain.added',
   ALLOWED_DOMAIN_REMOVED: 'settings.allowed_domain.removed',
   SMTP_SETTINGS_UPDATED: 'settings.smtp.updated',

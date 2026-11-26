@@ -40,6 +40,11 @@ export class UpdateUserDto {
   @MinLength(8)
   password?: string;
 
+  /** Obrigatória para trocar a própria senha (Admin trocando a de outro não precisa). */
+  @IsOptional()
+  @IsString()
+  currentPassword?: string;
+
   @IsOptional()
   @IsIanaTimezone()
   timezone?: string;

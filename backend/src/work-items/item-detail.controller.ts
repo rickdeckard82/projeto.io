@@ -9,6 +9,7 @@ import { CreateCommentDto } from './dto/create-comment.dto.js';
 import { Roles } from '../common/decorators/roles.decorator.js';
 import { ProjectResource } from '../common/decorators/project-resource.decorator.js';
 import { ProjectMemberGuard } from '../common/guards/project-member.guard.js';
+import { AllowApiKey } from '../common/decorators/allow-api-key.decorator.js';
 import { CurrentUser, AuthenticatedUser } from '../common/decorators/current-user.decorator.js';
 
 /**
@@ -26,6 +27,7 @@ export class ItemDetailController {
   constructor(private readonly workItemsService: WorkItemsService) {}
 
   /** Busca os detalhes de um item de trabalho pelo id. */
+  @AllowApiKey()
   @Get()
   findOne(@Param('itemId') itemId: string) {
     return this.workItemsService.findOne(itemId);
@@ -33,6 +35,7 @@ export class ItemDetailController {
 
   /** Atualiza campos do item (título, descrição, prioridade, datas, pai); restrito a Admin/Senior/Membro. */
   @Roles(GlobalRole.ADMIN, GlobalRole.SENIOR, GlobalRole.MEMBER)
+  @AllowApiKey()
   @Patch()
   update(@Param('itemId') itemId: string, @Body() dto: UpdateItemDto, @CurrentUser() user: AuthenticatedUser) {
     return this.workItemsService.update(itemId, dto, user);
@@ -40,6 +43,7 @@ export class ItemDetailController {
 
   /** Move o item para outro status/coluna do kanban; restrito a Admin/Senior/Membro. */
   @Roles(GlobalRole.ADMIN, GlobalRole.SENIOR, GlobalRole.MEMBER)
+  @AllowApiKey()
   @Patch('status')
   updateStatus(
     @Param('itemId') itemId: string,
@@ -51,6 +55,7 @@ export class ItemDetailController {
 
   /** Substitui a lista de responsáveis pelo item; restrito a Admin/Senior/Membro. */
   @Roles(GlobalRole.ADMIN, GlobalRole.SENIOR, GlobalRole.MEMBER)
+  @AllowApiKey()
   @Patch('assignees')
   updateAssignees(
     @Param('itemId') itemId: string,

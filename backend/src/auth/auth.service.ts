@@ -286,11 +286,15 @@ export class AuthService {
       throw new UnauthorizedException('Usuário inválido');
     }
 
-    // Rotate: revoke old, issue new
-    await this.prisma.refreshToken.update({
-      where: { id: stored.id },
+    // Rotate: revoke old, issue new. O `revokedAt: null` no filtro faz só um de dois refreshes
+    // simultâneos com o mesmo token vencer — o outro cai no 401.
+    const claimed = await this.prisma.refreshToken.updateMany({
+      where: { id: stored.id, revokedAt: null },
       data: { revokedAt: new Date() },
     });
+    if (claimed.count === 0) {
+      throw new UnauthorizedException('Refresh token inválido ou expirado');
+    }
 
     return this.issueTokens(user.id, user.email);
   }

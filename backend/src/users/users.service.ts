@@ -1,4 +1,4 @@
-import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import { GlobalRole } from '../generated/prisma/client.js';
@@ -6,6 +6,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateUserDto } from './dto/create-user.dto.js';
 import { UpdateUserDto } from './dto/update-user.dto.js';
 import { AuthenticatedUser } from '../common/decorators/current-user.decorator.js';
+import { hashToken } from '../common/utils/token-hash.util.js';
 
 const SAFE_SELECT = {
   id: true,
@@ -146,16 +147,27 @@ export class UsersService {
    * Atualiza dados do próprio perfil de um usuário (nome, avatar, senha).
    * Regra de autorização: um usuário não-admin só pode editar o próprio perfil
    * (`requester.id === id`); um ADMIN pode editar o perfil de qualquer usuário.
-   * Quando `dto.password` é informado, a senha é re-hasheada com bcrypt antes de salvar.
+   * Quando `dto.password` é informado, a senha é re-hasheada com bcrypt antes de salvar; trocar a
+   * própria senha exige a atual. Toda troca derruba as outras sessões, os dispositivos confiáveis
+   * e as chaves de API do usuário — quem trocou por suspeita de roubo não pode deixar o invasor logado.
    * @param id - Id do usuário a ser atualizado.
    * @param dto - Campos a atualizar (nome, avatar e/ou senha), todos opcionais.
    * @param requester - Usuário autenticado que está realizando a requisição.
+   * @param currentRefreshToken - refresh token da sessão atual, mantido quando o usuário troca a própria senha.
    * @returns Usuário atualizado (campos seguros, sem hash de senha).
    * @throws ForbiddenException - quando um usuário não-admin tenta editar o perfil de outro usuário.
+   * @throws BadRequestException - quando a senha atual não confere.
    */
-  async update(id: string, dto: UpdateUserDto, requester: AuthenticatedUser) {
+  async update(id: string, dto: UpdateUserDto, requester: AuthenticatedUser, currentRefreshToken?: string) {
     if (requester.id !== id && requester.globalRole !== GlobalRole.ADMIN) {
       throw new ForbiddenException('Você só pode editar o seu próprio perfil');
+    }
+    if (dto.password && requester.id === id) {
+      const own = await this.prisma.user.findUnique({ where: { id }, select: { passwordHash: true } });
+      if (!own || !dto.currentPassword || !(await bcrypt.compare(dto.currentPassword, own.passwordHash))) {
+        // 400, não 401: um 401 faria o frontend tentar renovar a sessão à toa.
+        throw new BadRequestException('Senha atual incorreta');
+      }
     }
 
     const data: { fullName?: string; avatarUrl?: string | null; passwordHash?: string; timezone?: string } = {};
@@ -173,6 +185,17 @@ export class UsersService {
     }
 
     const user = await this.prisma.user.update({ where: { id }, data, select: SAFE_SELECT });
+    if (dto.password) {
+      const keep = requester.id === id && currentRefreshToken ? hashToken(currentRefreshToken) : undefined;
+      await this.prisma.$transaction([
+        this.prisma.refreshToken.updateMany({
+          where: { userId: id, revokedAt: null, ...(keep ? { tokenHash: { not: keep } } : {}) },
+          data: { revokedAt: new Date() },
+        }),
+        this.prisma.trustedDevice.deleteMany({ where: { userId: id } }),
+        this.prisma.apiKey.deleteMany({ where: { userId: id } }),
+      ]);
+    }
     return user;
   }
 
@@ -254,6 +277,7 @@ export class UsersService {
       where: { userId: id, revokedAt: null },
       data: { revokedAt: new Date() },
     });
+    await this.prisma.apiKey.deleteMany({ where: { userId: id } });
 
     return user;
   }

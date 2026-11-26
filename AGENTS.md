@@ -93,6 +93,6 @@ docker exec projetoio-db psql -U app_user -d pm_app          # psql direto
 ```
 
 ## Fora do escopo (decisão deliberada do v1)
-Sem IA/automação, sem notificações, sem anexos de arquivo, sem papéis por projeto (só papel global), sem workspaces multi-nível. Ver `README.md` para o fluxo de verificação manual completo.
+Sem IA/automação dentro do app (o MCP em `backend/src/mcp/` só expõe a API a clientes externos, como o Claude Code), sem notificações, sem anexos de arquivo, sem papéis por projeto (só papel global), sem workspaces multi-nível. Ver `README.md` para o fluxo de verificação manual completo.
 
 (Tempo real via WebSockets **existe** desde então — ver `docs/architecture.md` — cobrindo itens de trabalho/atividade e o arquivamento/desarquivamento de projeto; documentos e outras telas ainda não têm sincronização ao vivo.)

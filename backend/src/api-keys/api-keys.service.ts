@@ -1,4 +1,5 @@
 import * as crypto from 'crypto';
+import { BlockList, isIP } from 'net';
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { GlobalRole } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -25,6 +26,25 @@ const SAFE_SELECT = {
 export function readApiKey(authorization: string | undefined): string | null {
   const token = /^Bearer\s+(\S+)$/i.exec(authorization ?? '')?.[1];
   return token?.startsWith(API_KEY_PREFIX) ? token : null;
+}
+
+/**
+ * `API_KEY_ALLOWED_CIDRS` (ex.: `160.79.104.0/21`, a saída da Anthropic) restringe de onde a chave
+ * é aceita; vazio aceita de qualquer lugar. Vale para o MCP e para as rotas REST liberadas.
+ */
+export function isApiKeyIpAllowed(ip: string | undefined, cidrs = process.env.API_KEY_ALLOWED_CIDRS ?? ''): boolean {
+  const ranges = cidrs.split(',').map((c) => c.trim()).filter(Boolean);
+  if (ranges.length === 0) return true;
+  const address = (ip ?? '').replace(/^::ffff:/, '');
+  const family = isIP(address);
+  if (!family) return false;
+  const list = new BlockList();
+  for (const range of ranges) {
+    const [network, prefix] = range.split('/');
+    const rangeFamily = isIP(network) === 6 ? 'ipv6' : 'ipv4';
+    list.addSubnet(network, prefix ? Number(prefix) : rangeFamily === 'ipv6' ? 128 : 32, rangeFamily);
+  }
+  return list.check(address, family === 6 ? 'ipv6' : 'ipv4');
 }
 
 @Injectable()

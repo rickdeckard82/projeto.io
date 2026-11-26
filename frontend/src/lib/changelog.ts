@@ -17,6 +17,14 @@ export interface ChangelogEntry {
  */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.21.1',
+    date: '2026-11-25',
+    changes: [
+      'As chaves de API funcionam como connector personalizado no claude.ai, valendo também no Claude Desktop, no celular e no Claude Code.',
+      'As chaves de API podem ser restritas aos IPs da Anthropic (API_KEY_ALLOWED_CIDRS).',
+    ],
+  },
+  {
     version: '1.21.0',
     date: '2026-11-25',
     changes: [

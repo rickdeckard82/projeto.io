@@ -1,7 +1,7 @@
 import { ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
-import { ApiKeysService, readApiKey } from '../../api-keys/api-keys.service.js';
+import { ApiKeysService, isApiKeyIpAllowed, readApiKey } from '../../api-keys/api-keys.service.js';
 import { ALLOW_API_KEY } from '../decorators/allow-api-key.decorator.js';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator.js';
 
@@ -38,6 +38,9 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     const request = context.switchToHttp().getRequest();
     const apiKey = readApiKey(request.headers.authorization);
     if (apiKey) {
+      if (!isApiKeyIpAllowed(request.ip)) {
+        throw new ForbiddenException('Chave de API não aceita a partir deste endereço');
+      }
       request.user = await this.apiKeysService.authenticate(apiKey);
       if (!this.reflector.get<boolean>(ALLOW_API_KEY, context.getHandler())) {
         throw new ForbiddenException('Esta rota não aceita chave de API');

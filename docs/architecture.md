@@ -41,7 +41,7 @@ Com 2FA ativo, `AuthService.login()` não emite os cookies de sessão direto: de
 
 ### Chaves de API e MCP (`backend/src/api-keys/`, `backend/src/mcp/`)
 
-Chave de API (`Authorization: Bearer pio_...`, hash SHA-256 em `api_keys`, 90 dias) age como o usuário dono. O `JwtAuthGuard` só a aceita em handlers com `@AllowApiKey()` — rotas novas nascem fechadas para ela, inclusive a própria gestão em `/api-keys`. Contas `ADMIN` não podem ter chave (ela não passa pelo 2FA), mas Admin cria e revoga chaves dos demais usuários.
+Chave de API (`Authorization: Bearer pio_...`, hash SHA-256 em `api_keys`, 90 dias) age como o usuário dono. O `JwtAuthGuard` só a aceita em handlers com `@AllowApiKey()` — rotas novas nascem fechadas para ela, inclusive a própria gestão em `/api-keys`. Contas `ADMIN` não podem ter chave (ela não passa pelo 2FA), mas Admin cria e revoga chaves dos demais usuários. `API_KEY_ALLOWED_CIDRS` limita de quais IPs a chave é aceita (no connector do claude.ai, a saída da Anthropic); as chamadas internas do MCP repassam o IP real no `X-Forwarded-For`.
 
 `POST /api/v1/mcp` é um servidor MCP (Streamable HTTP, sem sessão). As ferramentas (`mcp-server.ts`) chamam a própria API por HTTP no loopback repassando a chave, em vez de usar os services, para que guards, DTOs e auditoria continuem valendo. Uma ferramenta que use rota nova exige `@AllowApiKey()` nessa rota.
 

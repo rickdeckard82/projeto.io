@@ -70,16 +70,26 @@ Falhas de envio de e-mail (SMTP incorreto, credenciais inválidas etc.) ficam re
 24. Abra o quadro de um projeto ativo em duas janelas/navegadores com usuários diferentes (ambos membros do projeto). Em uma, arquive o projeto (**Configurações → Arquivar**). A outra janela deve mostrar um aviso ("projeto foi arquivado por outro usuário") e voltar sozinha para a lista de projetos, sem precisar recarregar; confirme também que tentar mover/criar/editar um item desse projeto (mesmo direto pela API) passa a retornar erro. Abrir um projeto que já estava arquivado direto pela página **Arquivos** continua funcionando normalmente (só leitura).
 25. Acesse a aba **Métricas** de um projeto como Admin ou Senior e confirme os números (total de itens, concluídos/cancelados, tempo médio até concluir, duração do projeto, resumo por responsável). Logado como Membro ou Visualizador, confirme que a aba não aparece e que acessar a URL (`/projects/:id/metrics`) direto redireciona para o quadro.
 
-## Claude Code (MCP)
+## Claude (connector MCP)
 
 1. Como Admin, crie um usuário **Senior** (ex.: "Claude") em Configurações > Usuários e adicione-o aos projetos existentes que ele deve acessar.
-2. Em Configurações > Chaves de API, crie uma chave para ele e rode o comando exibido:
+2. Em Configurações > Chaves de API, crie uma chave para ele.
+3. No claude.ai, em Configurações > Connectors > **Adicionar connector personalizado**:
+   - Nome: `projetoio`
+   - URL: `https://seuapp.com.br/api/v1/mcp`
+   - Autenticação: **Sem login**
+   - Cabeçalhos de requisição: `Authorization` = `Bearer pio_...`
+
+   O connector vale no claude.ai, no Claude Desktop, no app do celular e no Claude Code logado na mesma conta.
+4. Restrinja a chave à saída da Anthropic, para que uma chave vazada não sirva de fora: `API_KEY_ALLOWED_CIDRS=160.79.104.0/21` no `.env` e recrie o backend. Se o connector parar de conectar e a resposta for `Chave de API não aceita a partir deste endereço`, confira a lista oficial de IPs da Anthropic e acrescente a faixa nova.
+
+Sem a restrição de IP, o Claude Code também conecta direto da sua máquina (a chave fica na configuração dele; não a coloque num `.mcp.json` versionado):
 
 ```bash
 claude mcp add --scope user --transport http projetoio https://seuapp.com.br/api/v1/mcp --header "Authorization: Bearer pio_..."
 ```
 
-A chave fica salva na configuração do Claude Code: não a coloque num `.mcp.json` versionado. Claude web e celular ainda não são atendidos (exigem OAuth).
+Revogar na hora: Configurações > Chaves de API > Revogar.
 
 ## Deploy em produção (domínio próprio + Nginx Proxy Manager)
 

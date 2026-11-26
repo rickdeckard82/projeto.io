@@ -39,7 +39,7 @@ export function ApiKeysSettingsPage() {
         <Button onClick={() => setCreateOpen(true)}>Criar chave</Button>
       </div>
       <p className="mb-6 text-xs text-slate-500">
-        Conectam o Claude Code ao Projeto.io com as permissões do dono da chave. Valem por 90 dias. Contas de
+        Conectam o Claude (connector do claude.ai ou Claude Code) ao Projeto.io com as permissões do dono da chave. Valem por 90 dias. Contas de
         administrador não podem ter chave.
       </p>
 
@@ -126,7 +126,14 @@ function CreateApiKeyDialog({ isAdmin, onClose }: { isAdmin: boolean; onClose: (
           {mutation.data ? (
             <>
               <p className="mb-3 text-xs text-slate-400">
-                Copie agora: ela não será mostrada de novo. Para conectar o Claude Code, rode:
+                Copie agora: ela não será mostrada de novo. No claude.ai, em Configurações &gt; Connectors &gt;
+                Adicionar connector personalizado, use "Sem login" e:
+              </p>
+              <pre className="mb-3 select-all whitespace-pre-wrap break-all rounded-md border border-slate-700 bg-slate-950 p-3 text-xs text-slate-100">
+                {`URL: ${API_BASE_URL}/mcp\nCabeçalho: Authorization = Bearer ${mutation.data.token}`}
+              </pre>
+              <p className="mb-3 text-xs text-slate-400">
+                Ou, no Claude Code (se as chaves não estiverem restritas aos IPs da Anthropic):
               </p>
               <pre className="mb-3 select-all whitespace-pre-wrap break-all rounded-md border border-slate-700 bg-slate-950 p-3 text-xs text-slate-100">
                 {`claude mcp add --scope user --transport http projetoio ${API_BASE_URL}/mcp --header "Authorization: Bearer ${mutation.data.token}"`}

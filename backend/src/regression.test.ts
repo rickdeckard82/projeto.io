@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { JwtService } from '@nestjs/jwt';
 import { Reflector } from '@nestjs/core';
-import { ApiKeysService } from './api-keys/api-keys.service.js';
+import { ApiKeysService, isApiKeyIpAllowed } from './api-keys/api-keys.service.js';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
 import { ProjectsController } from './projects/projects.controller.js';
 import { UsersController } from './users/users.controller.js';
@@ -159,4 +159,14 @@ test('trocar a própria senha exige a atual e derruba as outras sessões', async
   // Admin trocando a senha de outro: não pede a atual e derruba todas as sessões dele.
   await service.update('u1', { password: 'senha-nova-123' }, { id: 'a1', globalRole: 'ADMIN' } as any, 'rt-admin');
   assert.equal(revoked[1].where.tokenHash, undefined);
+});
+
+test('chave de API só é aceita dos IPs permitidos, quando a lista existe', () => {
+  const anthropic = '160.79.104.0/21';
+  assert.equal(isApiKeyIpAllowed('203.0.113.9', ''), true);
+  assert.equal(isApiKeyIpAllowed('160.79.111.200', anthropic), true);
+  assert.equal(isApiKeyIpAllowed('::ffff:160.79.104.1', anthropic), true);
+  assert.equal(isApiKeyIpAllowed('160.79.112.1', anthropic), false);
+  assert.equal(isApiKeyIpAllowed(undefined, anthropic), false);
+  assert.equal(isApiKeyIpAllowed('2001:db8::1', `${anthropic}, 2001:db8::/32`), true);
 });

@@ -44,6 +44,7 @@ services:
       TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
       # Fuso do horário do backup automático por FTP (Configurações > Backup).
       BACKUP_TIMEZONE: ${BACKUP_TIMEZONE:-America/Sao_Paulo}
+      API_KEY_ALLOWED_CIDRS: ${API_KEY_ALLOWED_CIDRS:-}
     depends_on:
       db:
         condition: service_healthy
